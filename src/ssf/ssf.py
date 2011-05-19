@@ -13,9 +13,9 @@ ERROR_INVALID_CHECKSUM   = 4
 ERROR_MISSING_TRAILER_LF = 5
 
 ERROR_TEXT = { ERROR_UNEXPECTED_TRAILER: 'Unexpected block trailer',
-               ERROR_MISSING_HEADER_LF: 'Missing LF on header',
-               ERROR_MISSING_TRAILER: 'Missing block trailer',
-               ERROR_INVALID_CHECKSUM: 'Invalid block checksum',
+               ERROR_MISSING_HEADER_LF:  'Missing LF on header',
+               ERROR_MISSING_TRAILER:    'Missing block trailer',
+               ERROR_INVALID_CHECKSUM:   'Invalid block checksum',
                ERROR_MISSING_TRAILER_LF: 'Missing LF on trailer',
              }
 
@@ -29,28 +29,30 @@ CHECKSUM_NONE   = 4
 class Block(object):
 #===================
 
-  def __init__(self, blockno, type, format, header, content):
-  #----------------------------------------------------------
-    self.blockno = blockno
+  def __init__(self, type, header={}, content=''):
+  #-----------------------------------------------
     self.type = type
-    self.format = format
     self.header = header
     self.content = content
 
   def __str__(self):
   #-----------------
-    return ("BLOCK %d: Type=%c, Format='%s', Header=%s, Length=%d"
-           % (self.blockno, self.type, self.format, self.header, len(self.content)))
+    return ("BLOCK: Type=%c, Header=%s, Length=%d"
+           % (self.type, self.header, len(self.content)))
 
 
 class BlockReader(object):
 #=========================
 
-  def __init__(self, fh, error_handler, checksum=CHECKSUM_CHECK):
-  #--------------------------------------------------------------
+  def __init__(self, fh, checksum=CHECKSUM_CHECK):
+  #-----------------------------------------------
     self._file = fh
-    self._error = error_handler
     self._checksum = checksum
+
+  def error(self, blockno, errorno):
+  #---------------------------------
+    """Overriden by sub-class or instance."""
+    pass    ## Write to sys.stderr or call logging.error() as default ????
 
   def __iter__(self):
   #------------------
@@ -85,7 +87,7 @@ class BlockReader(object):
           length = 0
           state = 2
         else:
-          self._error(blockno, ERROR_UNEXPECTED_TRAILER)
+          self.error(blockno, ERROR_UNEXPECTED_TRAILER)
           state = 0
 
       elif state == 2:                 # Getting header length
@@ -119,7 +121,7 @@ class BlockReader(object):
           chunks = [ ]
           state = 5
         else:
-          self._error(blockno, ERROR_MISSING_HEADER_LF)
+          self.error(blockno, ERROR_MISSING_HEADER_LF)
           state = 0
 
       elif state == 5:                 # Getting content
@@ -142,7 +144,7 @@ class BlockReader(object):
           length -= 1
           if length == 0: state = 7
         else:
-          self._error(blockno, ERROR_MISSING_TRAILER)
+          self.error(blockno, ERROR_MISSING_TRAILER)
           state = 0
 
       elif state == 7:                 # Checking for checksum
@@ -166,14 +168,13 @@ class BlockReader(object):
         if ((self._checksum == CHECKSUM_STRICT
           or self._checksum == CHECKSUM_CHECK and len(checks))
          and ''.join(checks) != checksum.hexdigest()):
-          self._error(blockno, ERROR_INVALID_CHECKSUM)
+          self.error(blockno, ERROR_INVALID_CHECKSUM)
         elif data[pos] == '\n':
           pos += 1
           datalen -= 1
-          format = header.pop('format', '')
-          yield Block(blockno, type, format, header, content)
+          yield (blockno, Block(type, header, content))
         else:
-          self._error(blockno, ERROR_MISSING_TRAILER_LF)
+          self.error(blockno, ERROR_MISSING_TRAILER_LF)
         state = 0
 
 
@@ -181,35 +182,36 @@ class BlockReader(object):
 class BlockWriter(object):
 #=========================
 
-  def __init__(self, fh):
-  #----------------------
+  def __init__(self, fh, checksum=False):
+  #-------------------------------------
     self._file = fh
+    self._checksum = checksum
 
+  def write(self, block, check=None):
+  #==================================
 
-  def write(self, type, format='', header=None, content='', check=False):
-  #======================================================================
-
-    if header is None: header = { }
-    elif not isinstance(header, dict):
+    if not isinstance(block.header, dict):
       raise Exception('Block header must be a dictionary')
-    elif type == '#':
+    elif block.type == '#':
       raise Exception('Block type of "#" is reserved')
 
-    length = len(content)
-    header['length'] = length
-    if format: header['format'] = format
-    jsonhdr = json.dumps(header, separators=(',',':'))
+    length = len(block.content)
+    block.header['length'] = length
+    jsonhdr = json.dumps(block.header, separators=(',',':'))
 
+    if check is None: check = self._checksum
     checksum = hashlib.md5() if check else None
 
-    hdr = ('#%c' % str(type)[0] if type else ' ') + str(len(jsonhdr)) + jsonhdr + '\n'
+    hdr = (('#%c' % str(block.type)[0] if block.type else ' ')
+          + str(len(jsonhdr)) + jsonhdr
+          + '\n')
     self._file.write(hdr)
     if checksum: checksum.update(hdr)
 
     n = 0
     while n < length:
-      self._file.write(content[n:n+BUFFER_SIZE])
-      if checksum: checksum.update(content[n:n+BUFFER_SIZE])
+      self._file.write(block.content[n:n+BUFFER_SIZE])
+      if checksum: checksum.update(block.content[n:n+BUFFER_SIZE])
       n += BUFFER_SIZE
 
     self._file.write('##')
@@ -221,38 +223,40 @@ class BlockWriter(object):
 class StreamReader(threading.Thread):
 #====================================
 
-  def __init__(self, fh, processor, error_handler, **kwds):
-  #--------------------------------------------------------
+  def __init__(self, fh, checksum=CHECKSUM_CHECK, **kwds):
+  #-------------------------------------------------------
     threading.Thread.__init__(self, **kwds)
-    self._reader = BlockReader(fh, error_handler)
-    self._process = processor
+    self._reader = BlockReader(fh, checksum)
+    self._reader.error = self.error
 
+  def process(self, blockno, block):
+  #---------------------------------
+    """Overriden by sub-class or instance."""
+    pass
+
+  def error(self, blockno, errorno):
+  #---------------------------------
+    """Overriden by sub-class or instance."""
+    pass
 
   def start(self):
   #---------------
-    for block in self._reader:
-      self._process(block)
+    for nbr, block in self._reader:
+      self.process(nbr, block)
 
 
 
-class SimpleStreamReader(object):
-#================================
+class SimpleStreamReader(StreamReader):
+#======================================
 
-
-  @staticmethod
   def process(block):
   #------------------
     pass
 
-  @staticmethod
-  def error(blockno, errno):
-  #-------------------------
+  def error(blockno, errorno):
+  #---------------------------
     pass
 
-
-  def __init__(self, fh, metadata, data_process):
-  #----------------------------------------------
-    self._stream = StreamReader(fh, self.process, self.error)
 
 
 """
@@ -277,14 +281,6 @@ class SimpleStreamReader(object):
   header['attribute'] 
 """
 
-def processor(block):
-#====================
-  pass
-
-def error_handler(blockno, errno):
-#=================================
-  pass
-
 
 if __name__ == '__main__':
 #=========================
@@ -295,22 +291,25 @@ if __name__ == '__main__':
     if sys.argv[1][0] == 'o':
       bw = BlockWriter(sys.stdout)
 #  bw.write('D', content='some content', check=True) 
-      bw.write('M', format='turtle', content='<a> <b> 1 .')
+      bw.write(Block('M', header={'format': 'turtle'}, content='<a> <b> 1 .'))
 
       while True:
         d = sys.stdin.read(8192)
         if d == '': break
-        bw.write('D', content=d, check=True) 
+        bw.write(Block('D', content=d), check=True) 
 
     elif sys.argv[1][0] == 'i':
 
-      def printblock(blk):
-        print blk
+      def printblock(no, blk):
+        print no, blk
 
       def printerror(blkno, errno):
         print 'ERROR %d in BLOCK %d (%s)' % (blkno, errno, ERROR_TEXT[errno])
 
-      sr = StreamReader(sys.stdin, printblock, printerror)
+      sr = StreamReader(sys.stdin)
+      sr.process = printblock
+      sr.error = printerror
+
       sr.start()
 
       while sr.is_alive():
