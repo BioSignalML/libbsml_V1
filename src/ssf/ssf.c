@@ -13,10 +13,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "md5/md5.h"
-#include "cJSON/cJSON.h"
-
 #include "ssf.h"
+
+#define min(a, b) ((a) < (b) ? (a) : (b))
 
 
 char *stream_error_text(int errno)
@@ -31,12 +30,11 @@ char *stream_error_text(int errno)
   }
 
 
-StreamReader *stream_reader(FILE *file, int check)
-/*==============================================*/
+StreamReader *stream_new_reader(int file, int check)
+/*================================================*/
 {
   StreamReader *sp = (StreamReader *)calloc(1, sizeof(StreamReader)) ;
-  if (sp == NULL) raise_error("Out of memory...") ;
-  else {
+  if (sp) {
     sp->file = file ;
     sp->checksum = check ;
     sp->error = 0 ;
@@ -45,7 +43,6 @@ StreamReader *stream_reader(FILE *file, int check)
     sp->datalen = 0 ;
     sp->databuf = (char *)calloc(STREAM_BUFFER_SIZE, 1) ;
     if (sp->databuf == NULL) {
-      raise_error("Out of memory...") ;
       free(sp) ;
       sp = NULL ;
       }
@@ -59,13 +56,13 @@ StreamReader *stream_reader(FILE *file, int check)
   }
 
 
-void stream_free_buffers(StreamReader *sp)
-/*======================================*/
+static void stream_free_buffers(StreamReader *sp)
+/*=============================================*/
 {
   if (sp) {
     if (sp->databuf) free(sp->databuf) ;
     if (sp->jsonhdr) free(sp->jsonhdr) ;
-    if (sp->header) cJOSN_Delete(sp->header) ;
+    if (sp->header) cJSON_Delete(sp->header) ;
     if (sp->content) free(sp->header) ;
     sp->databuf = sp->jsonhdr = sp->content = NULL ;
     sp->jsonhdr = NULL ;

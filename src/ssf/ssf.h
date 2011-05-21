@@ -12,6 +12,9 @@
 #ifndef _SSF_H
 #define _SSF_H
 
+#include "md5/md5.h"
+#include "cJSON/cJSON.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,7 +45,7 @@ typedef struct {
 
   char *contentp ;
 
-  FILE *file ;
+  int file ;
   int checksum ;
 
   int state ;
@@ -61,8 +64,7 @@ typedef struct {
 
 char *stream_error_text(int) ;
 
-StreamReader *stream_reader(FILE *, int) ;
-void stream_free_buffers(StreamReader *) ;
+StreamReader *stream_new_reader(int, int) ;
 void stream_free_reader(StreamReader *) ;
 
 int stream_read_block(StreamReader *) ;
