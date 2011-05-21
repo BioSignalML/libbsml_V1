@@ -70,7 +70,7 @@ class BlockReader(object):
         next = data[pos:].find('#')
         if next >= 0:
           pos += (next + 1)
-          datalen -= 1
+          datalen -= (next + 1)
           checksum = hashlib.md5()
           checksum.update('#')
           state = 1
