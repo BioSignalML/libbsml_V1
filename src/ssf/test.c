@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+
 
 #include "ssf.h"
 
@@ -8,7 +11,13 @@
 int main(void)
 /*==========*/
 {
-  StreamReader *input = stream_new_reader(fileno(stdin), STREAM_CHECKSUM_CHECK) ;
+
+  
+
+  int infile = fileno(stdin) ;
+//               open("/Users/dave/biosignalml/libbsml/src/ssf/t", O_RDONLY) ;
+
+  StreamReader *input = stream_new_reader(infile, STREAM_CHECKSUM_CHECK) ;
 
   if (input == NULL) {
     printf("Cannot open stream...") ;
@@ -18,11 +27,14 @@ int main(void)
   while (stream_read_block(input)) {
 
     if (input->error)
-      printf("ERROR %d in BLOCK %d (%s)\n", input->blockno, input->error,
-                                            stream_error_text(input->error)) ;
-    else
-      printf("%d BLOCK: Type=%c, Header=%s, Length=%d",
-        input->blockno, input->type, cJSON_Print(input->header), input->length) ;
+      printf("%d ERROR %d (%s)\n", input->blockno, input->error,
+                                   stream_error_text(input->error)) ;
+    else {
+      char *json = cJSON_PrintUnformatted(input->header) ;
+      printf("%d BLOCK: Type=%c, Header=%s, Length=%d\n",
+        input->blockno, input->type, json, input->length) ;
+      free(json) ;
+      }
     }
 
   stream_free_reader(input) ;

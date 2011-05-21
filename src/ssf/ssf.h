@@ -43,16 +43,16 @@ typedef struct {
   int length ;
   char *content ;
 
-  char *contentp ;
 
   int file ;
   int checksum ;
 
   int state ;
   int datalen ;
+  int expected ;
   char *databuf ;
   char *datapos ;
-  int expected ;
+  char *storepos ;
 
   char *jsonhdr ;
 
