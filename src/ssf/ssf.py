@@ -1,3 +1,14 @@
+######################################################
+#
+#  BioSignalML Project API
+#
+#  Copyright (c) 2010-2011  David Brooks
+#
+#  $Id$
+#
+######################################################
+
+
 import threading
 
 import json
