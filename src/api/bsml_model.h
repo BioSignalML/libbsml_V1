@@ -12,51 +12,78 @@
 #ifndef _BSML_MODEL_H
 #define _BSML_MODEL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "bsml_internal.h"
 
+typedef enum {
+  RECORDING_RAW = 1,
+  RECORDING_EDF,
+  RECORDING_HDF5
+  } RECORDING_TYPES ;
+
+typedef enum {
+  SIGNAL_RAW = 1,
+  SIGNAL_EDF,
+  SIGNAL_HDF5
+  } SIGNAL_TYPES ;
 
 typedef struct {
+  Dictionary *metadata ;
+  } Resource ;
+
+typedef struct {
+  int type ;
   char *uri ;
-  int signals ;
+  void *info ;
+  Dictionary *attributes ;
   } Recording ;
 
 
 typedef struct {
+  int type ;
+  char *uri ;
+  void *info ;
   Recording *recording ;
-  int number ;
-  double rate ;
-  char *label ;
+  Dictionary *attributes ;
   } Signal ;
 
-
 typedef struct {
-  Signal *signal ;
-  double starttime ;  // or int64 sample_number; or Time starttime (and Time == int64 in nsec).
-  double duration ;
-  int length ;
+//  double starttime ; // or int64 sample_number; or Time starttime (and Time == int64 in nsec).
+//  double duration ;
+  long len ;
   double *data ;
-  } SignalData ;
+  } TimeSeries ;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+struct {
+  char *RAW ;
+  char *HDF5 ;
+  }
+BSML = { "bsml:rawurl",
+         "bsml:hdf5url"
+       } ;
+
+Dictionary *recording_get_metavars(Recording *) ;
+
+char *recording_metadata_as_string(const char *, Dictionary *) ;
 
 
-Recording *bsml_open_recording(const char *uri) ;
-Recording *bsml_create_recording(const char *uri) ;
+Recording *Recording_init(const char *, Dictionary *, int type) ;
+void Recording_close(Recording *) ;
 
-bsml_recording_open/create ??
+Signal *Signal_init(const char *, Dictionary *, int) ;
+void Signal_close(Signal *) ;
 
-bsml_recording_add_signal
+Recording *FILERecording_init(const char *, const char *, Dictionary *, int) ;
+void FILERecording_close(Recording *) ;
 
-int bsml_recording_signals(Recording *)
-
-Signal *bsml_recording_get_signal(Recording *recording, int signalno)
-
-void bsml_free_recording(Recording *recording) ;
-
+Signal *FILESignal_init(const char *, Dictionary *, int) ;
+void FILESignal_close(Signal *) ;
 
 #ifdef __cplusplus
 } ;
 #endif
 
 #endif
-
