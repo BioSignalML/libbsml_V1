@@ -52,7 +52,7 @@
 static char *normalise_name(const char *name)
 /*=========================================*/
 {
-  char *nm = string_copy(name) ;
+  char *nm = (char *)string_copy(name) ;
   char *s = nm ;
   while (1) {
     s = strchr(s, '/') ;
@@ -87,36 +87,20 @@ static herr_t set_hdf5_attribute(hid_t hdf5, const char *attr, Value *value)
 {
   herr_t status = 0 ;
 
-  switch (value->type) {
-    case TYPE_SHORT: {
-      short val = (short)value->integer ;
-      status = H5LTset_attribute_short(hdf5, ".", attr, &val, 1) ;
-      break ;
-      }
-    case TYPE_INTEGER: {
-      int val = (int)value->integer ;
-      status = H5LTset_attribute_int  (hdf5, ".", attr, &val, 1) ;
-      break ;
-      }
-    case TYPE_LONG: {
-      long val = (long)value->integer ;
-      status = H5LTset_attribute_long (hdf5, ".", attr, &val, 1) ;
-      break ;
-      }
-    case TYPE_FLOAT: {
-      float val = (float)value->real ;
-      status = H5LTset_attribute_float (hdf5, ".", attr, &val, 1) ;
-      break ;
-      }
-    case TYPE_DOUBLE: {
-      double val = (double)value->real ;
-      status = H5LTset_attribute_double(hdf5, ".", attr, &val, 1) ;
-      break ;
-      }
-   case TYPE_STRING:
-    status = H5LTset_attribute_string(hdf5, ".", attr, value->string) ;
+  switch (value_type(value)) {
+   case TYPE_INTEGER: {
+    long val = value_get_integer(value) ;
+    status = H5LTset_attribute_long(hdf5, ".", attr, &val, 1) ;
     break ;
-
+    }
+   case TYPE_REAL: {
+    double val = value_get_real(value) ;
+    status = H5LTset_attribute_double(hdf5, ".", attr, &val, 1) ;
+    break ;
+    }
+   case TYPE_STRING:
+    status = H5LTset_attribute_string(hdf5, ".", attr, value_get_string(value)) ;
+    break ;
    default:
     break ;
     }
@@ -169,7 +153,7 @@ static void del_clock(hid_t hdf5, const char *attr)
   }
 
 
-Recording *HDF5Recording_init(const char *fname, char mode, const char *uri, Dictionary *attributes)
+Recording *HDF5Recording_init(const char *fname, char mode, const char *uri, dict *attributes)
 /*==============================================================================================*/
 {
   if (attributes == NULL) attributes = dict_create() ;
@@ -243,7 +227,7 @@ Recording *HDF5Recording_open(const char *fname, char mode, const char *uri)
   }
 
 
-Recording *HDF5Recording_create(const char *fname, char mode, const char *uri, Dictionary *attributes)
+Recording *HDF5Recording_create(const char *fname, char mode, const char *uri, dict *attributes)
 /*================================================================================================*/
 {
   if (mode == 0) mode = '-' ;
@@ -275,7 +259,7 @@ Signal **HDF5Recording_create_signals(Recording *r, char **uris, TimeSeries **da
 
 
 Signal **HDF5Recording_create_signal_group(Recording *r, char **uris, double **data, int datalen,
-                                                                           Dictionary *attributes)
+                                                                           dict *attributes)
 /*==============================================================================================*/
 {
   int channels = array_len(uris) ;
@@ -353,7 +337,7 @@ void HDF5Recording_append_signal_data(Recording *r, double **data, int datalen)
   }
 
 
-void HDF5Recording_save_metadata(Recording *r, const char *format, Dictionary *prefixes)
+void HDF5Recording_save_metadata(Recording *r, const char *format, dict *prefixes)
 /*====================================================================================*/
 {
   if (format == NULL) format = "turtle" ;
@@ -370,7 +354,7 @@ void HDF5Recording_save_metadata(Recording *r, const char *format, Dictionary *p
  *
  **/
 
-Signal *HDF5Signal_init(const char *uri, Recording *r, hid_t dataset, Dictionary *attributes, int index)
+Signal *HDF5Signal_init(const char *uri, Recording *r, hid_t dataset, dict *attributes, int index)
 /*==================================================================================================*/
 {
   if (attributes == NULL) attributes = dict_create() ;
@@ -450,7 +434,7 @@ Signal *HDF5Signal_open(const char *uri, Recording *r)
   }
 
 
-Signal *HDF5Signal_create(const char *uri, Recording *r, TimeSeries *data, Dictionary *attributes)
+Signal *HDF5Signal_create(const char *uri, Recording *r, TimeSeries *data, dict *attributes)
 /*==============================================================================================*/
 {
   if (attributes == NULL) attributes = dict_create() ;

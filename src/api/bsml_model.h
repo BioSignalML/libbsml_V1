@@ -27,14 +27,14 @@ typedef enum {
   } SIGNAL_TYPES ;
 
 typedef struct {
-  Dictionary *metadata ;
+  dict *metadata ;
   } Resource ;
 
 typedef struct {
   int type ;
   char *uri ;
   void *info ;
-  Dictionary *attributes ;
+  dict *attributes ;
   } Recording ;
 
 
@@ -43,7 +43,7 @@ typedef struct {
   char *uri ;
   void *info ;
   Recording *recording ;
-  Dictionary *attributes ;
+  dict *attributes ;
   } Signal ;
 
 typedef struct {
@@ -65,21 +65,21 @@ BSML = { "bsml:rawurl",
          "bsml:hdf5url"
        } ;
 
-Dictionary *recording_get_metavars(Recording *) ;
 
-char *recording_metadata_as_string(const char *, Dictionary *) ;
-
-
-Recording *Recording_init(const char *, Dictionary *, int type) ;
+Recording *Recording_init(const char *, dict *, int type) ;
 void Recording_close(Recording *) ;
+dict *Recording_get_metavars(Recording *) ;
+char *Recording_metadata_as_string(Recording *, const char *, dict *) ;
 
-Signal *Signal_init(const char *, Dictionary *, int) ;
+Signal *Signal_init(const char *, dict *, int) ;
 void Signal_close(Signal *) ;
+dict *Signal_get_metavars(Signal *) ;
 
-Recording *FILERecording_init(const char *, const char *, Dictionary *, int) ;
+
+Recording *FILERecording_init(const char *, const char *, dict *, int) ;
 void FILERecording_close(Recording *) ;
 
-Signal *FILESignal_init(const char *, Dictionary *, int) ;
+Signal *FILESignal_init(const char *, dict *, int) ;
 void FILESignal_close(Signal *) ;
 
 #ifdef __cplusplus
