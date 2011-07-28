@@ -276,9 +276,6 @@ void dict_iterate(dict *d, Iterator_Function *f, void *param)
   }
 
 
-
-#ifdef UNITTEST
-
 #include <stdio.h>
 
 int print(const char *k, Value *v, void *p)
@@ -299,6 +296,9 @@ int print(const char *k, Value *v, void *p)
     }
   return 0 ;
   }
+
+
+#ifdef DICTTEST
 
 
 int main(void)
