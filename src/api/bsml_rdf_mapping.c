@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <time.h>
+#include <ctype.h>
 
 #include <redland.h>
 
@@ -34,7 +35,7 @@ Role of mappings:
 
 
 
-char *BSML_MAP_URI = "./mapping.ttl" ;
+char *BSML_MAP_URI = "file:///Users/dave/biosignalml/python/api/model/mapping.ttl" ;
 
 // 'file://' + os.path.dirname(os.path.abspath(__file__)) + '/mapping.ttl'
 
@@ -408,7 +409,7 @@ static const char *results_get_string(librdf_query_results *r, const char *k)
   librdf_node *n = librdf_query_results_get_binding_value_by_name(r, k) ;
   if (n) {
     if (librdf_node_is_literal(n))
-      s = (const char *)librdf_node_get_literal_value(n) ;
+      s = string_copy((const char *)librdf_node_get_literal_value(n)) ;
     librdf_free_node(n) ;
     }
   return s ;
@@ -437,8 +438,8 @@ static void mapping_set(dict *map, librdf_query_results *r)
     char key[strlen(label) + (class ? strlen(class) : 0) + 1] ;
     strcpy(key, label) ;
     if (class) strcat(key, class) ;
-    m->label    = string_copy(label) ;
-    m->class    = string_copy(class) ;
+    m->label    = label ;
+    m->class    = class ;
     m->property = results_get_node(r, "prop") ;
     m->datatype = results_get_uri(r, "otype") ;
     m->mapfn    = results_get_string(r, "map") ;
@@ -737,6 +738,9 @@ dict *map_get_attributes(Mapping *map, librdf_model *model, const char *subject,
 void bsml_rdf_mapping_initialise(void)
 /*==================================*/
 {
+  datatypes = dict_create() ;
+  pointerkinds = dict_create() ;
+
   dict_set_integer(datatypes, XSD_float,              TYPE_REAL) ;
   dict_set_integer(datatypes, XSD_double,             TYPE_REAL) ;
   dict_set_integer(datatypes, XSD_integer,            TYPE_INTEGER) ;
@@ -756,6 +760,10 @@ void bsml_rdf_mapping_initialise(void)
   dict_set_integer(datatypes,    XSD_duration,        TYPE_REAL) ;
   dict_set_integer(datatypes,    XSD_dateTime,        TYPE_POINTER) ;
   dict_set_integer(pointerkinds, XSD_dateTime,        KIND_DATETIME) ;
+
+
+  bsml_mapping = dict_create() ;
+  load_mapping(bsml_mapping, BSML_MAP_URI) ;
   }
 
 
@@ -781,12 +789,13 @@ void map_print(MapEntry *m)
   }
 
 
-void print(const char *k, Value *v, void *p)
-/*========================================*/
+int print(const char *k, Value *v, void *p)
+/*=======================================*/
 {
   printf("%s: (", k) ;
   map_print(value_get_pointer(v, NULL)) ;
   printf(")\n") ;
+  return 0 ;
   }
 
 
@@ -804,17 +813,11 @@ int main(void)
 {
   world = librdf_new_world() ;
   librdf_world_open(world) ;
-
   bsml_rdf_mapping_initialise() ;
 
-  dict *maps = dict_create() ;
+  dict_iterate(bsml_mapping, (Iterator_Function *)print, NULL) ;
 
-  load_mapping(maps, BSML_MAP_URI) ;
-
-  dict_iterate(maps, (Iterator_Function *)print, NULL) ;
-
-  dict_free(maps) ;
-
+  dict_free(bsml_mapping) ;
   librdf_free_world(world) ;
   }
 
