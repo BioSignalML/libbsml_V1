@@ -56,6 +56,7 @@ double value_get_real(Value *) ;
 void dict_delete(dict *, const char *) ;
 void dict_iterate(dict *, Iterator_Function *, void *) ;
 
+void dict_print(dict *) ;
 
 #ifdef __cplusplus
 } ;

@@ -8,7 +8,7 @@
  *
  *****************************************************/
 
-
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -275,12 +275,16 @@ void dict_iterate(dict *d, Iterator_Function *f, void *param)
   }
 
 
-#include <stdio.h>
-
-int print(const char *k, Value *v, void *p)
-/*=======================================*/
+static void print_entry(const char *k, Value *v, void *p)
+/*=====================================================*/
 {
+  void *ptr ;
+  int kind ;
   switch (value_type(v)) {
+   case TYPE_POINTER:
+    ptr = value_get_pointer(v, &kind) ;
+    printf("'%s': 0x%08lx (%d)\n", k, ptr, kind) ;
+    break ;
    case TYPE_STRING:
     printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
@@ -293,6 +297,12 @@ int print(const char *k, Value *v, void *p)
    default:
     break ;
     }
+  }
+
+void dict_print(dict *d)
+/*====================*/
+{
+  dict_iterate(d, print_entry, NULL) ;
   }
 
 
@@ -309,8 +319,9 @@ int main(void)
   dict_copy_string(d,  "1", "a") ;
   dict_set_integer(d, "2", 2) ;
   dict_set_real(d,   "3", 3.1) ;
+  dict_set_pointer(d, "4", (void *)main, 4, NULL) ;
 
-  dict_iterate(d, print, NULL) ;
+  dict_print(d) ;
   
 
   if (dict_get_value(d, "XX", NULL)) printf("ERROR...!!\n") ;
