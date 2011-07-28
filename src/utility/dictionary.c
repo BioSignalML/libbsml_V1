@@ -101,6 +101,7 @@ dict *dict_create(void)
 {
   dict *d = (dict *)calloc(sizeof(dict), 1) ;
   d->usecount = 1 ;
+  return d ;
   }
 
 dict *dict_copy(dict *d)
