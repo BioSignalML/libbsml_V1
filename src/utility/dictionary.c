@@ -14,9 +14,36 @@
 
 #include "dictionary.h"
 
+struct Value {
+  VALUE_TYPE type ;
+  union {
+    void *pointer ;
+    const char *string ;       // So we don't have to use 'pointer' with a cast
+    long integer ;
+    double real ;
+    } ;
+  int pointerkind ;
+  Free_Function *delete ;      // How to free a pointer
+  } ;
 
-char *string_copy(const char *s)
-/*============================*/
+typedef struct DictElement DictElement ;
+
+struct DictElement {
+  const char *key ;
+  Value value ;
+  DictElement *next ;
+  } ;
+
+struct Dictionary {
+  int count ;
+  DictElement *elements ;
+  int usecount ;
+  } ;
+
+
+
+const char *string_copy(const char *s)
+/*==================================*/
 {
   if (s) {
     char *t = malloc(strlen(s)+1) ;
@@ -26,8 +53,9 @@ char *string_copy(const char *s)
   else return NULL ;
   }
 
-static DictElement *dict_add_element(Dictionary *d, const char *key)
-/*================================================================*/
+
+static DictElement *dict_element(dict *d, const char *key)
+/*======================================================*/
 {
   DictElement *e = d->elements ;
   while (e && strcmp(e->key, key)) e = e->next ;
@@ -41,119 +69,49 @@ static DictElement *dict_add_element(Dictionary *d, const char *key)
   return e ;
   }
 
+static void value_delete(Value *v)
+/*==============================*/
+{
+  if (v->type == TYPE_STRING) free((void *)v->string) ;
+  else if (v->delete) v->delete(v->pointer) ;
+  }
+
+static DictElement *dict_element_set(dict *d, const char *key, VALUE_TYPE t)
+/*========================================================================*/
+{
+  DictElement *e = dict_element(d, key) ;
+  value_delete(&e->value) ;
+  e->value.type = t ;
+  return e ;
+  }
+
 static void dictElement_free(DictElement *e)
 /*========================================*/
 {
   if (e) {
-    if (e->key) free(e->key) ;
-    if (e->value.type == TYPE_STRING) free(e->value.string) ;
+    if (e->key) free((void *)e->key) ;
+    value_delete(&e->value) ;
     free(e) ;
     }
   }
 
 
-Value *value_create(TYPE_VALUES type)
-/*=================================*/
+dict *dict_create(void)
+/*===================*/
 {
-  Value *v = (Value *)calloc(sizeof(Value), 1) ;
-  v->type = type ;
-  return v ;
-  }
-
-Value *value_assign(Value *u, Value *v)
-/*===================================*/
-{
-  if (u == NULL) u = (Value *)calloc(sizeof(Value), 1) ;
-  else if (u->type == TYPE_STRING) free(u->string) ;
-  memcpy(u, v, sizeof(Value)) ;
-  if (v->type == TYPE_STRING) u->string = string_copy(v->string) ;
-  return u ;
-  }
-
-Value *value_assign_string(Value *v, const char *s)
-/*===============================================*/
-{
-  if (v == NULL) v = value_create(TYPE_STRING) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_STRING ;
-  v->string = string_copy(s) ;
-  return v ;
-  }
-
-Value *value_assign_short(Value *v, short i)
-/*========================================*/
-{
-  if (v == NULL) v = value_create(TYPE_SHORT) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_SHORT ;
-  v->integer = (long)i ;
-  return v ;
-  }
-
-Value *value_assign_integer(Value *v, int i)
-/*========================================*/
-{
-  if (v == NULL) v = value_create(TYPE_INTEGER) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_INTEGER ;
-  v->integer = (long)i ;
-  return v ;
-  }
-
-Value *value_assign_long(Value *v, long i)
-/*======================================*/
-{
-  if (v == NULL) v = value_create(TYPE_LONG) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_LONG ;
-  v->integer = (long)i ;
-  return v ;
-  }
-
-Value *value_assign_float(Value *v, float f)
-/*========================================*/
-{
-  if (v == NULL) v = value_create(TYPE_FLOAT) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_FLOAT ;
-  v->real = (double)f ;
-  return v ;
-  }
-
-Value *value_assign_double(Value *v, double f)
-/*==========================================*/
-{
-  if (v == NULL) v = value_create(TYPE_FLOAT) ;
-  else if (v->type == TYPE_STRING) free(v->string) ;
-  v->type = TYPE_DOUBLE ;
-  v->real = (double)f ;
-  return v ;
-  }
-
-void value_free(Value *v)
-/*=====================*/
-{
-  if (v->type == TYPE_STRING) free(v->string) ;
-  free(v) ;
-  }
-
-
-Dictionary *dict_create(void)
-/*=========================*/
-{
-  Dictionary *d = (Dictionary *)calloc(sizeof(Dictionary), 1) ;
+  dict *d = (dict *)calloc(sizeof(dict), 1) ;
   d->usecount = 1 ;
   }
 
-Dictionary *dict_copy(Dictionary *d)
-/*================================*/
+dict *dict_copy(dict *d)
+/*====================*/
 {
   ++d->usecount ;
   return d ;
   }
 
-void dict_free(Dictionary *d)
-/*=========================*/
+void dict_free(dict *d)
+/*===================*/
 {
   if (--d->usecount < 1) {
     DictElement *e = d->elements ;
@@ -167,69 +125,196 @@ void dict_free(Dictionary *d)
   }
 
 
-void dict_set(Dictionary *d, const char *key, Value *value)
-/*=======================================================*/
+void dict_set_pointer(dict *d, const char *key, void *p, int kind, Free_Function *delete)
+/*=====================================================================================*/
 {
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign(&e->value, value) ;
+  DictElement *e = dict_element_set(d, key, TYPE_POINTER) ;
+  e->value.pointer = p ;
+  e->value.pointerkind = kind ;
+  e->value.delete = delete ;
   }
 
-void dict_set_string(Dictionary *d, const char *key, const char *s)
-/*===============================================================*/
+void dict_set_string(dict *d, const char *key, const char *s)
+/*=========================================================*/
 {
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_string(&e->value, s) ;
+  DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
+  e->value.string = s ;
   }
 
-void dict_set_short(Dictionary *d, const char *key, short i)
-/*========================================================*/
-{
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_short(&e->value, i) ;
-  }
-
-void dict_set_integer(Dictionary *d, const char *key, int i)
-/*========================================================*/
-{
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_integer(&e->value, i) ;
-  }
-
-void dict_set_long(Dictionary *d, const char *key, long i)
-/*======================================================*/
-{
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_long(&e->value, i) ;
-  }
-
-void dict_set_float(Dictionary *d, const char *key, float f)
-/*========================================================*/
-{
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_float(&e->value, f) ;
-  }
-
-void dict_set_double(Dictionary *d, const char *key, double f)
+void dict_copy_string(dict *d, const char *key, const char *s)
 /*==========================================================*/
 {
-  DictElement *e = dict_add_element(d, key) ;
-  value_assign_double(&e->value, f) ;
+  DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
+  e->value.string = string_copy(s) ;
+  }
+
+void dict_set_short(dict *d, const char *key, short i)
+/*==================================================*/
+{
+  DictElement *e = dict_element_set(d, key, TYPE_SHORT) ;
+  e->value.integer = (long)i ;
+  }
+
+void dict_set_integer(dict *d, const char *key, int i)
+/*==================================================*/
+{
+  DictElement *e = dict_element_set(d, key, TYPE_INTEGER) ;
+  e->value.integer = (long)i ;
+  }
+
+void dict_set_long(dict *d, const char *key, long i)
+/*================================================*/
+{
+  DictElement *e = dict_element_set(d, key, TYPE_LONG) ;
+  e->value.integer = (long)i ;
+  }
+
+void dict_set_float(dict *d, const char *key, float f)
+/*==================================================*/
+{
+  DictElement *e = dict_element_set(d, key, TYPE_FLOAT) ;
+  e->value.real = (double)f ;
+  }
+
+void dict_set_double(dict *d, const char *key, double f)
+/*====================================================*/
+{
+  DictElement *e = dict_element_set(d, key, TYPE_DOUBLE) ;
+  e->value.real = (double)f ;
   }
 
 
-
-
-Value *dict_get(Dictionary *d, const char *key)
-/*===========================================*/
+Value *dict_get_value(dict *d, const char *key, VALUE_TYPE *type)
+/*=============================================================*/
 {
   DictElement *e = d->elements ;
   while (e && strcmp(e->key, key)) e = e->next ;
-  return e ? &e->value : NULL ;
+  if (e) {
+    if (type) *type = e->value.type ;
+    return &e->value ;
+    }
+  return NULL ;
   }
 
 
-void dict_delete(Dictionary *d, const char *key)
+
+void *dict_get_pointer(dict *d, const char *key, int *kind)
+/*=======================================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_POINTER) return value_get_pointer(v, kind) ;
+  return NULL ;
+  }
+
+const char *dict_get_string(dict *d, const char *key)
+/*=================================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_STRING) return value_get_string(v) ;
+  return NULL ;
+  }
+
+short dict_get_short(dict *d, const char *key)
+/*==========================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_SHORT) return value_get_short(v) ;
+  return 0 ;
+  }
+
+int dict_get_integer(dict *d, const char *key)
+/*==========================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_INTEGER) return value_get_integer(v) ;
+  return 0 ;
+  }
+
+long dict_get_long(dict *d, const char *key)
+/*========================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_LONG) return value_get_long(v) ;
+  return 0 ;
+  }
+
+float dict_get_float(dict *d, const char *key)
+/*==========================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_FLOAT) return value_get_float(v) ;
+  return 0.0 ;
+  }
+
+double dict_get_double(dict *d, const char *key)
 /*============================================*/
+{
+  VALUE_TYPE vt ;
+  Value *v = dict_get_value(d, key, &vt) ;
+  if (v && v->type == TYPE_DOUBLE) return value_get_double(v) ;
+  return 0.0 ;
+  }
+
+
+
+VALUE_TYPE value_type(Value *v)
+/*===========================*/
+{
+  return v->type ;
+  }
+
+void *value_get_pointer(Value *v, int *kind)
+/*========================================*/
+{
+  if (kind) *kind = v->pointerkind ;
+  return v->pointer ;
+  }
+
+const char *value_get_string(Value *v)
+/*==================================*/
+{
+  return v->string ;
+  }
+
+short value_get_short(Value *v)
+/*===========================*/
+{
+  return (short)v->integer ;
+  }
+
+int value_get_integer(Value *v)
+/*===========================*/
+{
+  return (int)v->integer ;
+  }
+
+long value_get_long(Value *v)
+/*=========================*/
+{
+  return (long)v->integer ;
+  }
+
+float value_get_float(Value *v)
+/*===========================*/
+{
+  return (float)v->real ;
+  }
+
+double value_get_double(Value *v)
+/*=============================*/
+{
+  return (double)v->real ;
+  }
+
+
+void dict_delete(dict *d, const char *key)
+/*======================================*/
 {
   DictElement *prev = NULL ;
   DictElement *e = d->elements ;
@@ -245,13 +330,13 @@ void dict_delete(Dictionary *d, const char *key)
     }
   }
 
-
-void dict_iterate(Dictionary *d, void(*f)(const char *, Value *))
-/*=============================================================*/
+void dict_iterate(dict *d, Iterator_Function *f, void *param)
+/*=========================================================*/
 {
   DictElement *e = d->elements ;
-  while (e) {
-    f(e->key, &e->value) ;
+  int done = 0 ;
+  while (e && !done) {
+    done = f(e->key, &e->value, param) ;
     e = e->next ;
     }
   }
@@ -262,25 +347,23 @@ void dict_iterate(Dictionary *d, void(*f)(const char *, Value *))
 
 #include <stdio.h>
 
-void print(const char *k, Value *v)
-/*===============================*/
+int print(const char *k, Value *v, void *p)
+/*=======================================*/
 {
-  switch (v->type) {
+  switch (value_type(v)) {
    case TYPE_STRING:
-    printf("'%s': '%s'\n", k, v->string) ;
+    printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
-
    case TYPE_INTEGER:
-    printf("'%s': %d\n", k, (int)v->integer) ;
+    printf("'%s': %d\n", k, value_get_integer(v)) ;
     break ;
-
    case TYPE_FLOAT:
-    printf("'%s': %f\n", k, (float)v->real) ;
+    printf("'%s': %g\n", k, value_get_float(v)) ;
     break ;
-
    default:
     break ;
     }
+  return 0 ;
   }
 
 
@@ -288,17 +371,17 @@ int main(void)
 /*===========*/
 {
 
-  Dictionary *d = dict_create() ;
+  dict *d = dict_create() ;
 
 
-  dict_set_string(d,  "1", "a") ;
+  dict_copy_string(d,  "1", "a") ;
   dict_set_integer(d, "2", 2) ;
   dict_set_float(d,   "3", 3.0) ;
 
-  dict_iterate(d, print) ;
+  dict_iterate(d, print, NULL) ;
   
 
-  if (dict_get(d, "XX")) printf("ERROR...!!\n") ;
+  if (dict_get_value(d, "XX", NULL)) printf("ERROR...!!\n") ;
   else printf("No element found, as expected\n") ;
 
 
