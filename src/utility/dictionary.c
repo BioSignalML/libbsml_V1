@@ -148,17 +148,17 @@ void dict_copy_string(dict *d, const char *key, const char *s)
   e->value.string = string_copy(s) ;
   }
 
-void dict_set_long(dict *d, const char *key, long i)
+void dict_set_integer(dict *d, const char *key, long i)
 /*================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_LONG) ;
+  DictElement *e = dict_element_set(d, key, TYPE_INTEGER) ;
   e->value.integer = (long)i ;
   }
 
-void dict_set_double(dict *d, const char *key, double f)
-/*====================================================*/
+void dict_set_real(dict *d, const char *key, double f)
+/*==================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_DOUBLE) ;
+  DictElement *e = dict_element_set(d, key, TYPE_REAL) ;
   e->value.real = (double)f ;
   }
 
@@ -195,21 +195,21 @@ const char *dict_get_string(dict *d, const char *key)
   return NULL ;
   }
 
-long dict_get_long(dict *d, const char *key)
-/*========================================*/
+long dict_get_integer(dict *d, const char *key)
+/*===========================================*/
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_LONG) return value_get_long(v) ;
+  if (v && v->type == TYPE_INTEGER) return value_get_integer(v) ;
   return 0 ;
   }
 
-double dict_get_double(dict *d, const char *key)
-/*============================================*/
+double dict_get_real(dict *d, const char *key)
+/*==========================================*/
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_DOUBLE) return value_get_double(v) ;
+  if (v && v->type == TYPE_REAL) return value_get_real(v) ;
   return 0.0 ;
   }
 
@@ -234,14 +234,14 @@ const char *value_get_string(Value *v)
   return v->string ;
   }
 
-long value_get_long(Value *v)
-/*=========================*/
+long value_get_integer(Value *v)
+/*============================*/
 {
   return (long)v->integer ;
   }
 
-double value_get_double(Value *v)
-/*=============================*/
+double value_get_real(Value *v)
+/*===========================*/
 {
   return (double)v->real ;
   }
@@ -288,11 +288,11 @@ int print(const char *k, Value *v, void *p)
    case TYPE_STRING:
     printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
-   case TYPE_LONG:
-    printf("'%s': %d\n", k, value_get_long(v)) ;
+   case TYPE_INTEGER:
+    printf("'%s': %d\n", k, value_get_integer(v)) ;
     break ;
-   case TYPE_DOUBLE:
-    printf("'%s': %g\n", k, value_get_double(v)) ;
+   case TYPE_REAL:
+    printf("'%s': %g\n", k, value_get_real(v)) ;
     break ;
    default:
     break ;
@@ -309,8 +309,8 @@ int main(void)
 
 
   dict_copy_string(d,  "1", "a") ;
-  dict_set_long(d, "2", 2) ;
-  dict_set_double(d,   "3", 3.1) ;
+  dict_set_integer(d, "2", 2) ;
+  dict_set_real(d,   "3", 3.1) ;
 
   dict_iterate(d, print, NULL) ;
   
