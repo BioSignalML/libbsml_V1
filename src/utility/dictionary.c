@@ -148,32 +148,11 @@ void dict_copy_string(dict *d, const char *key, const char *s)
   e->value.string = string_copy(s) ;
   }
 
-void dict_set_short(dict *d, const char *key, short i)
-/*==================================================*/
-{
-  DictElement *e = dict_element_set(d, key, TYPE_SHORT) ;
-  e->value.integer = (long)i ;
-  }
-
-void dict_set_integer(dict *d, const char *key, int i)
-/*==================================================*/
-{
-  DictElement *e = dict_element_set(d, key, TYPE_INTEGER) ;
-  e->value.integer = (long)i ;
-  }
-
 void dict_set_long(dict *d, const char *key, long i)
 /*================================================*/
 {
   DictElement *e = dict_element_set(d, key, TYPE_LONG) ;
   e->value.integer = (long)i ;
-  }
-
-void dict_set_float(dict *d, const char *key, float f)
-/*==================================================*/
-{
-  DictElement *e = dict_element_set(d, key, TYPE_FLOAT) ;
-  e->value.real = (double)f ;
   }
 
 void dict_set_double(dict *d, const char *key, double f)
@@ -216,24 +195,6 @@ const char *dict_get_string(dict *d, const char *key)
   return NULL ;
   }
 
-short dict_get_short(dict *d, const char *key)
-/*==========================================*/
-{
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_SHORT) return value_get_short(v) ;
-  return 0 ;
-  }
-
-int dict_get_integer(dict *d, const char *key)
-/*==========================================*/
-{
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_INTEGER) return value_get_integer(v) ;
-  return 0 ;
-  }
-
 long dict_get_long(dict *d, const char *key)
 /*========================================*/
 {
@@ -241,15 +202,6 @@ long dict_get_long(dict *d, const char *key)
   Value *v = dict_get_value(d, key, &vt) ;
   if (v && v->type == TYPE_LONG) return value_get_long(v) ;
   return 0 ;
-  }
-
-float dict_get_float(dict *d, const char *key)
-/*==========================================*/
-{
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_FLOAT) return value_get_float(v) ;
-  return 0.0 ;
   }
 
 double dict_get_double(dict *d, const char *key)
@@ -282,28 +234,10 @@ const char *value_get_string(Value *v)
   return v->string ;
   }
 
-short value_get_short(Value *v)
-/*===========================*/
-{
-  return (short)v->integer ;
-  }
-
-int value_get_integer(Value *v)
-/*===========================*/
-{
-  return (int)v->integer ;
-  }
-
 long value_get_long(Value *v)
 /*=========================*/
 {
   return (long)v->integer ;
-  }
-
-float value_get_float(Value *v)
-/*===========================*/
-{
-  return (float)v->real ;
   }
 
 double value_get_double(Value *v)
@@ -354,11 +288,11 @@ int print(const char *k, Value *v, void *p)
    case TYPE_STRING:
     printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
-   case TYPE_INTEGER:
-    printf("'%s': %d\n", k, value_get_integer(v)) ;
+   case TYPE_LONG:
+    printf("'%s': %d\n", k, value_get_long(v)) ;
     break ;
-   case TYPE_FLOAT:
-    printf("'%s': %g\n", k, value_get_float(v)) ;
+   case TYPE_DOUBLE:
+    printf("'%s': %g\n", k, value_get_double(v)) ;
     break ;
    default:
     break ;
@@ -375,8 +309,8 @@ int main(void)
 
 
   dict_copy_string(d,  "1", "a") ;
-  dict_set_integer(d, "2", 2) ;
-  dict_set_float(d,   "3", 3.0) ;
+  dict_set_long(d, "2", 2) ;
+  dict_set_double(d,   "3", 3.1) ;
 
   dict_iterate(d, print, NULL) ;
   
