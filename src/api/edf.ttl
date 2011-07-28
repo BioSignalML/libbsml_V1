@@ -1,0 +1,92 @@
+@base <http://recordings.biosignalml.org/testdata/sinewave/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tl: <http://purl.org/NET/c4dm/timeline.owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix evt: <http://purl.org/NET/c4dm/event.owl#> .
+@prefix bsml: <http://www.biosignalml.org/ontologies/2011/04/biosignalml#> .
+
+<../sinewave>
+    tl:timeline <timeline> ;
+    dct:created "2003-01-01T10:00:00"^^xsd:dateTime ;
+    dct:description "Startdate 01-JAN-2003 X X X" ;
+    dct:format bsml:HDF5 ;
+    dct:source <file:///Users/dave/biosignalml/python/utils/edf.h5> ;
+    dct:subject "X X X X" ;
+    a bsml:Recording .
+
+<annotation/tal_0_1>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/87602d5e-b660-11e0-81b2-001b631e7eb0> ;
+    dct:description "This is the first data record" ;
+    a evt:Event .
+
+<annotation/tal_1_1>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/87670887-b660-11e0-a6e0-001b631e7eb0> ;
+    dct:description "olivan@neurotraces.com" ;
+    a evt:Event .
+
+<annotation/tal_2_1>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/876711dc-b660-11e0-8069-001b631e7eb0> ;
+    dct:description "<EDF_XMLnote>content</EDF_XMLnote>" ;
+    a evt:Event .
+
+<annotation/tal_3_1>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/87671833-b660-11e0-9b50-001b631e7eb0> ;
+    dct:description "Unicode  5927 = ??" ;
+    a evt:Event .
+
+<annotation/tal_4_1>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/87671de6-b660-11e0-b01e-001b631e7eb0> ;
+    dct:description "TAL (ann1)" ;
+    a evt:Event .
+
+<annotation/tal_4_2>
+    evt:factor <../sinewave> ;
+    tl:time <timeline/87671de6-b660-11e0-b01e-001b631e7eb0> ;
+    dct:description "TAL (ann2)" ;
+    a evt:Event .
+
+<signal/1>
+    bsml:maxFrequency 50.0 ;
+    bsml:maxValue 100.0 ;
+    bsml:minValue -100.0 ;
+    bsml:recording <../sinewave> ;
+    bsml:sampleRate 100.0 ;
+    bsml:units "uV" ;
+    a bsml:Signal ;
+    rdfs:label "Sin wave" .
+
+<timeline>
+    a tl:RelativeTimeLine .
+
+<timeline/87602d5e-b660-11e0-81b2-001b631e7eb0>
+    tl:atDuration "P0D"^^xsd:duration ;
+    tl:timeline <timeline> ;
+    a tl:RelativeInstant .
+
+<timeline/87670887-b660-11e0-a6e0-001b631e7eb0>
+    tl:atDuration "PT1S"^^xsd:duration ;
+    tl:timeline <timeline> ;
+    a tl:RelativeInstant .
+
+<timeline/876711dc-b660-11e0-8069-001b631e7eb0>
+    tl:atDuration "PT2S"^^xsd:duration ;
+    tl:timeline <timeline> ;
+    a tl:RelativeInstant .
+
+<timeline/87671833-b660-11e0-9b50-001b631e7eb0>
+    tl:atDuration "PT3S"^^xsd:duration ;
+    tl:timeline <timeline> ;
+    a tl:RelativeInstant .
+
+<timeline/87671de6-b660-11e0-b01e-001b631e7eb0>
+    tl:atDuration "PT4S"^^xsd:duration ;
+    tl:timeline <timeline> ;
+    a tl:RelativeInstant .
