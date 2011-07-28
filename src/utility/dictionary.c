@@ -268,9 +268,8 @@ void dict_iterate(dict *d, Iterator_Function *f, void *param)
 /*=========================================================*/
 {
   DictElement *e = d->elements ;
-  int done = 0 ;
-  while (e && !done) {
-    done = f(e->key, &e->value, param) ;
+  while (e) {
+    f(e->key, &e->value, param) ;
     e = e->next ;
     }
   }
@@ -294,7 +293,6 @@ int print(const char *k, Value *v, void *p)
    default:
     break ;
     }
-  return 0 ;
   }
 
 

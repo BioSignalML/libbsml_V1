@@ -22,7 +22,7 @@ typedef enum {
 typedef struct Value      Value ;
 typedef struct Dictionary dict ;
 
-typedef int  (Iterator_Function)(const char *, Value *, void *) ;
+typedef void (Iterator_Function)(const char *, Value *, void *) ;
 typedef void (Free_Function)(void *) ;
 
 #ifdef __cplusplus
