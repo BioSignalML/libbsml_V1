@@ -139,7 +139,7 @@ void dict_set_string(dict *d, const char *key, const char *s)
 /*=========================================================*/
 {
   DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
-  e->value.string = s ;
+  e->value.string = string_copy(s) ;
   }
 
 void dict_copy_string(dict *d, const char *key, const char *s)
