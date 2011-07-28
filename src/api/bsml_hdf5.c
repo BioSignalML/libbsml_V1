@@ -8,7 +8,6 @@
  *
  *****************************************************/
 
-
 /**
 
   A single Recording per HDF5 file, either with separate datasets for
@@ -258,7 +257,7 @@ Recording *HDF5Recording_create_from_recording(Recording *r, const char *fname, 
 /*======================================================================================*/
 {
   if (mode == 0) mode = '-' ;
-  return HDF5Recording_init(fname, mode, r->uri, recording_get_metavars(r)) ;
+  return HDF5Recording_init(fname, mode, r->uri, Recording_get_metavars(r)) ;
   }
 
 
@@ -358,7 +357,7 @@ void HDF5Recording_save_metadata(Recording *r, const char *format, Dictionary *p
 /*====================================================================================*/
 {
   if (format == NULL) format = "turtle" ;
-  char *rdf = recording_metadata_as_string(format, prefixes) ;
+  char *rdf = Recording_metadata_as_string(r, format, prefixes) ;
   hid_t md = H5LTmake_dataset_string(((HDF5RecInfo *)r->info)->file, "metadata", rdf) ;
   H5LTset_attribute_string(md, ".", "format", format) ;
   H5Dclose(md) ;
@@ -476,13 +475,13 @@ Signal *HDF5Signal_create(const char *uri, Recording *r, TimeSeries *data, Dicti
   return s ;
   }
 
-/*
-  @classmethod
-  def create_from_signal(cls, recording, signal):
-  #----------------------------------------------
-    return cls.create(signal.uri, recording, metadata=signal.get_metavars())
 
-*/
+Signal *HDF5Signal_create_from_signal(Signal *s, Recording *r)
+/*==========================================================*/
+{
+  return HDF5Signal_create(s->uri, r, NULL, Signal_get_metavars(s)) ;
+  }
+
 
 void HDF5Signal_append(Signal *s, TimeSeries *data)
 /*===============================================*/

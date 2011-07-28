@@ -52,6 +52,7 @@ Signal *HDF5Signal_init(const char *, Recording *, hid_t, Dictionary *, int) ;
 void HDF5Signal_close(Signal *s) ;
 Signal *HDF5Signal_open(const char *, Recording *r) ;
 Signal *HDF5Signal_create(const char *, Recording *, TimeSeries *, Dictionary *) ;
+Signal *HDF5Signal_create_from_signal(Signal *, Recording *) ;
 
 void HDF5Signal_append(Signal *, TimeSeries *) ;
 
