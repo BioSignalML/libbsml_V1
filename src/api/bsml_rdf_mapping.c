@@ -26,9 +26,9 @@ Role of mappings:
 
 1) Take a dictionary of attribute/value pairs for some BSML resource
    and add them to a RDF model (or return a stream of RDF statements)
-   
+
 2) Given a RDF model and a uri of a BSML resource, return a dictionary
-   of attribute/value pairs.    
+   of attribute/value pairs.
 
 **/
 
@@ -52,6 +52,44 @@ enum {
   KIND_NODE
   } ;
 
+typedef struct {
+  int sign ;
+  struct tm datetime ;
+  unsigned int usecs ;
+  } DateTime ;
+
+
+
+DateTime *DateTime_create(void)
+/*===========================*/
+{
+  return (DateTime *)calloc(sizeof(DateTime), 1) ;
+  }
+
+
+void DateTime_free(DateTime *dt)
+/*============================*/
+{
+  free(dt) ;
+  }
+
+
+void dict_set_datetime(dict *d, const char *key, DateTime *dt)
+/*==========================================================*/
+{
+  dict_set_pointer(d, key, (void *)dt, KIND_DATETIME, (Free_Function *)DateTime_free) ;
+  }
+
+DateTime *dict_get_datetime(dict *d, const char *key)
+/*=================================================*/
+{
+  int kind ;
+  DateTime *dt = (DateTime *)dict_get_pointer(d, key, &kind) ;
+  if (dt && kind == KIND_DATETIME) return dt ;
+  return NULL ;
+  }
+
+
 void dict_set_uri(dict *d, const char *key, librdf_uri *uri)
 /*========================================================*/
 {
@@ -61,7 +99,7 @@ void dict_set_uri(dict *d, const char *key, librdf_uri *uri)
 librdf_uri *dict_get_uri(dict *d, const char *key)
 /*==============================================*/
 {
-  int kind ;  
+  int kind ;
   librdf_uri *uri = (librdf_uri *)dict_get_pointer(d, key, &kind) ;
   if (uri && kind == KIND_URI) return uri ;
   return NULL ;
@@ -77,18 +115,12 @@ void dict_set_node(dict *d, const char *key, librdf_node *node)
 librdf_node *dict_get_node(dict *d, const char *key)
 /*================================================*/
 {
-  int kind ;  
+  int kind ;
   librdf_node *node = (librdf_node *)dict_get_pointer(d, key, &kind) ;
   if (node && kind == KIND_NODE) return node ;
   return NULL ;
   }
 
-
-typedef struct {
-  int sign ;
-  struct tm datetime ;
-  unsigned int usecs ;
-  } DateTime ;
 
 const char *datetime_to_isoformat(DateTime *dt)
 /*===========================================*/
@@ -124,11 +156,10 @@ const char *datetime_to_isoformat(DateTime *dt)
   return string_copy(buf) ;
   }
 
-
 DateTime *isoformat_to_datetime(const char *str)
 /*============================================*/
 {
-  DateTime *dt = (DateTime *)calloc(sizeof(DateTime), 1) ;
+  DateTime *dt = DateTime_create() ;
   dt->sign = 1 ;
   if (*str == '-') {
     ++str ;
@@ -430,7 +461,7 @@ static int load_mapping(dict *mapping, const char *mapfile)
 
   librdf_storage *storage = librdf_new_storage(world, "hashes", "triples", "hash-type='memory'") ;
   librdf_model *model = librdf_new_model(world, storage, NULL) ;
-  
+
   librdf_uri *uri ;
   if (uri_protocol(mapfile)) uri = librdf_new_uri(world, ( const unsigned char *)mapfile) ;
   else {
@@ -492,7 +523,7 @@ typedef struct {
   const char *class ;
   dict *mapping ;
   } MapSaveInfo ;
-  
+
 
 static void add_statement(const char *label, Value *value, void *userdata)
 /*======================================================================*/
@@ -539,15 +570,12 @@ static void add_statement(const char *label, Value *value, void *userdata)
           literal = call_map_function_string(m->mapfn, literal) ;
         break ;
 
-       case TYPE_SHORT:
        case TYPE_INTEGER:
-       case TYPE_LONG:
-        literal = call_map_function_long(m->mapfn, value_get_long(value), numbuf) ;
+        literal = call_map_function_long(m->mapfn, value_get_integer(value), numbuf) ;
         break ;
 
-       case TYPE_FLOAT:
-       case TYPE_DOUBLE:
-        literal = call_map_function_double(m->mapfn, value_get_double(value), numbuf) ;
+       case TYPE_REAL:
+        literal = call_map_function_double(m->mapfn, value_get_real(value), numbuf) ;
         break ;
 
        default:
@@ -603,7 +631,7 @@ void map_save_attributes(Mapping *map, librdf_model *model, const char *subject,
 */
 
 
- 
+
 static void set_attribute(dict *attributes, librdf_node *node, ReverseEntry *rmap)
 /*==============================================================================*/
 {
@@ -626,19 +654,6 @@ typedef struct {
 
     else if (librdf_node_is_literal(node)) {
       char *text = (char *)librdf_node_get_literal_value(node) ;
-
-/* node datatype...
-      librdf_uri *dt = librdf_node_get_literal_value_datatype_uri(node) ;
-      if (dt) {   // ignore node dtype and use mapping's ???
-        char *dtype = NULL ;
-        asprintf(&dtype, librdf_uri_as_string(dt)) ;
-        switch (value_get_integer(dict_get_element(datatypes, dtype))) {
-
-          // use appropriate cast/atoi() and dict_set()
-
-          }
-*/
-
       VALUE_TYPE dtype = 0 ;
       if (rmap->datatype)
         dtype = dict_get_integer(datatypes, rmap->datatype) ;
@@ -648,44 +663,25 @@ typedef struct {
        case TYPE_POINTER:
         { int kind = dict_get_integer(pointerkinds, rmap->datatype) ;
           if (kind == KIND_DATETIME)
-            dict_set_pointer(attributes, key,
-              inverse_map_function_datetime(rmap->mapfn, text), KIND_DATETIME) ;
+            dict_set_datetime(attributes, key, inverse_map_function_datetime(rmap->mapfn, text)) ;
           }
         break ;
 
        case TYPE_STRING:
-
-
-
-
-        if (uri_protocol(literal))
-          node = librdf_new_node_from_uri_string(world, (unsigned char *)literal) ;
-        else
-          literal = call_map_function_string(m->mapfn, literal) ;
+        dict_set_string(attributes, key, inverse_map_function_string(rmap->mapfn, text)) ;
         break ;
 
-       case TYPE_SHORT:
        case TYPE_INTEGER:
-       case TYPE_LONG:
-        dict_set_long(attributes, key, inverse_map_function_long(rmap->mapfn, text)) ;
+        dict_set_integer(attributes, key, inverse_map_function_long(rmap->mapfn, text)) ;
         break ;
 
-       case TYPE_FLOAT:
-       case TYPE_DOUBLE:
-        dict_set_double(attributes, key, inverse_map_function_double(rmap->mapfn, text)) ;
+       case TYPE_REAL:
+        dict_set_real(attributes, key, inverse_map_function_double(rmap->mapfn, text)) ;
         break ;
 
        default:
         break ;
         }
-
-
-
-
-      //if (rmap->mapfn) then call
-      //mapping_function(name, param_string)
-        }
-
       }
     }
   }
@@ -715,7 +711,7 @@ dict *map_get_attributes(Mapping *map, librdf_model *model, const char *subject,
     while (!librdf_stream_end(stream)) {
       librdf_statement *stmt = librdf_stream_get_object(stream) ;
       ReverseEntry *rmap = NULL ;
-      const char *pred = librdf_uri_as_string(
+      const char *pred = (char *)librdf_uri_as_string(
                            librdf_node_get_uri(
                              librdf_statement_get_predicate(stmt))) ;
       if (class) {
@@ -741,25 +737,24 @@ dict *map_get_attributes(Mapping *map, librdf_model *model, const char *subject,
 void bsml_rdf_mapping_initialise(void)
 /*==================================*/
 {
-  dict_set_integer(datatypes, XSD_float,              TYPE_FLOAT) ;
-  dict_set_integer(datatypes, XSD_double,             TYPE_DOUBLE) ;
-  dict_set_integer(datatypes, XSD_integer,            TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_long,               TYPE_LONG) ;
+  dict_set_integer(datatypes, XSD_float,              TYPE_REAL) ;
+  dict_set_integer(datatypes, XSD_double,             TYPE_REAL) ;
+  dict_set_integer(datatypes, XSD_integer,            TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_long,               TYPE_INTEGER) ;
   dict_set_integer(datatypes, XSD_int,                TYPE_INTEGER) ;
   dict_set_integer(datatypes, XSD_short,              TYPE_INTEGER) ;
   dict_set_integer(datatypes, XSD_byte,               TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_nonPostiveInteger,  TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_nonNegativeInteger, TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_positiveInteger,    TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_negativeInteger,    TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_unsignedLong,       TYPE_LONG) ;
-  dict_set_integer(datatypes, XSD_unsignedInt,        TYPE_LONG) ;
+  dict_set_integer(datatypes, XSD_nonPostiveInteger,  TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_nonNegativeInteger, TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_positiveInteger,    TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_negativeInteger,    TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedLong,       TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedInt,        TYPE_INTEGER) ;
   dict_set_integer(datatypes, XSD_unsignedShort,      TYPE_INTEGER) ;
   dict_set_integer(datatypes, XSD_unsignedByte,       TYPE_INTEGER) ;
 
-  dict_set_integer(datatypes, XSD_dateTime,           TYPE_POINTER) ;
-  dict_set_integer(datatypes, XSD_duration,           TYPE_DOUBLE) ;
-
+  dict_set_integer(datatypes,    XSD_duration,        TYPE_REAL) ;
+  dict_set_integer(datatypes,    XSD_dateTime,        TYPE_POINTER) ;
   dict_set_integer(pointerkinds, XSD_dateTime,        KIND_DATETIME) ;
   }
 
@@ -771,9 +766,11 @@ void bsml_rdf_mapping_initialise(void)
 void map_print(MapEntry *m)
 /*=======================*/
 {
-  if (m->property) printf("<%s>, ", librdf_uri_as_string(m->property)) ;
+  if (m->label) printf("'%s', ", m->label) ;
   else printf("NULL, ") ;
-  if (m->class) printf("<%s>, ", librdf_uri_as_string(m->class)) ;
+  if (m->class) printf("'%s', ", m->class) ;
+  else printf("NULL, ") ;
+  if (m->property) printf("<%s>, ", librdf_uri_as_string(librdf_node_get_uri(m->property))) ;
   else printf("NULL, ") ;
   if (m->datatype) printf("<%s>, ", librdf_uri_as_string(m->datatype)) ;
   else printf("NULL, ") ;
@@ -783,11 +780,12 @@ void map_print(MapEntry *m)
   else printf("NULL") ;
   }
 
+
 void print(const char *k, Value *v, void *p)
 /*========================================*/
 {
   printf("%s: (", k) ;
-  map_print(v->pointer) ;
+  map_print(value_get_pointer(v, NULL)) ;
   printf(")\n") ;
   }
 
@@ -807,12 +805,13 @@ int main(void)
   world = librdf_new_world() ;
   librdf_world_open(world) ;
 
+  bsml_rdf_mapping_initialise() ;
 
   dict *maps = dict_create() ;
-  
+
   load_mapping(maps, BSML_MAP_URI) ;
 
-  dict_iterate(maps, print, NULL) ;
+  dict_iterate(maps, (Iterator_Function *)print, NULL) ;
 
   dict_free(maps) ;
 
