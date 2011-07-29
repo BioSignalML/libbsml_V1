@@ -11,14 +11,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
-#include <time.h>
 #include <ctype.h>
 
-#include <redland.h>
-
-#include "bsml_names.h"
-#include "bsml_rdfnames.h"
+#include "bsml_rdf.h"
+#include "bsml_rdf_mapping.h"
 #include "bsml_internal.h"
 
 /**
@@ -40,87 +36,12 @@ char *BSML_MAP_URI = "file:///Users/dave/biosignalml/python/api/model/mapping.tt
 // 'file://' + os.path.dirname(os.path.abspath(__file__)) + '/mapping.ttl'
 
 
-librdf_world *world = NULL ;
+extern librdf_world *world ;
 
 static dict *datatypes    = NULL ;
 static dict *pointerkinds = NULL ;
 static dict *bsml_mapping = NULL ;
 
-enum {
-  KIND_NONE     =   0,
-  KIND_DATETIME =  10,
-  KIND_URI      = 100,
-  KIND_NODE
-  } ;
-
-typedef struct {
-  int sign ;
-  struct tm datetime ;
-  unsigned int usecs ;
-  } DateTime ;
-
-
-
-DateTime *DateTime_create(void)
-/*===========================*/
-{
-  return (DateTime *)calloc(sizeof(DateTime), 1) ;
-  }
-
-
-void DateTime_free(DateTime *dt)
-/*============================*/
-{
-  free(dt) ;
-  }
-
-
-void dict_set_datetime(dict *d, const char *key, DateTime *dt)
-/*==========================================================*/
-{
-  dict_set_pointer(d, key, (void *)dt, KIND_DATETIME, (Free_Function *)DateTime_free) ;
-  }
-
-DateTime *dict_get_datetime(dict *d, const char *key)
-/*=================================================*/
-{
-  int kind ;
-  DateTime *dt = (DateTime *)dict_get_pointer(d, key, &kind) ;
-  if (dt && kind == KIND_DATETIME) return dt ;
-  return NULL ;
-  }
-
-
-void dict_set_uri(dict *d, const char *key, librdf_uri *uri)
-/*========================================================*/
-{
-  dict_set_pointer(d, key, (void *)uri, KIND_URI, (Free_Function *)librdf_free_uri) ;
-  }
-
-librdf_uri *dict_get_uri(dict *d, const char *key)
-/*==============================================*/
-{
-  int kind ;
-  librdf_uri *uri = (librdf_uri *)dict_get_pointer(d, key, &kind) ;
-  if (uri && kind == KIND_URI) return uri ;
-  return NULL ;
-  }
-
-
-void dict_set_node(dict *d, const char *key, librdf_node *node)
-/*===========================================================*/
-{
-  dict_set_pointer(d, key, (void *)node, KIND_NODE, (Free_Function *)librdf_free_node) ;
-  }
-
-librdf_node *dict_get_node(dict *d, const char *key)
-/*================================================*/
-{
-  int kind ;
-  librdf_node *node = (librdf_node *)dict_get_pointer(d, key, &kind) ;
-  if (node && kind == KIND_NODE) return node ;
-  return NULL ;
-  }
 
 
 const char *datetime_to_isoformat(DateTime *dt)
@@ -468,50 +389,6 @@ static int uri_protocol(const char *u)
 /*==================================*/
 {
   return (memcmp(u, "file:", 5) == 0 || memcmp(u, "http:", 5) == 0) ;
-  }
-
-
-
-typedef struct {
-  librdf_storage *storage ;
-  librdf_model *model ;
-  } GraphStore ;
-
-void GraphStore_free(GraphStore *g)
-/*===============================*/
-{
-  if (g) {
-    if (g->model) librdf_free_model(g->model) ;
-    if (g->storage) librdf_free_storage(g->storage) ;
-    }
-  }
-
-GraphStore *GraphStore_create(const char *path, const char *format)
-/*===============================================================*/
-{
-  GraphStore *g = (GraphStore *)calloc(sizeof(GraphStore), 1) ;
-  g->storage = librdf_new_storage(world, "hashes", "triples", "hash-type='memory'") ;
-  g->model = librdf_new_model(world, g->storage, NULL) ;
-
-  if (path) {
-    librdf_uri *uri ;
-    if (uri_protocol(path)) uri = librdf_new_uri(world, (const unsigned char *)path) ;
-    else {
-      char fullname[PATH_MAX+7] = "file://" ;
-      realpath(path, fullname+7) ;
-      uri = librdf_new_uri(world, (const unsigned char *)fullname) ;
-      }
-    if (format == NULL) format = "turtle" ;
-    librdf_parser *parser = librdf_new_parser(world, format, NULL, NULL) ;
-    if (librdf_parser_parse_into_model(parser, uri, uri, g->model)) {
-      fprintf(stderr, "Failed to parse: %s\n", path) ;
-      GraphStore_free(g) ;
-      return NULL ;
-      }
-    librdf_free_parser(parser);
-    librdf_free_uri(uri) ;
-    }
-  return g ;
   }
 
 

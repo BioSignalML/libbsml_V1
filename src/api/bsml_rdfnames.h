@@ -17,8 +17,6 @@
 #define OWL_NS                "http://www.w3.org/2002/07/owl#"
 #define XSD_NS                "http://www.w3.org/2001/XMLSchema#"
 
-
-
 #define XSD_float              (XSD_NS "float")
 #define XSD_double             (XSD_NS "double")
 #define XSD_integer            (XSD_NS "integer")

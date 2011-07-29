@@ -57,19 +57,11 @@ typedef struct {
 extern "C" {
 #endif
 
-struct {
-  char *RAW ;
-  char *HDF5 ;
-  }
-BSML = { "bsml:rawurl",
-         "bsml:hdf5url"
-       } ;
-
-
 Recording *Recording_init(const char *, dict *, int type) ;
 void Recording_close(Recording *) ;
 dict *Recording_get_metavars(Recording *) ;
 char *Recording_metadata_as_string(Recording *, const char *, dict *) ;
+void *Recording_add_signal(Recording *, Signal *) ;
 
 Signal *Signal_init(const char *, dict *, int) ;
 void Signal_close(Signal *) ;
