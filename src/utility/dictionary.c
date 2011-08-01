@@ -12,19 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BSML_INTERNALS  1
 #include "dictionary.h"
 
-struct Value {
-  VALUE_TYPE type ;
-  union {
-    void *pointer ;
-    const char *string ;       // So we don't have to use 'pointer' with a cast
-    long integer ;
-    double real ;
-    } ;
-  int pointerkind ;
-  Free_Function *delete ;      // How to free a pointer
-  } ;
 
 typedef struct DictElement DictElement ;
 
@@ -39,19 +29,6 @@ struct Dictionary {
   DictElement *elements ;
   int usecount ;
   } ;
-
-
-
-const char *string_copy(const char *s)
-/*==================================*/
-{
-  if (s) {
-    char *t = malloc(strlen(s)+1) ;
-    strcpy(t, s) ;
-    return t ;
-    }
-  else return NULL ;
-  }
 
 
 static DictElement *dict_element(dict *d, const char *key)
@@ -69,18 +46,11 @@ static DictElement *dict_element(dict *d, const char *key)
   return e ;
   }
 
-static void value_delete(Value *v)
-/*==============================*/
-{
-  if (v->type == TYPE_STRING) free((void *)v->string) ;
-  else if (v->delete) v->delete(v->pointer) ;
-  }
-
 static DictElement *dict_element_set(dict *d, const char *key, VALUE_TYPE t)
 /*========================================================================*/
 {
   DictElement *e = dict_element(d, key) ;
-  value_delete(&e->value) ;
+  value_free(&e->value) ;
   e->value.type = t ;
   return e ;
   }
@@ -90,7 +60,7 @@ static void dictElement_free(DictElement *e)
 {
   if (e) {
     if (e->key) free((void *)e->key) ;
-    value_delete(&e->value) ;
+    value_free(&e->value) ;
     free(e) ;
     }
   }
@@ -126,8 +96,8 @@ void dict_free(dict *d)
   }
 
 
-void dict_set_pointer(dict *d, const char *key, void *p, int kind, Free_Function *delete)
-/*=====================================================================================*/
+void dict_set_pointer(dict *d, const char *key, void *p, int kind, Value_Free *delete)
+/*==================================================================================*/
 {
   DictElement *e = dict_element_set(d, key, TYPE_POINTER) ;
   e->value.pointer = p ;
@@ -142,11 +112,11 @@ void dict_set_string(dict *d, const char *key, const char *s)
   e->value.string = string_copy(s) ;
   }
 
-void dict_copy_string(dict *d, const char *key, const char *s)
-/*==========================================================*/
+void dict_set_copied_string(dict *d, const char *key, const char *s)
+/*================================================================*/
 {
   DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
-  e->value.string = string_copy(s) ;
+  e->value.string = s ;
   }
 
 void dict_set_integer(dict *d, const char *key, long i)
@@ -175,7 +145,6 @@ Value *dict_get_value(dict *d, const char *key, VALUE_TYPE *type)
     }
   return NULL ;
   }
-
 
 
 void *dict_get_pointer(dict *d, const char *key, int *kind)
@@ -215,39 +184,6 @@ double dict_get_real(dict *d, const char *key)
   }
 
 
-
-VALUE_TYPE value_type(Value *v)
-/*===========================*/
-{
-  return v->type ;
-  }
-
-void *value_get_pointer(Value *v, int *kind)
-/*========================================*/
-{
-  if (kind) *kind = v->pointerkind ;
-  return v->pointer ;
-  }
-
-const char *value_get_string(Value *v)
-/*==================================*/
-{
-  return v->string ;
-  }
-
-long value_get_integer(Value *v)
-/*============================*/
-{
-  return (long)v->integer ;
-  }
-
-double value_get_real(Value *v)
-/*===========================*/
-{
-  return (double)v->real ;
-  }
-
-
 void dict_delete(dict *d, const char *key)
 /*======================================*/
 {
@@ -265,8 +201,8 @@ void dict_delete(dict *d, const char *key)
     }
   }
 
-void dict_iterate(dict *d, Iterator_Function *f, void *param)
-/*=========================================================*/
+void dict_iterate(dict *d, Dict_Iterator *f, void *param)
+/*=====================================================*/
 {
   DictElement *e = d->elements ;
   while (e) {
