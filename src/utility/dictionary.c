@@ -99,7 +99,7 @@ void dict_free(dict *d)
 void dict_set_pointer(dict *d, const char *key, void *p, int kind, Value_Free *delete)
 /*==================================================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_POINTER) ;
+  DictElement *e = dict_element_set(d, key, VALUE_TYPE_POINTER) ;
   e->value.pointer = p ;
   e->value.pointerkind = kind ;
   e->value.delete = delete ;
@@ -108,28 +108,28 @@ void dict_set_pointer(dict *d, const char *key, void *p, int kind, Value_Free *d
 void dict_set_string(dict *d, const char *key, const char *s)
 /*=========================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
+  DictElement *e = dict_element_set(d, key, VALUE_TYPE_STRING) ;
   e->value.string = string_copy(s) ;
   }
 
 void dict_set_copied_string(dict *d, const char *key, const char *s)
 /*================================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_STRING) ;
+  DictElement *e = dict_element_set(d, key, VALUE_TYPE_STRING) ;
   e->value.string = s ;
   }
 
 void dict_set_integer(dict *d, const char *key, long i)
 /*================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_INTEGER) ;
+  DictElement *e = dict_element_set(d, key, VALUE_TYPE_INTEGER) ;
   e->value.integer = (long)i ;
   }
 
 void dict_set_real(dict *d, const char *key, double f)
 /*==================================================*/
 {
-  DictElement *e = dict_element_set(d, key, TYPE_REAL) ;
+  DictElement *e = dict_element_set(d, key, VALUE_TYPE_REAL) ;
   e->value.real = (double)f ;
   }
 
@@ -152,7 +152,7 @@ void *dict_get_pointer(dict *d, const char *key, int *kind)
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_POINTER) return value_get_pointer(v, kind) ;
+  if (v && v->type == VALUE_TYPE_POINTER) return value_get_pointer(v, kind) ;
   return NULL ;
   }
 
@@ -161,7 +161,7 @@ const char *dict_get_string(dict *d, const char *key)
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_STRING) return value_get_string(v) ;
+  if (v && v->type == VALUE_TYPE_STRING) return value_get_string(v) ;
   return NULL ;
   }
 
@@ -170,7 +170,7 @@ long dict_get_integer(dict *d, const char *key)
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_INTEGER) return value_get_integer(v) ;
+  if (v && v->type == VALUE_TYPE_INTEGER) return value_get_integer(v) ;
   return 0 ;
   }
 
@@ -179,7 +179,7 @@ double dict_get_real(dict *d, const char *key)
 {
   VALUE_TYPE vt ;
   Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == TYPE_REAL) return value_get_real(v) ;
+  if (v && v->type == VALUE_TYPE_REAL) return value_get_real(v) ;
   return 0.0 ;
   }
 
@@ -230,17 +230,17 @@ static void print_entry(const char *k, Value *v, void *p)
   void *ptr ;
   int kind ;
   switch (value_type(v)) {
-   case TYPE_POINTER:
+   case VALUE_TYPE_POINTER:
     ptr = value_get_pointer(v, &kind) ;
     printf("'%s': 0x%08lx (%d)\n", k, ptr, kind) ;
     break ;
-   case TYPE_STRING:
+   case VALUE_TYPE_STRING:
     printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
-   case TYPE_INTEGER:
+   case VALUE_TYPE_INTEGER:
     printf("'%s': %d\n", k, value_get_integer(v)) ;
     break ;
-   case TYPE_REAL:
+   case VALUE_TYPE_REAL:
     printf("'%s': %g\n", k, value_get_real(v)) ;
     break ;
    default:

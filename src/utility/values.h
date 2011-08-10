@@ -12,10 +12,10 @@
 #define _VALUES_H
 
 typedef enum {
-  TYPE_POINTER = 1,
-  TYPE_STRING,
-  TYPE_INTEGER,
-  TYPE_REAL
+  VALUE_TYPE_POINTER = 1,
+  VALUE_TYPE_STRING,
+  VALUE_TYPE_INTEGER,
+  VALUE_TYPE_REAL
   } VALUE_TYPE ;
 
 typedef struct Value Value ;

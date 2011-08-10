@@ -31,7 +31,7 @@ const char *string_copy(const char *s)
 void value_free(Value *v)
 /*=====================*/
 {
-  if (v->type == TYPE_STRING) free((void *)v->string) ;
+  if (v->type == VALUE_TYPE_STRING) free((void *)v->string) ;
   else if (v->delete) v->delete(v->pointer) ;
   }
 

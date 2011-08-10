@@ -108,7 +108,7 @@ void list_free(list *l)
   while (e) {
     ListElement *this = e ;
     e = e->next ;
-    listElement_free(this) ;
+    ListElement_free(this) ;
     }
   free(l) ;
   }
@@ -123,7 +123,7 @@ int list_length(list *l)
 int list_append_pointer(list *l, void *p, int kind, Value_Free *delete)
 //=====================================================================
 {
-  ListElement *e = list_element_set(l, l->count, TYPE_POINTER) ;
+  ListElement *e = list_element_set(l, l->count, VALUE_TYPE_POINTER) ;
   if (e) {
     e->value.pointer = p ;
     e->value.pointerkind = kind ;
@@ -142,7 +142,7 @@ int list_append_string(list *l, const char *s)
 int list_append_copied_string(list *l, const char *s)
 //===================================================
 {
-  ListElement *e = list_element_set(l, l->count, TYPE_STRING) ;
+  ListElement *e = list_element_set(l, l->count, VALUE_TYPE_STRING) ;
   if (e) {
     e->value.string = s ;
     return l->count ;
@@ -153,7 +153,7 @@ int list_append_copied_string(list *l, const char *s)
 int list_append_integer(list *l, long i)
 //======================================
 {
-  ListElement *e = list_element_set(l, l->count, TYPE_INTEGER) ;
+  ListElement *e = list_element_set(l, l->count, VALUE_TYPE_INTEGER) ;
   if (e) {
     e->value.integer = (long)i ;
     return l->count ;
@@ -164,7 +164,7 @@ int list_append_integer(list *l, long i)
 int list_append_real(list *l, double f)
 //=====================================
 {
-  ListElement *e = list_element_set(l, l->count, TYPE_REAL) ;
+  ListElement *e = list_element_set(l, l->count, VALUE_TYPE_REAL) ;
   if (e) {
     e->value.real = (double)f ;
     return l->count ;
@@ -189,7 +189,7 @@ void *list_get_pointer(list *l, int index, int *kind)
 {
   VALUE_TYPE vt ;
   Value *v = list_get_value(l, index, &vt) ;
-  if (v && v->type == TYPE_POINTER) return value_get_pointer(v, kind) ;
+  if (v && v->type == VALUE_TYPE_POINTER) return value_get_pointer(v, kind) ;
   return NULL ;
   }
 
@@ -240,17 +240,17 @@ static void print_entry(int n, Value *v, void *p)
   void *ptr ;
   int kind ;
   switch (value_type(v)) {
-   case TYPE_POINTER:
+   case VALUE_TYPE_POINTER:
     ptr = value_get_pointer(v, &kind) ;
     printf("[%d]: 0x%08lx (%d)\n", n, ptr, kind) ;
     break ;
-   case TYPE_STRING:
+   case VALUE_TYPE_STRING:
     printf("[%d]: '%s'\n", n, value_get_string(v)) ;
     break ;
-   case TYPE_INTEGER:
+   case VALUE_TYPE_INTEGER:
     printf("[%d]: %d\n", n, value_get_integer(v)) ;
     break ;
-   case TYPE_REAL:
+   case VALUE_TYPE_REAL:
     printf("[%d]: %g\n", n, value_get_real(v)) ;
     break ;
    default:
