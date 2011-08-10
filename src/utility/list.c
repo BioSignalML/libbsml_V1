@@ -221,6 +221,19 @@ void list_iterate(list *l, List_Iterator *f, void *param)
     }
   }
 
+void list_iterate_break(list *l, List_Iterator_Break *f, void *param)
+/*=================================================================*/
+{
+  ListElement *e = l->head ;
+  int n = 0 ;
+  int done = 0 ;
+  while (e && !done) {
+    done = f(n, &e->value, param) ;
+    e = e->next ;
+    ++n ;
+    }
+  }
+
 static void print_entry(int n, Value *v, void *p)
 //===============================================
 {

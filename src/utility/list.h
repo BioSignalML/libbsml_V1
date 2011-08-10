@@ -16,6 +16,7 @@
 typedef struct List list ;
 
 typedef void (List_Iterator)(int, Value *, void *) ;
+typedef int  (List_Iterator_Break)(int, Value *, void *) ;
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,6 +37,8 @@ Value *list_pop_value(list *, int, VALUE_TYPE *) ;
 void  *list_get_pointer(list *, int, int *) ;
 
 void list_iterate(list *, List_Iterator *, void *) ;
+void list_iterate_break(list *, List_Iterator_Break *, void *) ;
+
 void list_print(list *) ;
 
 #ifdef __cplusplus
