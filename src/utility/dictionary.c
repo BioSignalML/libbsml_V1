@@ -212,6 +212,18 @@ void dict_iterate(dict *d, Dict_Iterator *f, void *param)
   }
 
 
+void dict_iterate_break(dict *d, Dict_Iterator_Break *f, void *param)
+/*=================================================================*/
+{
+  DictElement *e = d->elements ;
+  int done = 0 ;
+  while (e && !done) {
+    done = f(e->key, &e->value, param) ;
+    e = e->next ;
+    }
+  }
+
+
 static void print_entry(const char *k, Value *v, void *p)
 /*=====================================================*/
 {

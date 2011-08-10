@@ -16,6 +16,7 @@
 typedef struct Dictionary dict ;
 
 typedef void (Dict_Iterator)(const char *, Value *, void *) ;
+typedef int  (Dict_Iterator_Break)(const char *, Value *, void *) ;
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +40,7 @@ double      dict_get_real(dict *, const char *) ;
 
 void dict_delete(dict *, const char *) ;
 void dict_iterate(dict *, Dict_Iterator *, void *) ;
+void dict_iterate_break(dict *, Dict_Iterator_Break *, void *) ;
 
 void dict_print(dict *) ;
 
