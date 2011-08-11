@@ -44,7 +44,7 @@ static dict *bsml_mapping = NULL ;
 
 
 
-const char *datetime_to_isoformat(DateTime *dt)
+const char *datetime_to_isoformat(bsml_datetime *dt)
 /*===========================================*/
 {
   char buf[128] ;
@@ -78,10 +78,10 @@ const char *datetime_to_isoformat(DateTime *dt)
   return string_copy(buf) ;
   }
 
-DateTime *isoformat_to_datetime(const char *str)
+bsml_datetime *isoformat_to_datetime(const char *str)
 /*============================================*/
 {
-  DateTime *dt = DateTime_create() ;
+  bsml_datetime *dt = bsml_datetime_create() ;
   dt->sign = 1 ;
   if (*str == '-') {
     ++str ;
@@ -208,8 +208,8 @@ double isoduration_to_seconds(const char *d)
   }
 
 
-const char *call_map_function_datetime(const char *fn, DateTime *dt)
-/*================================================================*/
+static const char *call_map_function_datetime(const char *fn, bsml_datetime *dt)
+/*=======================================================================*/
 {
   if (fn) {
     if (strcmp(fn , "datetime_to_isoformat") == 0) return datetime_to_isoformat(dt) ;
@@ -217,8 +217,8 @@ const char *call_map_function_datetime(const char *fn, DateTime *dt)
   return NULL ;
   }
 
-DateTime *inverse_map_function_datetime(const char *fn, const char *s)
-/*==================================================================*/
+static bsml_datetime *inverse_map_function_datetime(const char *fn, const char *s)
+/*=========================================================================*/
 {
   if (fn) {
     if (strcmp(fn , "isoformat_to_datetime") == 0) return isoformat_to_datetime(s) ;
@@ -227,35 +227,35 @@ DateTime *inverse_map_function_datetime(const char *fn, const char *s)
   }
 
 
-const char *call_map_function_string(const char *fn, const char *s)
-/*===============================================================*/
+static const char *call_map_function_string(const char *fn, const char *s)
+/*======================================================================*/
 {
   return s ;
   }
 
-const char *inverse_map_function_string(const char *fn, const char *s)
-/*==================================================================*/
+static const char *inverse_map_function_string(const char *fn, const char *s)
+/*=========================================================================*/
 {
   return s ;
   }
 
 
-const char *call_map_function_long(const char *fn, long l, char *buf)
-/*=================================================================*/
+static const char *call_map_function_long(const char *fn, long l, char *buf)
+/*========================================================================*/
 {
   sprintf(buf, "%d", l) ;
   return (const char *)buf ;
   }
 
-long inverse_map_function_long(const char *fn, const char *s)
-/*=========================================================*/
+static long inverse_map_function_long(const char *fn, const char *s)
+/*================================================================*/
 {
   return strtol(s, NULL, 10) ;
   }
 
 
-const char *call_map_function_double(const char *fn, double d, char *buf)
-/*=====================================================================*/
+static const char *call_map_function_double(const char *fn, double d, char *buf)
+/*============================================================================*/
 {
   if (fn) {
     if (strcmp(fn , "seconds_to_isoduration") == 0) return seconds_to_isoduration(d) ;
@@ -264,8 +264,8 @@ const char *call_map_function_double(const char *fn, double d, char *buf)
   return (const char *)buf ;
   }
 
-double inverse_map_function_double(const char *fn, const char *s)
-/*=============================================================*/
+static double inverse_map_function_double(const char *fn, const char *s)
+/*====================================================================*/
 {
   if (fn) {
     if (strcmp(fn , "isoduration_to_seconds") == 0) return isoduration_to_seconds(s) ;
@@ -275,7 +275,7 @@ double inverse_map_function_double(const char *fn, const char *s)
 
 
 
-static unsigned char *QUERY_MAP = (unsigned char *)
+static char *QUERY_MAP =
   "prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>"
   "prefix map:  <http://www.biosignalml.org/ontologies/2011/02/mapping#>"
   "select ?lbl ?prop ?class ?otype ?map ?rmap"
@@ -307,49 +307,12 @@ typedef struct {
   } ReverseEntry ;  // Indexed (str(property) + class)
 
 
-typedef struct {
+struct bsml_rdfmapping {
   dict *mapping ;
   dict *reversemap ;
-  } Mapping ;
+  } ;
 
 
-
-static librdf_node *results_get_node(librdf_query_results *r, const char *k)
-/*========================================================================*/
-{
-  librdf_node *n = librdf_query_results_get_binding_value_by_name(r, k) ;
-  if (n) {
-    if (librdf_node_is_resource(n)) return n ;
-    librdf_free_node(n) ;
-    }
-  return NULL ;
-  }
-
-static librdf_uri *results_get_uri(librdf_query_results *r, const char *k)
-/*========================================================================*/
-{
-  librdf_uri *u = NULL ;
-  librdf_node *n = librdf_query_results_get_binding_value_by_name(r, k) ;
-  if (n) {
-    if (librdf_node_is_resource(n))
-      u = librdf_new_uri_from_uri(librdf_node_get_uri(n)) ;
-    librdf_free_node(n) ;
-    }
-  return u ;
-  }
-
-static const char *results_get_string(librdf_query_results *r, const char *k)
-/*=========================================================================*/
-{
-  const char *s = NULL ;
-  librdf_node *n = librdf_query_results_get_binding_value_by_name(r, k) ;
-  if (n) {
-    if (librdf_node_is_literal(n))
-      s = string_copy((const char *)librdf_node_get_literal_value(n)) ;
-    librdf_free_node(n) ;
-    }
-  return s ;
-  }
 
 static void map_entry_free(void *p)
 /*===============================*/
@@ -364,9 +327,10 @@ static void map_entry_free(void *p)
   free(m) ;
   }
 
-static void mapping_set(dict *map, librdf_query_results *r)
-/*=======================================================*/
+static void mapping_set(librdf_query_results *r, void *userdata)
+//==============================================================
 {
+  dict *map = (dict *)userdata ;
   MapEntry *m = (MapEntry *)calloc(sizeof(MapEntry), 1) ;
   const char *label = results_get_string(r, "lbl") ;
   const char *class = results_get_string(r, "class") ;
@@ -380,38 +344,36 @@ static void mapping_set(dict *map, librdf_query_results *r)
     m->datatype = results_get_uri(r, "otype") ;
     m->mapfn    = results_get_string(r, "map") ;
     m->inverse  = results_get_string(r, "rmap") ;
-    dict_set_pointer(map, key, m, KIND_NONE, map_entry_free) ;
+    dict_set_pointer(map, key, m, BSML_KIND_NONE, map_entry_free) ;
     }
-  }
-
-
-static int uri_protocol(const char *u)
-/*==================================*/
-{
-  return (memcmp(u, "file:", 5) == 0 || memcmp(u, "http:", 5) == 0) ;
   }
 
 
 static void load_mapping(dict *mapping, const char *mapfile)
 /*========================================================*/
 {
-
-  GraphStore *g = GraphStore_create(mapfile, "turtle") ;
+  bsml_graphstore *g = bsml_graphstore_create_from_uri(mapfile, "turtle") ;
   if (g) {
-    librdf_query *query = librdf_new_query(world, "sparql11-query", NULL, QUERY_MAP, NULL) ;
-    librdf_query_results *results = librdf_model_query_execute(g->model, query) ;
-    if (results == NULL) { //...
-      fprintf(stderr, "SPARQL error...\n") ;
-      }
-    else {
-      while (!librdf_query_results_finished(results)) {
-        mapping_set(mapping, results) ;
-        librdf_query_results_next(results) ;
-        }
-      librdf_free_query_results(results) ;
-      }
-    librdf_free_query(query) ;
-    GraphStore_free(g) ;
+    bsml_graphstore_select(g, QUERY_MAP, mapping_set, (void *)mapping) ;
+    bsml_graphstore_free(g) ;
+    }
+  }
+
+
+static void mapping_copy(const char *k, Value *value, void *userdata)
+//===================================================================
+{
+  dict *copy = (dict *)userdata ;
+  MapEntry *m = value_get_pointer(value, NULL) ;
+  if (m->property) {
+    MapEntry *n = (MapEntry *)calloc(sizeof(MapEntry), 1) ;
+    n->property = librdf_new_node_from_node(m->property) ;
+    if (m->label)    n->label    = string_copy(m->label) ;
+    if (m->class)    n->class    = string_copy(m->class) ;
+    if (m->datatype) n->datatype = librdf_new_uri_from_uri(m->datatype) ;
+    if (m->mapfn)    n->mapfn    = string_copy(m->mapfn) ;
+    if (m->inverse)  n->inverse  = string_copy(m->inverse) ;
+    dict_set_pointer(copy, k, n, BSML_KIND_NONE, map_entry_free) ;
     }
   }
 
@@ -443,29 +405,31 @@ static void reverse_set(const char *k, Value *value, void *userdata)
     if (m->datatype) r->datatype = string_copy((char *)librdf_uri_as_string(m->datatype)) ;
     if (m->inverse)  r->mapfn    = string_copy(m->inverse) ;
 
-    dict_set_pointer(rmap, key, r, KIND_NONE, reverse_entry_free) ;
+    dict_set_pointer(rmap, key, r, BSML_KIND_NONE, reverse_entry_free) ;
     }
   }
 
 
-Mapping *Mapping_create(dict *base)
-/*===============================*/
+bsml_rdfmapping *bsml_rdfmapping_create(dict *usermap)
+/*==================================*/
 {
-  Mapping *m = (Mapping *)calloc(sizeof(Mapping) , 1) ;
+  bsml_rdfmapping *m = (bsml_rdfmapping *)calloc(sizeof(bsml_rdfmapping) , 1) ;
 
-  m->mapping = base ; // dict_create() ; // dict_deep_copy(base) ;
+  m->mapping = dict_create() ;
+  dict_iterate(bsml_mapping, mapping_copy, (void *)(m->mapping)) ;
+  if (usermap) dict_iterate(usermap, mapping_copy, (void *)(m->mapping)) ;
 
   m->reversemap = dict_create() ;
-  dict_iterate(m->mapping, (Iterator_Function *)reverse_set, (void *)(m->reversemap)) ;
+  dict_iterate(m->mapping, reverse_set, (void *)(m->reversemap)) ;
 
   return m ;
   }
 
-void Mapping_free(Mapping *m)
+void bsml_rdfmapping_free(bsml_rdfmapping *m)
 /*=========================*/
 {
   dict_free(m->reversemap) ;
-  // dict_free(m->mapping) ;  // But only if a real copy...
+  dict_free(m->mapping) ;
   free(m) ;
   }
 
@@ -507,43 +471,43 @@ static void add_statement(const char *label, Value *value, void *userdata)
   if (m == NULL) m = (MapEntry *)dict_get_pointer(ud->mapping, label, NULL) ;
 
   if (m) {
-    const char *literal = (vtype == TYPE_STRING) ? value_get_string(value) : NULL ;
+    const char *literal = (vtype == VALUE_TYPE_STRING) ? value_get_string(value) : NULL ;
     char numbuf[20] ;
 
     if (literal == NULL || *literal) {  // Not a string or a non-empty string
       librdf_node *node = NULL ;
 
       switch (vtype) {
-       case TYPE_POINTER:
+       case VALUE_TYPE_POINTER:
         { int kind ;
           void *p = value_get_pointer(value, &kind) ;
           if (p == NULL) break ;
-          if (kind == KIND_NODE) {
+          if (kind == BSML_KIND_NODE) {
             librdf_model_add(ud->model,
               librdf_new_node_from_node(ud->subject),
               librdf_new_node_from_node(m->property),
               librdf_new_node_from_node((librdf_node *)p)) ;
             return ;
             }
-          else if (kind == KIND_URI)
+          else if (kind == BSML_KIND_URI)
             node = librdf_new_node_from_uri(world, (librdf_uri *)p) ;
-          else if (kind == KIND_DATETIME)
-            literal = call_map_function_datetime(m->mapfn, (DateTime *)p) ;
+          else if (kind == BSML_KIND_DATETIME)
+            literal = call_map_function_datetime(m->mapfn, (bsml_datetime *)p) ;
           }
         break ;
 
-       case TYPE_STRING:
-        if (uri_protocol(literal))
+       case VALUE_TYPE_STRING:
+        if (bsml_uri_protocol(literal))
           node = librdf_new_node_from_uri_string(world, (unsigned char *)literal) ;
         else
           literal = call_map_function_string(m->mapfn, literal) ;
         break ;
 
-       case TYPE_INTEGER:
+       case VALUE_TYPE_INTEGER:
         literal = call_map_function_long(m->mapfn, value_get_integer(value), numbuf) ;
         break ;
 
-       case TYPE_REAL:
+       case VALUE_TYPE_REAL:
         literal = call_map_function_double(m->mapfn, value_get_real(value), numbuf) ;
         break ;
 
@@ -570,19 +534,19 @@ static void add_statement(const char *label, Value *value, void *userdata)
  Add attributes of a class instance with uri of 'subject' to a model
 **/
 
-void map_save_attributes(Mapping *map, librdf_model *model, dict *attributes,
-                                                            const char *subject, const char *class)
+void bsml_rdfmapping_save_attributes(bsml_rdfmapping *map, bsml_graphstore *g, dict *attributes,
+                                                          const char *subject, const char *class)
 /*===============================================================================================*/
 {
   if (subject == NULL)
     subject = dict_get_string(attributes, "uri") ;
   if (subject) {
     MapSaveInfo info ;
-    info.model = model ;
+    info.model = g->model ;
     info.subject = librdf_new_node_from_uri_string(world, (unsigned char *)subject) ;
     info.class = class ;
     info.mapping = map->mapping ;
-    dict_iterate(attributes, (Iterator_Function *)add_statement, &info) ;
+    dict_iterate(attributes, add_statement, (void *)&info) ;
     librdf_free_node(info.subject) ;
     }
   }
@@ -614,25 +578,25 @@ static void set_attribute(dict *attributes, librdf_node *node, ReverseEntry *r)
       VALUE_TYPE dtype = 0 ;
       if (r->datatype)
         dtype = dict_get_integer(datatypes, r->datatype) ;
-      if (dtype == 0) dtype = TYPE_STRING ;
+      if (dtype == 0) dtype = VALUE_TYPE_STRING ;
 
       switch (dtype) {
-       case TYPE_POINTER:
+       case VALUE_TYPE_POINTER:
         { int kind = dict_get_integer(pointerkinds, r->datatype) ;
-          if (kind == KIND_DATETIME)
+          if (kind == BSML_KIND_DATETIME)
             dict_set_datetime(attributes, key, inverse_map_function_datetime(r->mapfn, text)) ;
           }
         break ;
 
-       case TYPE_STRING:
+       case VALUE_TYPE_STRING:
         dict_set_string(attributes, key, inverse_map_function_string(r->mapfn, text)) ;
         break ;
 
-       case TYPE_INTEGER:
+       case VALUE_TYPE_INTEGER:
         dict_set_integer(attributes, key, inverse_map_function_long(r->mapfn, text)) ;
         break ;
 
-       case TYPE_REAL:
+       case VALUE_TYPE_REAL:
         dict_set_real(attributes, key, inverse_map_function_double(r->mapfn, text)) ;
         break ;
 
@@ -645,47 +609,50 @@ static void set_attribute(dict *attributes, librdf_node *node, ReverseEntry *r)
 
 
 
+typedef struct {
+  bsml_rdfmapping *map ;
+  const char *class ;
+  dict *attributes ;
+  } MapGetInfo ;
+
+
+
+static void map_statements(librdf_statement *stmt, void *userdata)
+//================================================================
+{
+  MapGetInfo *info = userdata ;
+
+  ReverseEntry *r = NULL ;
+  const char *pred = (char *)librdf_uri_as_string(
+                       librdf_node_get_uri(
+                         librdf_statement_get_predicate(stmt))) ;
+  if (info->class) {
+    char key[strlen(pred) + strlen(info->class) + 1] ;
+    strcpy(key, pred) ;
+    strcat(key, info->class) ;
+    r = (ReverseEntry *)dict_get_pointer(info->map->reversemap, key, NULL) ;
+    }
+  if (r == NULL) r = (ReverseEntry *)dict_get_pointer(info->map->reversemap, pred, NULL) ;
+  if (r) set_attribute(info->attributes, librdf_statement_get_object(stmt), r) ;
+  }
+
+
+
 /**
   Load attributes of class with uri of 'subject' from a model.
 **/
 
-void map_get_attributes(Mapping *map, dict *attributes, librdf_model *model,
+void bsml_rdfmapping_get_attributes(bsml_rdfmapping *map, dict *attributes, bsml_graphstore *g,
                                                         const char *subject, const char *class)
 /*===========================================================================================*/
 {
   dict_set_uri(attributes, "uri", librdf_new_uri(world, (const unsigned char *)subject)) ;
-
+  MapGetInfo info = { map, class, attributes } ;
   char *sparql ;
   asprintf(&sparql, "CONSTRUCT { <%s> ?p ?o } WHERE { <%s> a <%s> . <%s> ?p ?o }",
                                                     subject, subject, class, subject) ;
-  librdf_query *query = librdf_new_query(world, "sparql11-query", NULL,
-                                                (unsigned char *)sparql, NULL) ;
-  librdf_query_results *results = librdf_model_query_execute(model, query) ;
+  bsml_graphstore_construct(g, sparql, map_statements, (void *)&info) ;
   free(sparql) ;
-  if (results == NULL) fprintf(stderr, "SPARQL error...\n") ;
-
-  if (results && librdf_query_results_is_graph(results)) {
-    librdf_stream *stream = librdf_query_results_as_stream(results) ;
-    while (!librdf_stream_end(stream)) {
-      librdf_statement *stmt = librdf_stream_get_object(stream) ;
-      ReverseEntry *r = NULL ;
-      const char *pred = (char *)librdf_uri_as_string(
-                           librdf_node_get_uri(
-                             librdf_statement_get_predicate(stmt))) ;
-      if (class) {
-        char key[strlen(pred) + strlen(class) + 1] ;
-        strcpy(key, pred) ;
-        strcat(key, class) ;
-        r = (ReverseEntry *)dict_get_pointer(map->reversemap, key, NULL) ;
-        }
-      if (r == NULL) r = (ReverseEntry *)dict_get_pointer(map->reversemap, pred, NULL) ;
-      if (r) set_attribute(attributes, librdf_statement_get_object(stmt), r) ;
-      librdf_stream_next(stream) ;
-      }
-    librdf_free_stream(stream) ;
-    }
-  librdf_free_query_results(results) ;
-  librdf_free_query(query) ;
   }
 
 
@@ -695,25 +662,25 @@ void bsml_rdf_mapping_initialise(void)
   datatypes = dict_create() ;
   pointerkinds = dict_create() ;
 
-  dict_set_integer(datatypes, XSD_float,              TYPE_REAL) ;
-  dict_set_integer(datatypes, XSD_double,             TYPE_REAL) ;
-  dict_set_integer(datatypes, XSD_integer,            TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_long,               TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_int,                TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_short,              TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_byte,               TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_nonPostiveInteger,  TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_nonNegativeInteger, TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_positiveInteger,    TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_negativeInteger,    TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_unsignedLong,       TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_unsignedInt,        TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_unsignedShort,      TYPE_INTEGER) ;
-  dict_set_integer(datatypes, XSD_unsignedByte,       TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_float,              VALUE_TYPE_REAL) ;
+  dict_set_integer(datatypes, XSD_double,             VALUE_TYPE_REAL) ;
+  dict_set_integer(datatypes, XSD_integer,            VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_long,               VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_int,                VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_short,              VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_byte,               VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_nonPostiveInteger,  VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_nonNegativeInteger, VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_positiveInteger,    VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_negativeInteger,    VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedLong,       VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedInt,        VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedShort,      VALUE_TYPE_INTEGER) ;
+  dict_set_integer(datatypes, XSD_unsignedByte,       VALUE_TYPE_INTEGER) ;
 
-  dict_set_integer(datatypes,    XSD_duration,        TYPE_REAL) ;
-  dict_set_integer(datatypes,    XSD_dateTime,        TYPE_POINTER) ;
-  dict_set_integer(pointerkinds, XSD_dateTime,        KIND_DATETIME) ;
+  dict_set_integer(datatypes,    XSD_duration,        VALUE_TYPE_REAL) ;
+  dict_set_integer(datatypes,    XSD_dateTime,        VALUE_TYPE_POINTER) ;
+  dict_set_integer(pointerkinds, XSD_dateTime,        BSML_KIND_DATETIME) ;
 
 
   bsml_mapping = dict_create() ;
@@ -723,7 +690,7 @@ void bsml_rdf_mapping_initialise(void)
 
 
 
-#ifdef UNITTEST
+#ifdef RDFMAPTEST
 
 void map_print(MapEntry *m)
 /*=======================*/
@@ -768,22 +735,22 @@ static void print_attr(const char *k, Value *v, void *p)
   void *ptr ;
   int kind ;
   switch (value_type(v)) {
-   case TYPE_POINTER:
+   case VALUE_TYPE_POINTER:
     ptr = value_get_pointer(v, &kind) ;
-    if (kind == KIND_URI)
+    if (kind == BSML_KIND_URI)
       printf("'%s': <%s>\n", k, librdf_uri_as_string((librdf_uri *)ptr)) ;
-    else if (kind == KIND_NODE)
+    else if (kind == BSML_KIND_NODE)
       printf("'%s': <%s>\n", k, librdf_uri_as_string(librdf_node_get_uri((librdf_node *)ptr))) ;
     else
       printf("'%s': 0x%08lx (%d)\n", k, ptr, kind) ;
     break ;
-   case TYPE_STRING:
+   case VALUE_TYPE_STRING:
     printf("'%s': '%s'\n", k, value_get_string(v)) ;
     break ;
-   case TYPE_INTEGER:
+   case VALUE_TYPE_INTEGER:
     printf("'%s': %d\n", k, value_get_integer(v)) ;
     break ;
-   case TYPE_REAL:
+   case VALUE_TYPE_REAL:
     printf("'%s': %g\n", k, value_get_real(v)) ;
     break ;
    default:
@@ -795,14 +762,14 @@ static void print_attr(const char *k, Value *v, void *p)
 void print_attributes(dict *a)
 /*==========================*/
 {
-  dict_iterate(a, (Iterator_Function *)print_attr, NULL) ;
+  dict_iterate(a, print_attr, NULL) ;
   }
 
-dict *get_metadata(Mapping *map, librdf_model *model, const char *uri, const char *class)
-/*======================================================================================*/
+dict *get_metadata(bsml_rdfmapping *map, bsml_graphstore *g, const char *uri, const char *class)
+/*===============================================================================*/
 {
   dict *md = dict_create() ;
-  map_get_attributes(map, md, model, uri, class) ;
+  bsml_rdfmapping_get_attributes(map, md, g, uri, class) ;
   print_attributes(md) ;
   return md ;
   }
@@ -812,36 +779,34 @@ dict *get_metadata(Mapping *map, librdf_model *model, const char *uri, const cha
 int main(void)
 /*==========*/
 {
-  world = librdf_new_world() ;
-  librdf_world_open(world) ;
-  bsml_rdf_mapping_initialise() ;
+  bsml_rdf_initialise() ;
 
   //dict_iterate(bsml_mapping, (Iterator_Function *)print, NULL) ;
 
-  Mapping *mymap = Mapping_create(bsml_mapping) ;
+  bsml_rdfmapping *mymap = bsml_rdfmapping_create(NULL) ;
 
   //dict_print(mymap->reversemap) ;
 
-  char *rdf = "file:///Users/dave/biosignalml/libbsml/src/api/edf.ttl" ;
-  GraphStore *edf = GraphStore_create(rdf, "turtle") ;
-  dict *rec = get_metadata(mymap, edf->model,
+  char *rdf = "file:///Users/dave/biosigna^lml/libbsml/src/api/edf.ttl" ;
+  bsml_graphstore *edfgraph = bsml_graphstore_create_from_uri(rdf, "turtle") ;
+  dict *rec = get_metadata(mymap, edfgraph,
      "http://recordings.biosignalml.org/testdata/sinewave", BSML_Recording) ;
-  dict *sig = get_metadata(mymap, edf->model,
+  dict *sig = get_metadata(mymap, edfgraph,
      "http://recordings.biosignalml.org/testdata/sinewave/signal/1", BSML_Signal) ;
-  GraphStore_free(edf) ;
+  bsml_graphstore_free(edfgraph) ;
 
-  GraphStore *out = GraphStore_create(NULL, NULL) ;
-  map_save_attributes(mymap, out->model, rec,
+  bsml_graphstore *out = bsml_graphstore_create() ;
+  bsml_rdfmapping_save_attributes(mymap, out, rec,
      "http://recordings.biosignalml.org/testdata/sinewave", BSML_Recording) ;
-  map_save_attributes(mymap, out->model, sig,
+  bsml_rdfmapping_save_attributes(mymap, out, sig,
      "http://recordings.biosignalml.org/testdata/sinewave/signal/1", BSML_Signal) ;
   librdf_model_print(out->model, stdout) ;   // *******
-  GraphStore_free(out) ;
+  bsml_graphstore_free(out) ;
 
   dict_free(rec) ;
   dict_free(sig) ;
 
-  Mapping_free(mymap) ;
+  bsml_rdfmapping_free(mymap) ;
 
   dict_free(bsml_mapping) ;
   librdf_free_world(world) ;

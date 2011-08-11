@@ -12,67 +12,75 @@
 #ifndef _BSML_MODEL_H
 #define _BSML_MODEL_H
 
+#include "bsml_rdf.h"
 #include "bsml_internal.h"
 
 typedef enum {
-  RECORDING_RAW = 1,
-  RECORDING_EDF,
-  RECORDING_HDF5
-  } RECORDING_TYPES ;
+  BSML_RECORDING = 1,
+  BSML_RECORDING_RAW,
+  BSML_RECORDING_EDF,
+  BSML_RECORDING_HDF5
+  } BSML_RECORDING_TYPES ;
 
 typedef enum {
-  SIGNAL_RAW = 1,
-  SIGNAL_EDF,
-  SIGNAL_HDF5
-  } SIGNAL_TYPES ;
+  BSML_SIGNAL = 1,
+  BSML_SIGNAL_RAW,
+  BSML_SIGNAL_EDF,
+  BSML_SIGNAL_HDF5
+  } BSML_SIGNAL_TYPES ;
 
+/*
 typedef struct {
   dict *metadata ;
-  } Resource ;
+  } bsml_resource ;
+*/
 
 typedef struct {
   int type ;
-  char *uri ;
+  const char *uri ;
   void *info ;
   dict *attributes ;
-  } Recording ;
+  bsml_graphstore *graph ;
+  } bsml_recording ;
 
 
 typedef struct {
   int type ;
-  char *uri ;
+  const char *uri ;
   void *info ;
-  Recording *recording ;
+  bsml_recording *recording ;
   dict *attributes ;
-  } Signal ;
+  } bsml_signal ;
 
 typedef struct {
 //  double starttime ; // or int64 sample_number; or Time starttime (and Time == int64 in nsec).
 //  double duration ;
   long len ;
   double *data ;
-  } TimeSeries ;
+  } bsml_timeseries ;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-Recording *Recording_init(const char *, dict *, int type) ;
-void Recording_close(Recording *) ;
-dict *Recording_get_metavars(Recording *) ;
-char *Recording_metadata_as_string(Recording *, const char *, dict *) ;
-void *Recording_add_signal(Recording *, Signal *) ;
+list *bsml_model_recordings(bsml_graphstore *) ;
 
-Signal *Signal_init(const char *, dict *, int) ;
-void Signal_close(Signal *) ;
-dict *Signal_get_metavars(Signal *) ;
+bsml_recording *bsml_recording_init(const char *, dict *, int type) ;
+void bsml_recording_close(bsml_recording *) ;
+dict *bsml_recording_get_metavars(bsml_recording *) ;
+char *bsml_recording_metadata_as_string(bsml_recording *, const char *, dict *) ;
+void *bsml_recording_add_signal(bsml_recording *, bsml_signal *) ;
+
+bsml_signal *bsml_signal_init(const char *, dict *, int) ;
+void bsml_signal_close(bsml_signal *) ;
+dict *bsml_signal_get_metavars(bsml_signal *) ;
 
 
-Recording *FILERecording_init(const char *, const char *, dict *, int) ;
-void FILERecording_close(Recording *) ;
+bsml_recording *bsml_file_recording_init(const char *, const char *, dict *, int) ;
+void bsml_file_recording_close(bsml_recording *) ;
 
-Signal *FILESignal_init(const char *, dict *, int) ;
-void FILESignal_close(Signal *) ;
+bsml_signal *bsml_file_signal_init(const char *, dict *, int) ;
+void bsml_file_signal_close(bsml_signal *) ;
 
 #ifdef __cplusplus
 } ;
