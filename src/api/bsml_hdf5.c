@@ -15,7 +15,7 @@
 
     Path               Object   Type     Dimension  Attributes
     ----               ------   ----     ---------  ----------
-    /                  Root
+    /                  Root                         version
     /metadata          Dataset  STRING   Scalar     format
     /recording_uri     Group                        uri
      ./signal0_uri     Dataset  Numeric  1-D        uri, rate/clock
@@ -28,7 +28,7 @@
 
     Path               Object   Type     Dimension  Attributes
     ----               ------   ----     ---------  ----------
-    /                  Root                       
+    /                  Root                         version
     /metadata          Dataset  STRING   Scalar     format
     /recording_uri     Group                        uri
      ./data            Dataset  Numeric  2-D        rate/clock
@@ -64,13 +64,33 @@
 #include <hdf5_hl.h>
 
 #include "bsml_rdf.h"
+#include "bsml_rdf_mapping.h"
+
 #include "bsml_hdf5.h"
+
+typedef struct {
+  const char *version ;
+  char **uris ;
+  int channels ;
+  hid_t file ;
+  hid_t recording ;
+  hid_t sigdata ;
+  } HDF5RecInfo ;
+
+typedef struct {
+  hid_t dataset ;
+  int index ;
+  } HDF5SigInfo ;
 
 
 #define DATASET_META  "metadata"
 #define DATASET_DATA  "data"
 #define DATASET_URIS  "uris"
 
+#ifndef FALSE
+#define FALSE 0
+#define TRUE  1
+#endif
 
 
 hid_t HDF5_error_major_num = 0 ;
@@ -96,6 +116,7 @@ herr_t error_fn(hid_t stack, void *ud)
 /*==================================*/
 {
   H5Ewalk(stack, H5E_WALK_UPWARD, error_walk, ud) ;
+  return 1 ;
   }
 
 
@@ -125,27 +146,6 @@ static char *make_name(const char *prefix, const char *uri)
   return normalise_name(uri) ;
   }
 
-static char *get_uri(hid_t h5, const char *prefix, const char *name)
-/*================================================================*/
-{
-  char *uri = NULL ;
-  if (H5LTfind_attribute(h5, "uri")) {
-    hsize_t dims ;
-    H5T_class_t class ;
-    size_t size ;
-    H5LTget_attribute_info(h5, DATASET_META, "uri", &dims, &class, &size) ;
-    char *uri = calloc(size + 1, 1) ;
-    H5LTget_attribute_string(h5, DATASET_META, "uri", uri) ;
-    char *nm = make_name(prefix, uri) ;
-    if (strcmp(name, nm) == 0) {
-      free(uri) ;
-      uri = NULL ;
-      }
-    free(nm) ;
-    }
-  return uri ;
-  }
-
 
 static int array_len(char **array)
 /*==============================*/
@@ -162,17 +162,17 @@ static herr_t set_hdf5_attribute(hid_t hdf5, const char *attr, Value *value)
   herr_t status = 0 ;
 
   switch (value_type(value)) {
-   case TYPE_INTEGER: {
+   case VALUE_TYPE_INTEGER: {
     long val = value_get_integer(value) ;
     status = H5LTset_attribute_long(hdf5, ".", attr, &val, 1) ;
     break ;
     }
-   case TYPE_REAL: {
+   case VALUE_TYPE_REAL: {
     double val = value_get_real(value) ;
     status = H5LTset_attribute_double(hdf5, ".", attr, &val, 1) ;
     break ;
     }
-   case TYPE_STRING:
+   case VALUE_TYPE_STRING:
     status = H5LTset_attribute_string(hdf5, ".", attr, value_get_string(value)) ;
     break ;
    default:
@@ -182,9 +182,9 @@ static herr_t set_hdf5_attribute(hid_t hdf5, const char *attr, Value *value)
   return status ;
   }
 
-// *** UNUSED ???
+/*** UNUSED ???
 static void set_attribute(Resource *obj, hid_t hdf5, const char *attr, Value *value)
-/*================================================================================*/
+//==================================================================================
 {
   int known = (H5Aexists(hdf5, attr) > 0) ;
 
@@ -195,18 +195,22 @@ static void set_attribute(Resource *obj, hid_t hdf5, const char *attr, Value *va
     }
   else if (known) H5Adelete(hdf5, attr) ;
   }
+****/
+
 
 static char *get_hdf5_string_attribute(hid_t hdf5, const char *attr)
 /*================================================================*/
 {
-  hsize_t attr_dims ;
-  H5T_class_t attr_type ;
-  size_t attr_size ;
-
-  H5LTget_attribute_info(hdf5, ".", attr, &attr_dims, &attr_type, &attr_size) ;
-  char *value = (char *)calloc(attr_size + 1, 1) ;
-  H5LTget_attribute_string(hdf5, ".", attr, value) ;
-  return value ;
+  if (H5LTfind_attribute(hdf5, attr) == 1) {
+    hsize_t attr_dims ;
+    H5T_class_t attr_type ;
+    size_t attr_size ;
+    H5LTget_attribute_info(hdf5, ".", attr, &attr_dims, &attr_type, &attr_size) ;
+    char *value = (char *)calloc(attr_size + 1, 1) ;
+    H5LTget_attribute_string(hdf5, ".", attr, value) ;
+    return value ;
+    }
+  return NULL ;
   }
 
 
@@ -228,90 +232,113 @@ static void del_clock(hid_t hdf5, const char *attr)
   }
 
 
-Recording *HDF5Recording_init(const char *fname, char mode, const char *uri, dict *attributes)
-/*==============================================================================================*/
+static bsml_graphstore *read_metadata(hid_t h5, const char *baseuri)
+//=============================================================
+{
+  hsize_t dims ;
+  H5T_class_t class ;
+  size_t size ;
+  if (H5LTfind_dataset(h5, DATASET_META) == 0)
+    return NULL ;                         // No 'metadata' dataset
+
+  int error = 1 ;
+  char *format = "" ;
+  hid_t md = H5Dopen(h5, DATASET_META, H5P_DEFAULT) ;
+  if (H5LTfind_attribute(md, "format")) {
+    H5LTget_attribute_info(h5, DATASET_META, "format", &dims, &class, &size) ;
+    format = calloc(size + 1, 1) ;
+    H5LTget_attribute_string(h5, DATASET_META, "format", format) ;
+    error = 0 ;
+    }
+  H5Dclose(md) ;
+  if (error) return NULL ;                // No 'format'
+
+  H5LTget_dataset_info(h5, DATASET_META, &dims, &class, &size) ;
+  char *rdf = calloc(size + 1, 1) ;
+  H5LTread_dataset_string(h5, DATASET_META, rdf) ;
+  bsml_graphstore *g = bsml_graphstore_create_from_string(rdf, format, baseuri) ;
+  free(rdf) ;
+
+  return g ;
+  }
+
+
+static int find_recording(int index, Value *v, void *userdata)
+//============================================================
+{
+  int stopping = 0 ;
+  bsml_recording *r = (bsml_recording *)userdata ;
+  HDF5RecInfo *h5info = r->info ;
+  int kind ;
+  bsml_recording *rec = (bsml_recording *)value_get_pointer(v, &kind) ;
+  if (kind == BSML_KIND_RECORDING && (r->uri == NULL || strcmp(r->uri, rec->uri) == 0)) {
+    char *name = normalise_name(rec->uri) ;
+    if (H5Lexists(h5info->file, name, H5P_DEFAULT) == TRUE) {
+      hsize_t dims ;
+      H5T_class_t class ;
+      size_t size ;
+      if (H5LTget_attribute_info(h5info->file, name, "uri", &dims, &class, &size) >= 0) {
+        char *uri = calloc(size + 1, 1) ;
+        H5LTget_attribute_string(h5info->file, name, "uri", uri) ;
+        if (strcmp(rec->uri, uri) == 0) {
+          h5info->recording = H5Gopen(h5info->file, name, H5P_DEFAULT) ;
+          if (r->uri == NULL) r->uri = string_copy(uri) ;
+          stopping = 1 ;        // Have first group with uri that matches a Recording
+          }
+        free(uri) ;
+        }
+      }
+    free(name) ;
+    }
+  return stopping ;
+  }
+
+
+bsml_recording *bsml_hdf5_recording_init(const char *fname, char mode, const char *uri, dict *attributes)
+//============================================================================================
 {
   if (attributes == NULL) attributes = dict_create() ;
   // Check for and remove any 'uri' in attributes
   if (dict_get_value(attributes, "uri", NULL)) dict_delete(attributes, "uri") ;
   dict_set_string(attributes, "format", BSML_HDF5) ;
-  Recording *r = FILERecording_init(fname, uri, attributes, RECORDING_HDF5) ;
+
+  bsml_recording *r = bsml_file_recording_init(fname, uri, attributes, BSML_RECORDING_HDF5) ;
+
   hid_t h5f = (mode == 'w') ? H5Fcreate(fname, H5F_ACC_EXCL,  H5P_DEFAULT, H5P_DEFAULT)
             : (mode == '-') ? H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT)
             : (mode == 'a') ? H5Fopen(fname, H5F_ACC_RDWR,   H5P_DEFAULT)
             :                 H5Fopen(fname, H5F_ACC_RDONLY, H5P_DEFAULT) ;
-  
+  const char *version = get_hdf5_string_attribute(h5f, "version") ;
+  if (version == NULL) {
+    version = string_copy(BSML_HDF5_VERSION) ;
+    if (strchr("w-a", mode)) H5LTset_attribute_string(h5f, ".", "version", version) ;
+    }
   HDF5RecInfo *rec = (HDF5RecInfo *)calloc(sizeof(HDF5RecInfo), 1) ;
   rec->file = h5f ;
+  rec->version = version ;
   r->info = (void *)rec ;
 
   int error = 1 ;
   while (1) {
     if (h5f < 0) break ;
-
     if (strchr("w-", mode) == NULL) {   // Existing file, check it's valid
-      hsize_t dims ;
-      H5T_class_t class ;
-      size_t size ;
-      char *format = "" ;
-      if (H5LTfind_dataset(h5f, DATASET_META) == 0) break ;
-
-      hid_t md = H5Dopen(h5f, DATASET_META, H5P_DEFAULT) ;
-      if (H5LTfind_attribute(md, "format")) {
-        H5LTget_attribute_info(h5f, DATASET_META, "format", &dims, &class, &size) ;
-        format = calloc(size + 1, 1) ;
-        H5LTget_attribute_string(h5f, DATASET_META, "format", format) ;
-        error = 0 ;
-        }
-      H5Dclose(md) ;
-      if (error) break ;                // No 'format'
-      error = 1 ;                       // Continue checks
-
-      H5LTget_dataset_info(h5f, DATASET_META, &dims, &class, &size) ;
-      char *rdf = calloc(size + 1, 1) ;
-      H5LTread_dataset_string(h5f, DATASET_META, rdf) ;
-
-      // Parse into a model... rec->graph = Grapn_create(rdf, format) ;
-      // if (rec->graph == NULL) break ;
-
-      free(rdf) ;
+      r->graph = read_metadata(h5f, r->uri) ;
+      if (r->graph == NULL) break ;
+      list *recs = bsml_model_recordings(r->graph) ;
+      if (uri == NULL) r->uri = NULL ;  // Will now be set from recording
+      list_iterate_break(recs, find_recording, (void *)r) ;
+      list_free(recs) ;
+      if (rec->recording <= 0) break ;
       }
-
-
-    //get group name
-
-    //if match_name(NULL, name)
-    // Now find a group with 'uri' attribute...
-
-    // Check can be generic since sued by signals as well...
-    // Check its name against the attributes value
-    // Do this *before* reading metadata...
-
     error = 0 ;
     break ;   // Reset error flag and continue...
     }
-
   if (error) {
-    HDF5Recording_close(r) ;
+    bsml_hdf5_recording_close(r) ;
     return NULL ;
     }
 
-
-
-
-
 /*
-  We recognise a BSML HDF5 file because it:
-
-  * Has a '\metadata' dataset of STRING type, with a 'format' attribute,
-    and valid RDF (in the specified format) as the contents.
-    
-  * Has a top-level group having a 'uri' attribute, with the group's name being
-    equal to the attributes value with '/' replaced by '_'.
-
-  * The metadata dataset contains the statement "<uri-value> a bsml:Recording".
-
-
   We identify the file as having a group of signals if the recording group:
 
   * Has a 2-D numeric dataset called './data'.
@@ -320,28 +347,28 @@ Recording *HDF5Recording_init(const char *fname, char mode, const char *uri, dic
 
 */
 
-  char *name = normalise_name(uri) ;
-  rec->recording = H5Gopen(h5f, name, H5P_DEFAULT) ;
-  if (rec->recording < 0)
+  if (strchr("w-", mode)) {   // New file
+    char *name = normalise_name(uri) ;
     rec->recording = H5Gcreate(h5f, name, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT) ;
-  free(name) ;
-  H5LTset_attribute_string(rec->recording, ".", "uri", uri) ;
-
-  int buf[1] = { -1 } ;
-  H5LTset_attribute_int(rec->recording, ".", "channels", buf, 1) ;
-  rec->channels = -1 ;
+    free(name) ;
+    H5LTset_attribute_string(rec->recording, ".", "uri", uri) ;
+    int buf[1] = { -1 } ;
+    H5LTset_attribute_int(rec->recording, ".", "channels", buf, 1) ;
+    rec->channels = -1 ;
+    }
+//  else ...     // Do we read these from an existing file??
   rec->sigdata = -1 ;
   rec->uris = NULL ;
 
-  r->type = RECORDING_HDF5 ;
+  r->type = BSML_RECORDING_HDF5 ;
   return r ;
   }
 
 
-void HDF5Recording_close(Recording *r)
+void bsml_hdf5_recording_close(bsml_recording *r)
 /*==================================*/
 {
-  if (r->type == RECORDING_HDF5) {
+  if (r->type == BSML_RECORDING_HDF5) {
     HDF5RecInfo *rec = (HDF5RecInfo *)r->info ;
     if (rec->uris) {
       char **u = rec->uris ;
@@ -350,15 +377,15 @@ void HDF5Recording_close(Recording *r)
     if (rec->sigdata > 0) H5Dclose(rec->sigdata) ;
     if (rec->recording > 0) H5Gclose(rec->recording) ;
     if (rec->file > 0) H5Fclose(rec->file) ;
+    if (rec->version) free((void *)rec->version) ;
     free(rec) ;
     r->type = -1 ;
     }
-  FILERecording_close(r) ;
+  bsml_file_recording_close(r) ;
   }
 
 
-
-Recording *HDF5Recording_open(const char *fname, char mode, const char *uri)
+bsml_recording *bsml_hdf5_recording_open(const char *fname, char mode, const char *uri)
 /*========================================================================*/
 {
   if (mode == 0) mode = 'r' ;
@@ -377,42 +404,42 @@ Recording *HDF5Recording_open(const char *fname, char mode, const char *uri)
   // rec->sigdata
   // "channels" attribute...
 
-  return HDF5Recording_init(fname, mode, uri, NULL) ;
+  return bsml_hdf5_recording_init(fname, mode, uri, NULL) ;
   }
 
 
-Recording *HDF5Recording_create(const char *fname, char mode, const char *uri, dict *attributes)
+bsml_recording *bsml_hdf5_recording_create(const char *fname, char mode, const char *uri, dict *attributes)
 /*================================================================================================*/
 {
   if (mode == 0) mode = 'w' ;
-  return HDF5Recording_init(fname, mode, uri, attributes) ;
+  return bsml_hdf5_recording_init(fname, mode, uri, attributes) ;
   }
 
 
 // create_from_recording sets source to recording.uri? or recording.source??
 
-Recording *HDF5Recording_create_from_recording(Recording *r, const char *fname, char mode)
+bsml_recording *bsml_hdf5_recording_create_from_recording(bsml_recording *r, const char *fname, char mode)
 /*======================================================================================*/
 {
   if (mode == 0) mode = 'w' ;
-  return HDF5Recording_init(fname, mode, r->uri, Recording_get_metavars(r)) ;
+  return bsml_hdf5_recording_init(fname, mode, r->uri, bsml_recording_get_metavars(r)) ;
   }
 
 
-Signal **HDF5Recording_create_signals(Recording *r, char **uris, TimeSeries **data)
+bsml_signal **bsml_hdf5_recording_create_signals(bsml_recording *r, char **uris, bsml_timeseries **data)
 /*===============================================================================*/
 {
   // if data is not None and len(data.shape) > 1 and len(uris) != data.shape[0]:
   //   raise Exception, "Number of Signal uris different from number of data columns"
-  Signal **signals = calloc(sizeof(Signal *), array_len(uris)) ;
-  Signal **sp = signals ;
+  bsml_signal **signals = calloc(sizeof(bsml_signal *), array_len(uris)) ;
+  bsml_signal **sp = signals ;
   while (*uris)
-    *sp++ = HDF5Signal_create(*uris++, r, data ? *data++ : NULL, NULL) ;
+    *sp++ = bsml_hdf5_signal_create(*uris++, r, data ? *data++ : NULL, NULL) ;
   return signals ;
   }
 
 
-Signal **HDF5Recording_create_signal_group(Recording *r, char **uris, double **data, int datalen,
+bsml_signal **bsml_hdf5_recording_create_signal_group(bsml_recording *r, char **uris, double **data, int datalen,
                                                                            dict *attributes)
 /*==============================================================================================*/
 {
@@ -446,18 +473,18 @@ Signal **HDF5Recording_create_signal_group(Recording *r, char **uris, double **d
   rec->sigdata = dataset ;
 
   int n = 0 ;
-  Signal **signals = calloc(sizeof(Signal *), channels) ;
+  bsml_signal **signals = calloc(sizeof(bsml_signal *), channels) ;
   while (*uris) {
-    signals[n] = HDF5Signal_init(*uris++, r, dataset, attributes, n) ;
+    signals[n] = bsml_hdf5_signal_init(*uris++, r, dataset, attributes, n) ;
     ++n ;
     }
-  if (data) HDF5Recording_append_signal_data(r, data, datalen) ;
+  if (data) bsml_hdf5_recording_append_signal_data(r, data, datalen) ;
   return signals ;
   }
 
 
 
-void HDF5Recording_append_signal_data(Recording *r, double **data, int datalen)
+void bsml_hdf5_recording_append_signal_data(bsml_recording *r, double **data, int datalen)
 /*===========================================================================*/
 {
   HDF5RecInfo *rec = (HDF5RecInfo *)r->info ;
@@ -491,16 +518,16 @@ void HDF5Recording_append_signal_data(Recording *r, double **data, int datalen)
   }
 
 
-void HDF5Recording_save_metadata(Recording *r, const char *format, dict *prefixes)
+void bsml_hdf5_recording_save_metadata(bsml_recording *r, const char *format, dict *prefixes)
 //================================================================================
 {
   if (format == NULL) format = "turtle" ;
-  char *rdf = Recording_metadata_as_string(r, format, prefixes) ;
+  char *rdf = bsml_recording_metadata_as_string(r, format, prefixes) ;
   hid_t h5f = ((HDF5RecInfo *)r->info)->file ;
 
-  if (H5LH5LTfind_dataset(h5f, DATASET_META)) H5Ldelete(h5f, DATASET_META, H5P_DEFAULT) ;
+  if (H5LTfind_dataset(h5f, DATASET_META)) H5Ldelete(h5f, DATASET_META, H5P_DEFAULT) ;
   H5LTmake_dataset_string(h5f, DATASET_META, rdf) ;
-  H5LTset_attribute(h5f, DATASET_META, "format", format) ;
+  H5LTset_attribute_string(h5f, DATASET_META, "format", format) ;
   free(rdf) ;
   }
 
@@ -510,12 +537,12 @@ void HDF5Recording_save_metadata(Recording *r, const char *format, dict *prefixe
  *
  **/
 
-Signal *HDF5Signal_init(const char *uri, Recording *r, hid_t dataset, dict *attributes, int index)
+bsml_signal *bsml_hdf5_signal_init(const char *uri, bsml_recording *r, hid_t dataset, dict *attributes, int index)
 //================================================================================================
 {
   if (attributes == NULL) attributes = dict_create() ;
   if (dict_get_value(attributes, "uri", NULL)) dict_delete(attributes, "uri") ;
-  Signal *s = FILESignal_init(uri, attributes, SIGNAL_HDF5) ;
+  bsml_signal *s = bsml_file_signal_init(uri, attributes, BSML_SIGNAL_HDF5) ;
 
   HDF5SigInfo *sig = (HDF5SigInfo *)calloc(sizeof(HDF5RecInfo), 1) ;
   sig->dataset = dataset ;
@@ -523,7 +550,7 @@ Signal *HDF5Signal_init(const char *uri, Recording *r, hid_t dataset, dict *attr
   if (index < 0) H5LTset_attribute_string(dataset, ".", "uri", uri) ;
   s->info = (char *)sig ;
 
-  Recording_add_signal(r, s) ;
+  bsml_recording_add_signal(r, s) ;
   return s ;
   }
 
@@ -545,15 +572,15 @@ static void set_clock(dataset, const char *attr, Value *value)
 
 
 
-void HDF5Signal_close(Signal *s)
+void bsml_hdf5_signal_close(bsml_signal *s)
 /*============================*/
 {
   H5Dclose(((HDF5SigInfo *)s->info)->dataset) ;
-  FILESignal_close(s) ;
+  bsml_file_signal_close(s) ;
   }
 
 
-Signal *HDF5Signal_open(const char *uri, Recording *r)
+bsml_signal *bsml_hdf5_signal_open(const char *uri, bsml_recording *r)
 /*==================================================*/
 {
   HDF5RecInfo *rec = (HDF5RecInfo *)r->info ;
@@ -565,7 +592,7 @@ Signal *HDF5Signal_open(const char *uri, Recording *r)
     char *siguri = get_hdf5_string_attribute(dataset, "uri") ;
     if (strcmp(uri, siguri) == 0) {
       free(siguri) ;
-      return HDF5Signal_init(uri, r, dataset, NULL, -1) ;  // attributes, -1) ;
+      return bsml_hdf5_signal_init(uri, r, dataset, NULL, -1) ;  // attributes, -1) ;
                                                            // get from metadata block...
                                                            // via dataset.attrs['uri']
       }
@@ -581,7 +608,7 @@ Signal *HDF5Signal_open(const char *uri, Recording *r)
     // r->channels ...
     while (*u && strcmp(uri, *u) != 0) ++u, ++index ;
 
-    if (u) return HDF5Signal_init(uri, r, rec->sigdata, NULL, index) ; // attributes, index) ;
+    if (u) return bsml_hdf5_signal_init(uri, r, rec->sigdata, NULL, index) ; // attributes, index) ;
     else {
       //raise ValueError, 'Signal %s is not in Recording' % str(uri)
       return NULL ;
@@ -590,7 +617,7 @@ Signal *HDF5Signal_open(const char *uri, Recording *r)
   }
 
 
-Signal *HDF5Signal_create(const char *uri, Recording *r, TimeSeries *data, dict *attributes)
+bsml_signal *bsml_hdf5_signal_create(const char *uri, bsml_recording *r, bsml_timeseries *data, dict *attributes)
 /*==============================================================================================*/
 {
   if (attributes == NULL) attributes = dict_create() ;
@@ -610,20 +637,20 @@ Signal *HDF5Signal_create(const char *uri, Recording *r, TimeSeries *data, dict 
   H5Sclose(dataspace) ;
   H5Pclose(plist) ;
 
-  Signal *s = HDF5Signal_init(uri, r, dataset, attributes, -1) ;
-  if (data) HDF5Signal_append(s, data) ;
+  bsml_signal *s = bsml_hdf5_signal_init(uri, r, dataset, attributes, -1) ;
+  if (data) bsml_hdf5_signal_append(s, data) ;
   return s ;
   }
 
 
-Signal *HDF5Signal_create_from_signal(Signal *s, Recording *r)
+bsml_signal *bsml_hdf5_signal_create_from_signal(bsml_signal *s, bsml_recording *r)
 /*==========================================================*/
 {
-  return HDF5Signal_create(s->uri, r, NULL, Signal_get_metavars(s)) ;
+  return bsml_hdf5_signal_create(s->uri, r, NULL, bsml_signal_get_metavars(s)) ;
   }
 
 
-void HDF5Signal_append(Signal *s, TimeSeries *data)
+void bsml_hdf5_signal_append(bsml_signal *s, bsml_timeseries *data)
 /*===============================================*/
 {
  /*
@@ -686,13 +713,25 @@ int main(void)
 /*==========*/
 {
 
-  H5Eset_auto(H5E_DEFAULT, error_fn, NULL) ;  // ** Our error reporting...
+  bsml_rdf_initialise() ;
+
+//  H5Eset_auto(H5E_DEFAULT, error_fn, NULL) ;  // ** Our error reporting...
 
   char *hdf = "/Users/dave/biosignalml/libbsml/src/api/edf.h5" ;
-  Recording *hdf5 = HDF5Recording_open(hdf, 'r', NULL) ;
+  bsml_recording *hdf5 = bsml_hdf5_recording_open(hdf, 'r', NULL) ;
 
 
-  H5close() ;                             // ** All done...
+  dict_print(hdf5->attributes) ;
+  // Get/add signals? Part of recording open??
+
+  //list *sigs = bsml_recording_signals(hdf5) ;  // v's list of HDF5Signals
+
+  // Or dict, indexed by sig.uri ??
+
+
+  bsml_hdf5_recording_close(hdf5) ;
+
+  // H5close() ;   // ???????????
 
   }
 
