@@ -4,7 +4,7 @@
  *
  *  Copyright (c) 2010-2011  David Brooks
  *
- *  $Id$
+ *  $ID$
  *
  ******************************************************
  */
@@ -21,8 +21,8 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 
-char *stream_error_text(int errno)
-/*==============================*/
+char *stream_error_text(STREAM_ERROR errno)
+/*=======================================*/
 {
   return ( (errno == STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
          : (errno == STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
@@ -67,14 +67,26 @@ void stream_free_block(StreamBlock *blk)
   }
 
 
-StreamReader *stream_new_reader(int file, int check)
-/*================================================*/
+StreamReader *stream_new_input(STREAM_CHECKSUM check)
+/*=================================================*/
 {
   StreamReader *sp = (StreamReader *)calloc(1, sizeof(StreamReader)) ;
   if (sp) {
-    sp->file = file ;
+    sp->state = STREAM_STATE_RESET ;
+    sp->file = -1 ;
     sp->checksum = check ;
     sp->block.number = -1 ;
+    }
+  return sp ;
+  }
+
+
+StreamReader *stream_new_reader(int file, STREAM_CHECKSUM check)
+/*============================================================*/
+{
+  StreamReader *sp = stream_new_input(check) ;
+  if (sp) {
+    sp->file = file ;
     sp->databuf = (char *)calloc(STREAM_BUFFER_SIZE, 1) ;
     sp->datapos = sp->databuf ;
     if (sp->databuf == NULL) {
@@ -100,33 +112,37 @@ static void stream_free_buffers(StreamReader *sp)
   }
 
 
-void stream_free_reader(StreamReader *sp)
-/*=====================================*/
+void stream_free_input(StreamReader *sp)
+/*====================================*/
 {
   if (sp) {
     stream_free_buffers(sp) ;
-    if (sp->databuf) free(sp->databuf) ;
     free(sp) ;
     }
   }
 
 
-StreamBlock *stream_read_block(StreamReader *sp)
-/*============================================*/
+void stream_free_reader(StreamReader *sp)
+/*=====================================*/
 {
-  StreamBlock *result = NULL ;
+  if (sp) {
+    if (sp->databuf) free(sp->databuf) ;
+    stream_free_input(sp) ;
+    }
+  }
 
+
+void stream_process_data(StreamReader *sp)
+//========================================
+{
   sp->block.error = 0 ;
-  while (!sp->block.error && sp->state < 10) {
 
-    if (sp->datalen <= 0) {
-      sp->datalen = read(sp->file, sp->databuf, STREAM_BUFFER_SIZE) ;
-      sp->datapos = sp->databuf ;
-      if (sp->datalen <= 0) return NULL ;
-      }
+  while (!sp->block.error && sp->state != STREAM_STATE_BLOCK) {
+
+    if (sp->datalen <= 0) return ;   // Need more data
 
     switch (sp->state) {
-      case 0: {            // Looking for a block
+      case STREAM_STATE_RESET: {            // Looking for a block
         char *next = memchr(sp->datapos, '#', sp->datalen) ;
         if (next) {
           sp->datalen -= (next - sp->datapos + 1) ;
@@ -134,13 +150,13 @@ StreamBlock *stream_read_block(StreamReader *sp)
           md5_init(&sp->md5) ;
           md5_append(&sp->md5, (const md5_byte_t *)"#", 1) ;
           stream_free_buffers(sp) ;
-          sp->state = 1 ;
+          sp->state = STREAM_STATE_TYPE ;
           }
         else sp->datalen = 0 ;
         break ;
         }
 
-      case 1: {            // Getting block type 
+      case STREAM_STATE_TYPE: {            // Getting block type 
         sp->block.type = *sp->datapos ;
         sp->datapos += 1 ;
         sp->datalen -= 1 ;
@@ -148,13 +164,13 @@ StreamBlock *stream_read_block(StreamReader *sp)
           md5_append(&sp->md5, (const md5_byte_t *)&sp->block.type, 1) ;
           sp->block.number += 1 ;
           sp->expected = 0 ;
-          sp->state = 2 ;
+          sp->state = STREAM_STATE_HDRLEN ;
           }
         else sp->block.error = STREAM_ERROR_UNEXPECTED_TRAILER ;
         break ;
         }
 
-      case 2: {            // Getting header length
+      case STREAM_STATE_HDRLEN: {            // Getting header length
         while (sp->datalen > 0 && isdigit(*sp->datapos)) {
           sp->expected = 10*sp->expected + (*sp->datapos - '0') ;
           md5_append(&sp->md5, (const md5_byte_t *)sp->datapos, 1) ;
@@ -163,12 +179,12 @@ StreamBlock *stream_read_block(StreamReader *sp)
           }
         if (sp->datalen > 0) {
           sp->jsonhdr = calloc(sp->expected + 1, 1) ;
-          sp->state = 3 ;
+          sp->state = STREAM_STATE_HEADER ;
           }
         break ;
         }
 
-      case 3: {            // Getting header JSON
+      case STREAM_STATE_HEADER: {            // Getting header JSON
         while (sp->datalen > 0 && sp->expected > 0) {
           int delta = min(sp->expected, sp->datalen) ;
           strncat(sp->jsonhdr, sp->datapos, delta) ;
@@ -179,12 +195,12 @@ StreamBlock *stream_read_block(StreamReader *sp)
           }
         if (sp->expected == 0) {
           if (*sp->jsonhdr) sp->block.header = cJSON_Parse(sp->jsonhdr) ;
-          sp->state = 4 ;
+          sp->state = STREAM_STATE_HDREND ;
           }
         break ;
         }
 
-      case 4: {            // Checking header LF
+      case STREAM_STATE_HDREND: {            // Checking header LF
         if (*sp->datapos == '\n') {
           sp->datapos += 1 ;
           sp->datalen -= 1 ;
@@ -198,13 +214,13 @@ StreamBlock *stream_read_block(StreamReader *sp)
           sp->block.content = calloc(sp->block.length+1, 1) ;
           sp->storepos = sp->block.content ;
           sp->expected = sp->block.length ;
-          sp->state = 5 ;
+          sp->state = STREAM_STATE_CONTENT ;
           }
         else sp->block.error = STREAM_ERROR_MISSING_HEADER_LF ;
         break ;
         }
 
-      case 5: {            // Getting content
+      case STREAM_STATE_CONTENT: {            // Getting content
         while (sp->datalen > 0 && sp->expected > 0) {
           int delta = min(sp->expected, sp->datalen) ;
           memcpy(sp->storepos, sp->datapos, delta) ;
@@ -216,44 +232,44 @@ StreamBlock *stream_read_block(StreamReader *sp)
           }
         if (sp->expected == 0) {
           sp->expected = 2 ;
-          sp->state = 6 ;
+          sp->state = STREAM_STATE_TRAILER ;
           }
         break ;
         }
 
-      case 6: {            // Getting trailer
+      case STREAM_STATE_TRAILER: {             // Getting trailer
         if (*sp->datapos == '#') {
           sp->datapos += 1 ;
           sp->datalen -= 1 ;
           sp->expected -= 1 ;
-          if (sp->expected == 0) sp->state = 7 ;
+          if (sp->expected == 0) sp->state = STREAM_STATE_CHECKSUM ;
           }
         else sp->block.error = STREAM_ERROR_MISSING_TRAILER ;
         break ;
         }
 
-      case 7: {            // Checking for checksum
+      case STREAM_STATE_CHECKSUM: {            // Checking for checksum
         if (*sp->datapos != '\n' && sp->checksum != STREAM_CHECKSUM_NONE) {
           sp->storepos = sp->checktext ;
           sp->expected = 32 ;
-          sp->state = 8 ;
+          sp->state = STREAM_STATE_CHECKDATA ;
           }
-        else sp->state = 9 ;
+        else sp->state = STREAM_STATE_BLOCKEND ;
         sp->checktext[0] = '\0' ;
         break ;
         }
 
-      case 8: {            // Getting checksum
+      case STREAM_STATE_CHECKDATA: {           // Getting checksum
         while (sp->datalen > 0 && sp->expected > 0 && isxdigit(*sp->datapos)) {
           *sp->storepos++ = *sp->datapos++ ;
           sp->datalen -= 1 ;
           sp->expected -= 1 ;
           }
-        if (sp->datalen > 0) sp->state = 9 ;
+        if (sp->datalen > 0) sp->state = STREAM_STATE_BLOCKEND ;
         break ;
         }
 
-      case 9: {            // Checking for final LF
+      case STREAM_STATE_BLOCKEND: {            // Checking for final LF
         if (sp->checksum == STREAM_CHECKSUM_STRICT
          || sp->checksum == STREAM_CHECKSUM_CHECK && sp->checktext[0]) {
           md5_byte_t digest[16] ;
@@ -270,24 +286,49 @@ StreamBlock *stream_read_block(StreamReader *sp)
             }
           else sp->block.error = STREAM_ERROR_MISSING_TRAILER_LF ;
           }
-        sp->state = 10 ;    // All done, exit loop
+        sp->state = STREAM_STATE_BLOCK ;    // All done, exit loop
         break ;
         }
       }
     }
-  sp->state = 0 ;
-  result = stream_dup_block(&sp->block) ;
-  sp->block.header = NULL ;  // Now pointed to be result->header
-  sp->block.content = NULL ;
+  }
+
+
+
+StreamBlock *stream_read_block(StreamReader *sp)
+/*============================================*/
+{
+
+  StreamBlock *result = NULL ;
+
+  if (sp->datalen <= 0) {
+    if (sp->file >= 0) sp->datalen = read(sp->file, sp->databuf, STREAM_BUFFER_SIZE) ;
+    if (sp->datalen <= 0) {
+      sp->state = STREAM_STATE_ENDED ;
+      return NULL ;      // end of file...
+      }
+    sp->datapos = sp->databuf ;
+    }
+
+  stream_process_data(sp) ;  // returns needing data, or block error, or have good block
+
+  if (sp->state == STREAM_STATE_BLOCK) {
+    sp->state = STREAM_STATE_RESET ;
+    result = stream_dup_block(&sp->block) ;
+    sp->block.header = NULL ;  // Now pointed to be result->header
+    sp->block.content = NULL ;
+    }
+
   return result ;
   }
+
 
 
 /* Stream writing... */
 
 
-StreamWriter *stream_new_writer(int file, int check)
-/*================================================*/
+StreamWriter *stream_new_writer(int file, STREAM_CHECKSUM check)
+/*============================================================*/
 {
   StreamWriter *sp = (StreamWriter *)calloc(1, sizeof(StreamWriter)) ;
   if (sp) {
@@ -314,8 +355,8 @@ static int stream_write_data(int fh, char *data, int len, md5_state_t *md5p)
   }
 
 
-int stream_write_block(StreamWriter *sp, StreamBlock *blk, int check)
-/*=================================================================*/
+int stream_write_block(StreamWriter *sp, StreamBlock *blk, STREAM_CHECKSUM check)
+/*=============================================================================*/
 {
   blk->error = 0 ;
   if (blk->type == '#') blk->error = STREAM_ERROR_HASHRESERVED ;

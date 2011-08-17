@@ -4,7 +4,7 @@
  *
  *  Copyright (c) 2010-2011  David Brooks
  *
- *  $Id$
+ *  $ID$
  *
  ******************************************************
  */
@@ -20,20 +20,40 @@ extern "C" {
 #endif
 
 
-#define STREAM_BUFFER_SIZE              4096
+#define STREAM_BUFFER_SIZE 4096
 
-#define STREAM_ERROR_UNEXPECTED_TRAILER    1
-#define STREAM_ERROR_MISSING_HEADER_LF     2
-#define STREAM_ERROR_MISSING_TRAILER       3
-#define STREAM_ERROR_INVALID_CHECKSUM      4
-#define STREAM_ERROR_MISSING_TRAILER_LF    5
-#define STREAM_ERROR_HASHRESERVED          6
-#define STREAM_ERROR_WRITEOF               7
+typedef enum {
+  STREAM_ERROR_UNEXPECTED_TRAILER = 1,
+  STREAM_ERROR_MISSING_HEADER_LF,
+  STREAM_ERROR_MISSING_TRAILER,
+  STREAM_ERROR_INVALID_CHECKSUM,
+  STREAM_ERROR_MISSING_TRAILER_LF,
+  STREAM_ERROR_HASHRESERVED,
+  STREAM_ERROR_WRITEOF
+  } STREAM_ERROR ;
 
-#define STREAM_CHECKSUM_STRICT             1
-#define STREAM_CHECKSUM_CHECK              2
-#define STREAM_CHECKSUM_IGNORE             3
-#define STREAM_CHECKSUM_NONE               4
+typedef enum {
+  STREAM_CHECKSUM_INHERIT = 0,
+  STREAM_CHECKSUM_STRICT,
+  STREAM_CHECKSUM_CHECK,
+  STREAM_CHECKSUM_IGNORE,
+  STREAM_CHECKSUM_NONE
+  } STREAM_CHECKSUM ;
+
+typedef enum {
+  STREAM_STATE_ENDED = -1,
+  STREAM_STATE_RESET,
+  STREAM_STATE_TYPE,
+  STREAM_STATE_HDRLEN,
+  STREAM_STATE_HEADER,
+  STREAM_STATE_HDREND,
+  STREAM_STATE_CONTENT,
+  STREAM_STATE_TRAILER,
+  STREAM_STATE_CHECKSUM,
+  STREAM_STATE_CHECKDATA,
+  STREAM_STATE_BLOCKEND,
+  STREAM_STATE_BLOCK
+  } STREAM_STATE ;
 
 
 typedef struct {
@@ -42,16 +62,16 @@ typedef struct {
   cJSON *header ;
   int length ;
   char *content ;
-  int error ;
+  STREAM_ERROR error ;
   } StreamBlock ;
 
 
 typedef struct {
   int file ;
-  int checksum ;
+  STREAM_CHECKSUM checksum ;
   StreamBlock block ;
 
-  int state ;
+  STREAM_STATE state ;
   int datalen ;
   int expected ;
   char *databuf ;
@@ -68,47 +88,30 @@ typedef struct {
 
 typedef struct {
   int file ;
-  int checksum ;
+  STREAM_CHECKSUM checksum ;
   } StreamWriter ;
 
 
-char *stream_error_text(int) ;
+char *stream_error_text(STREAM_ERROR) ;
 
 StreamBlock *stream_new_block(void) ;
 StreamBlock *stream_dup_block(StreamBlock *) ;
 void stream_free_block(StreamBlock *) ;
 
-StreamReader *stream_new_reader(int, int) ;
+StreamReader *stream_new_input(STREAM_CHECKSUM) ;
+StreamReader *stream_new_reader(int, STREAM_CHECKSUM) ;
+void stream_free_input(StreamReader *) ;
 void stream_free_reader(StreamReader *) ;
+void stream_process_data(StreamReader *) ;
 StreamBlock *stream_read_block(StreamReader *) ;
 
 
-StreamWriter *stream_new_writer(int, int) ;
+StreamWriter *stream_new_writer(int, STREAM_CHECKSUM) ;
 void stream_free_writer(StreamWriter *) ;
-int stream_write_block(StreamWriter *, StreamBlock *, int) ;
+int stream_write_block(StreamWriter *, StreamBlock *, STREAM_CHECKSUM) ;
 
 
-/****
-typedef struct {
-  char *uri ;
-  } Recording ;
-
-typedef struct {
-  Recording *recording ;
-  int number ;
-  double rate ;
-  char *label ;
-  } Signal ;
-
-typedef struct {
-  Signal *signal ;
-  double starttime ;
-  double duration ;
-  int length ;
-  double *data ;
-  } SignalData ;
-
-
+/***
 typedef struct {
 
 
