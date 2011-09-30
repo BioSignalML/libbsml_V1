@@ -31,6 +31,7 @@ extern "C" {
 #endif
 
 void bsml_rdf_initialise(void) ;
+void bsml_rdf_finish(void) ;
 
 int uri_protocol(const char *) ;
 

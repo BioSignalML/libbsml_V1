@@ -688,6 +688,13 @@ void bsml_rdf_mapping_initialise(void)
   }
 
 
+void bsml_rdfmapping_finish(void)
+//===============================
+{
+  if (bsml_mapping) dict_free(bsml_mapping) ;
+  if (pointerkinds) dict_free(pointerkinds) ;
+  if (datatypes)    dict_free(datatypes) ;
+  }
 
 
 #ifdef RDFMAPTEST

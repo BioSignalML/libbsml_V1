@@ -201,5 +201,13 @@ void bsml_rdf_initialise(void)
 {
   world = librdf_new_world() ;
   librdf_world_open(world) ;
-  bsml_rdf_mapping_initialise() ;
+  bsml_rdfmapping_initialise() ;
+  }
+
+
+void bsml_rdf_finish(void)
+//========================
+{
+  bsml_rdfmapping_finish() ;
+  if (world) librdf_free_world(world) ;
   }

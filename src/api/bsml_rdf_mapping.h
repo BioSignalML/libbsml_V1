@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 void bsml_rdfmapping_initialise(void) ;
+void bsml_rdfmapping_finsh(void) ;
 
 bsml_rdfmapping *bsml_rdfmapping_create(dict *) ;
 void bsml_rdfmapping_free(bsml_rdfmapping *) ;
