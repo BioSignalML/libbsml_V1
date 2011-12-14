@@ -27,59 +27,80 @@ int bsml_uri_protocol(const char *u)
   }
 
 
-bsml_graphstore *bsml_graphstore_create(void)
-//===========================================
+bsml_graph *bsml_graph_create(void)
+//=================================
 {
-  bsml_graphstore *g = (bsml_graphstore *)calloc(sizeof(bsml_graphstore), 1) ;
+  bsml_graph *g = (bsml_graph *)calloc(sizeof(bsml_graph), 1) ;
   g->storage = librdf_new_storage(world, "hashes", "triples", "hash-type='memory'") ;
   g->model = librdf_new_model(world, g->storage, NULL) ;
   return g ;
   }
 
-bsml_graphstore *bsml_graphstore_create_from_uri(const char *path, const char *format)
-//====================================================================================
+bsml_graph *bsml_graph_create_from_uri(const char *endpoint, const char *path)
+//============================================================================
 {
-  bsml_graphstore *g = bsml_graphstore_create() ;
+  bsml_graph *g = bsml_graph_create() ;
   if (g) {
-    if (!bsml_graphstore_parse_uri(g, path, format)) return g ;
-    bsml_graphstore_free(g) ;
+    const char *fullpath ;
+    if (endpoint == NULL || memcmp(endpoint, path, strlen(endpoint) == 0)) {
+      fullpath = string_copy(path) ;
+      }
+    else {
+      char *colon = strchr(path, ':') ;
+      if (colon == NULL) fullpath = string_copy(path) ;
+      else {
+        fullpath = (char *)calloc(1, strlen(endpoint) + strlen(path) + 3) ;
+        strcpy((char *)fullpath, endpoint) ;
+        memcpy((char *)fullpath + strlen(endpoint), path, colon-path) ;
+        strcat((char *)fullpath, "%3A") ;
+        strcat((char *)fullpath, path + (colon-path) + 1) ;
+        }
+      }
+    if (bsml_graph_parse_uri(g, fullpath, NULL)) {
+      bsml_graph_free(g) ;
+      free((char *)fullpath) ;
+      g = NULL ;
+      }
+    g->location = fullpath ;     
+    }
+  return g ;
+  }
+
+bsml_graph *bsml_graph_create_from_string(const char *rdf, const char *format, const char *base)
+//==============================================================================================
+{
+  bsml_graph *g = bsml_graph_create() ;
+  if (g) {
+    if (!bsml_graph_parse_string(g, rdf, format, base)) return g ;
+    bsml_graph_free(g) ;
     }
   return NULL ;
   }
 
-bsml_graphstore *bsml_graphstore_create_from_string(const char *rdf, const char *format, const char *base)
-//========================================================================================================
-{
-  bsml_graphstore *g = bsml_graphstore_create() ;
-  if (g) {
-    if (!bsml_graphstore_parse_string(g, rdf, format, base)) return g ;
-    bsml_graphstore_free(g) ;
-    }
-  return NULL ;
-  }
 
-
-void bsml_graphstore_free(bsml_graphstore *g)
-//===========================================
+void bsml_graph_free(bsml_graph *g)
+//=================================
 {
   if (g) {
     if (g->model) librdf_free_model(g->model) ;
     if (g->storage) librdf_free_storage(g->storage) ;
+    if (g->location) free((char *)g->location) ;
     }
   }
 
 
-int bsml_graphstore_parse_uri(bsml_graphstore *g, const char *path, const char *format)
-//=====================================================================================
+int bsml_graph_parse_uri(bsml_graph *g, const char *path, const char *format)
+//===========================================================================
 {
   librdf_uri *uri ;
+//printf("Getting: %s\n", path) ;
   if (bsml_uri_protocol(path)) uri = librdf_new_uri(world, (const unsigned char *)path) ;
   else {
     char fullname[PATH_MAX+7] = "file://" ;
     realpath(path, fullname+7) ;
     uri = librdf_new_uri(world, (const unsigned char *)fullname) ;
     }
-  if (format == NULL) format = "turtle" ;
+  if (format == NULL) format = "guess" ;
   librdf_parser *parser = librdf_new_parser(world, format, NULL, NULL) ;
   if (librdf_parser_parse_into_model(parser, uri, uri, g->model)) {
     fprintf(stderr, "Failed to parse: %s\n", path) ;
@@ -90,8 +111,8 @@ int bsml_graphstore_parse_uri(bsml_graphstore *g, const char *path, const char *
   return 0 ;
   }
 
-int bsml_graphstore_parse_string(bsml_graphstore *g, const char *rdf, const char *format, const char *base)
-//=========================================================================================================
+int bsml_graph_parse_string(bsml_graph *g, const char *rdf, const char *format, const char *base)
+//===============================================================================================
 {
   int error = 0 ;
   if (format == NULL) format = "turtle" ;
@@ -137,18 +158,23 @@ const char *results_get_string(librdf_query_results *r, const char *k)
   const char *s = NULL ;
   librdf_node *n = librdf_query_results_get_binding_value_by_name(r, k) ;
   if (n) {
-    if (librdf_node_is_literal(n))
+    if       (librdf_node_is_literal(n))
       s = string_copy((const char *)librdf_node_get_literal_value(n)) ;
+
+     else if (librdf_node_is_resource(n))
+      s = string_copy((const char *)librdf_uri_as_string(librdf_node_get_uri(n))) ;
+
     librdf_free_node(n) ;
     }
   return s ;
   }
 
 
-int bsml_graphstore_select(bsml_graphstore *g, const char *sparql, bsml_select_results *resultfn, void *userdata)
-//===============================================================================================================
+int bsml_graph_select(bsml_graph *g, const char *sparql, bsml_select_results *resultfn, void *userdata)
+//=====================================================================================================
 {
   int error = 0 ;
+//fprintf(stderr, "SELECT: %s\n", sparql) ;
   librdf_query *query = librdf_new_query(world, "sparql11-query", NULL, (unsigned char *)sparql, NULL) ;
   librdf_query_results *results = librdf_model_query_execute(g->model, query) ;
   if (results == NULL) { //...
@@ -163,17 +189,21 @@ int bsml_graphstore_select(bsml_graphstore *g, const char *sparql, bsml_select_r
     librdf_free_query_results(results) ;
     }
   librdf_free_query(query) ;
+//fprintf(stderr, "Select finished...\n") ;
   return error ;
   }
 
 
 
-int bsml_graphstore_construct(bsml_graphstore *g, const char *sparql, bsml_construct_results *resultfn, void *userdata)
-//=====================================================================================================================
+int bsml_graph_construct(bsml_graph *g, const char *sparql, bsml_construct_results *resultfn, void *userdata)
+//===========================================================================================================
 {
   int error = 0 ;
+//librdf_model_print(g->model, stderr) ;
+//fprintf(stderr, "CONSTRUCT: %s\n", sparql) ;
   librdf_query *query = librdf_new_query(world, "sparql11-query", NULL, (unsigned char *)sparql, NULL) ;
   librdf_query_results *results = librdf_model_query_execute(g->model, query) ;
+//fprintf(stderr, "Executed query...\n") ;
   if (results == NULL) {
     fprintf(stderr, "SPARQL error...\n") ;
     error = 1 ;
@@ -183,7 +213,10 @@ int bsml_graphstore_construct(bsml_graphstore *g, const char *sparql, bsml_const
       librdf_stream *stream = librdf_query_results_as_stream(results) ;
       while (!librdf_stream_end(stream)) {
         librdf_statement *stmt = librdf_stream_get_object(stream) ;
+//librdf_statement_print(stmt, stderr) ;
+//fprintf(stderr, "\n") ;
         resultfn(librdf_stream_get_object(stream), userdata) ;
+//fprintf(stderr, "strean next...\n") ;
         librdf_stream_next(stream) ;
         }
       librdf_free_stream(stream) ;
@@ -191,13 +224,14 @@ int bsml_graphstore_construct(bsml_graphstore *g, const char *sparql, bsml_const
     librdf_free_query_results(results) ;
     }
   librdf_free_query(query) ;
+//fprintf(stderr, "Construct finished...\n") ;
   return error ;
   }
 
 
 
-void bsml_rdf_initialise(void)
-//============================
+void bsml_rdf_initialise(const char *repo)
+//========================================
 {
   world = librdf_new_world() ;
   librdf_world_open(world) ;

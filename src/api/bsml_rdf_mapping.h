@@ -27,8 +27,8 @@ void bsml_rdfmapping_finsh(void) ;
 bsml_rdfmapping *bsml_rdfmapping_create(dict *) ;
 void bsml_rdfmapping_free(bsml_rdfmapping *) ;
 
-void bsml_rdfmapping_save_attributes(bsml_rdfmapping *, bsml_graphstore *, dict *, const char *, const char *) ;
-void bsml_rdfmapping_get_attributes(bsml_rdfmapping *, dict *, bsml_graphstore *, const char *, const char *) ;
+void bsml_rdfmapping_save_attributes(bsml_rdfmapping *, bsml_graph *, dict *, const char *, const char *) ;
+void bsml_rdfmapping_get_attributes(bsml_rdfmapping *, dict *, bsml_graph *, const char *, const char *) ;
 
 #ifdef __cplusplus
 } ;

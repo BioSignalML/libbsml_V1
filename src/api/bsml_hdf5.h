@@ -12,6 +12,8 @@
 #ifndef _BSML_HDF5_H
 #define _BSML_HDF5_H
 
+#include <hdf5.h>
+
 #include "bsml_model.h"
 
 #define BSML_HDF5_VERSION "1.0"

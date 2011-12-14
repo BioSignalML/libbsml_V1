@@ -18,7 +18,7 @@ int main(void)
 //               open("/Users/dave/biosignalml/libbsml/src/ssf/t", O_RDONLY) ;
 
   StreamReader *input = stream_new_reader(infile, STREAM_CHECKSUM_CHECK) ;
-  StreamWriter *out = stream_new_writer(fileno(stdout), 1) ;
+  StreamWriter *out = stream_new_writer(fileno(stdout), STREAM_CHECKSUM_STRICT) ;
 
   StreamBlock *block ;
 
@@ -27,11 +27,16 @@ int main(void)
     exit(1) ;
     }
 
-  while ((block = stream_read_block(input))) {
+  while (1) {
+    block = stream_read_block(input) ;
 
-    if (block->error)
-      fprintf(stderr, "%d ERROR %d (%s)\n", block->number, block->error,
-                                   stream_error_text(block->error)) ;
+    if (input->state < 0) break ; // EOF
+
+    else if (block) {
+
+      if (block->error)
+        fprintf(stderr, "%d ERROR %d (%s)\n", block->number, block->error,
+                                              stream_error_text(block->error)) ;
 /*    else {
       char *json = cJSON_PrintUnformatted(block->header) ;
       printf("%d BLOCK: Type=%c, Header=%s, Length=%d\n",
@@ -41,11 +46,12 @@ int main(void)
 
       }
 */
-    stream_write_block(out, block, 0) ;
+      stream_write_block(out, block, STREAM_CHECKSUM_INHERIT) ;
 
+      stream_free_block(block) ;
 
+      }
 
-    stream_free_block(block) ;
     }
 
   stream_free_reader(input) ;

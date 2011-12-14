@@ -15,9 +15,28 @@
 #include "bsml_model.h"
 
 #include "bsml_rdf.h"
+#include "bsml_rdf_mapping.h"
 #include "bsml_names.h"
 #include "bsml_internal.h"
 
+
+static bsml_rdfmapping *bsml_mapping ;
+
+void bsml_model_initialise(const char *repo)
+//==========================================
+{
+  bsml_stream_initialise() ;
+  bsml_rdf_initialise(repo) ;
+  bsml_mapping = bsml_rdfmapping_create(NULL) ;
+  }
+
+void bsml_model_finish(void)
+//==========================
+{
+  bsml_rdfmapping_free(bsml_mapping) ;
+  bsml_rdf_finish() ;
+  bsml_stream_finish() ;
+  }
 
 
 static void add_recording(librdf_query_results *r, void *userdata)
@@ -28,91 +47,150 @@ static void add_recording(librdf_query_results *r, void *userdata)
   if (librdf_node_is_resource(n)) uri = (char *)librdf_uri_as_string(librdf_node_get_uri(n)) ;
   librdf_free_node(n) ;
   if (uri) {
-    bsml_recording *rec = bsml_recording_init(uri, NULL, BSML_RECORDING) ;
+    bsml_recording *rec = bsml_recording_create(uri, NULL, NULL, BSML_RECORDING) ;
     list_append_pointer((list *)userdata, (void *)rec, BSML_KIND_RECORDING,
-                                                                 (Value_Free *)bsml_recording_close) ;
+                                                       (Value_Free *)bsml_recording_free) ;
     }
   }
 
 
-list *bsml_model_recordings(bsml_graphstore *g)
+list *bsml_model_recordings(bsml_graph *g)
 //========================================
 {
   list *recs = list_create() ;
   char *sparql ;
   asprintf(&sparql, "SELECT ?r WHERE { ?r a <%s> }", BSML_Recording) ;
-  bsml_graphstore_select(g, sparql, add_recording, (void *)recs) ;
+  bsml_graph_select(g, sparql, add_recording, (void *)recs) ;
   free(sparql) ;
   return recs ;
   }
 
 
-bsml_recording *bsml_recording_init(const char *uri, dict *attributes, int type)
-/*===================================================================*/
+// Abstract Recordings...
+
+bsml_recording *bsml_recording_create(const char *uri, dict *attributes,
+                                                       bsml_graph *graph, int type)
+//=================================================================================
 {
-  bsml_recording *r = (bsml_recording *)calloc(sizeof(bsml_recording), 1) ;
-  r->type = type ;
-  if (uri) r->uri = string_copy(uri) ;
-  r->attributes = attributes ;
-  r->graph = bsml_graphstore_create() ;
-  return r ;
+  bsml_recording *rec = (bsml_recording *)calloc(sizeof(bsml_recording), 1) ;
+
+  rec->type = type ;           // Look up format if graph given...
+
+  if (uri) rec->uri = string_copy(uri) ;
+
+  if (attributes == NULL) {
+    attributes = dict_create() ;
+    if (uri && graph) {
+      bsml_rdfmapping_get_attributes(bsml_mapping, attributes, graph, uri, BSML_Recording) ;
+// set type from attributes["format"]
+      }
+    }
+  rec->attributes = attributes ;
+  
+  if (graph == NULL) graph = bsml_graph_create() ;
+  rec->graph = graph ;
+  
+  return rec ;
   }
 
-void bsml_recording_close(bsml_recording *r)
-//================================
+
+bsml_recording *bsml_recording_open_uri(const char *endpoint, const char *uri)
+//============================================================================
 {
-  if (r->graph) bsml_graphstore_free(r->graph) ;
+  if (uri == NULL) return NULL ;
+  bsml_graph *g = bsml_graph_create_from_uri(endpoint, uri) ;
+  bsml_recording *rec = bsml_recording_create(uri, NULL, g, -1) ;
+  if (g->location) rec->location = string_copy(g->location) ;
+//dict_print(rec->attributes) ;
+  return rec ;
+  }
+
+
+void bsml_recording_free(bsml_recording *r)
+//=========================================
+{
+  if (r->graph) bsml_graph_free(r->graph) ;
   if (r->attributes) dict_free(r->attributes) ;
+  if (r->location) free((void *)r->location) ;
   if (r->uri) free((void *)r->uri) ;
   }
 
 void *bsml_recording_add_signal(bsml_recording *r, bsml_signal *s)
-//=================================================
+//===============================================================
 {
   return NULL ; // **********************
   }
 
 dict *bsml_recording_get_metavars(bsml_recording *r)
-//========================================
+//==================================================
 {
   return dict_create() ;
   }
 
 
 char *bsml_recording_metadata_as_string(bsml_recording *r, const char *format, dict *prefixes)
-//==================================================================================
+//============================================================================================
 {
   return "" ;     // ******************
   }
 
-bsml_signal *bsml_signal_init(const char *uri, dict *attributes, int type)
-//==============================================================
+
+// Abstract Signals...
+
+bsml_signal *bsml_signal_create(const char *uri, dict *attributes)
+//================================================================
 {
   bsml_signal *s = (bsml_signal *)calloc(sizeof(bsml_signal), 1) ;
-  s->type = type ;
   if (uri) s->uri = string_copy(uri) ;
+  if (attributes == NULL) attributes = dict_create() ;
   s->attributes = attributes ;
+  s->data = bsml_timeseries_create(NULL) ;
   return s ;
   }
 
-void bsml_signal_close(bsml_signal *s)
-//==========================
+void bsml_signal_free(bsml_signal *s)
+//===================================
 {
+  if (s->data) bsml_timeseries_free(s->data) ;
   if (s->attributes) dict_free(s->attributes) ;
+  if (s->location) free((void *)s->location) ;
   if (s->uri) free((void *)s->uri) ;
+  free((void *)s) ;
   }
 
+
+bsml_signal *bsml_signal_open_uri(const char *endpoint, const char *uri)
+//======================================================================
+{
+  bsml_graph *g = bsml_graph_create_from_uri(endpoint, uri) ;
+  if (g == NULL) return NULL ;
+
+  bsml_signal *sig = bsml_signal_create(uri, NULL) ; 
+  bsml_rdfmapping_get_attributes(bsml_mapping, sig->attributes, g, uri, BSML_Signal) ;
+  if (g->location) sig->location = string_copy(g->location) ;
+  bsml_graph_free(g) ;
+
+//dict_print(sig->attributes) ;
+  sig->recording = bsml_recording_open_uri(endpoint, dict_get_string(sig->attributes, "recording")) ;
+
+  sig->data->rate = dict_get_real(sig->attributes, "rate") ;
+  if (sig->data->rate) sig->data->period = 1.0/sig->data->rate ;
+
+  return sig ;
+  }
+
+
 dict *bsml_signal_get_metavars(bsml_signal *s)
-//==================================
+//============================================
 {
   return dict_create() ;
   }
 
 
-
+// Recordings as files...
 
 bsml_recording *bsml_file_recording_init(const char *fname, const char *uri, dict *attributes, int type)
-/*=========================================================================================*/
+//======================================================================================================
 {
   if (attributes == NULL) attributes = dict_create() ;
   if (type == 0) type = BSML_RECORDING_RAW ;
@@ -131,7 +209,7 @@ bsml_recording *bsml_file_recording_init(const char *fname, const char *uri, dic
 
 // RAW Rccording sets 'source' and 'digest' properties and sets uri from fname if no uri.
 
-  bsml_recording *r = bsml_recording_init(uri, attributes, type) ;
+  bsml_recording *r = bsml_recording_create(uri, attributes, NULL, type) ;
 
   const char *digest = dict_get_string(attributes, "digest") ;
   if (digest) dict_set_string(r->attributes, "digest", digest) ;
@@ -140,23 +218,27 @@ bsml_recording *bsml_file_recording_init(const char *fname, const char *uri, dic
   }
 
 void bsml_file_recording_close(bsml_recording *r)
-//====================================
+//===============================================
 {
-  bsml_recording_close(r) ;
+  bsml_recording_free(r) ;
   }
 
 
-bsml_signal *bsml_file_signal_init(const char *uri, dict *attributes, int type)
-//==================================================================
+// Signals in files...
+
+bsml_signal *bsml_file_signal_init(const char *uri, dict *attributes)
+//===================================================================
 {
-  return bsml_signal_init(uri, attributes, type) ;
+  return bsml_signal_create(uri, attributes) ;
   }
 
 void bsml_file_signal_close(bsml_signal *s)
-//==============================
+//=========================================
 {
-  bsml_signal_close(s) ;
+  bsml_signal_free(s) ;
   }
+
+
 
 
 

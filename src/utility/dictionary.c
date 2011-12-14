@@ -150,37 +150,25 @@ Value *dict_get_value(dict *d, const char *key, VALUE_TYPE *type)
 void *dict_get_pointer(dict *d, const char *key, int *kind)
 /*=======================================================*/
 {
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == VALUE_TYPE_POINTER) return value_get_pointer(v, kind) ;
-  return NULL ;
+  return value_get_pointer(dict_get_value(d, key, NULL), kind) ;
   }
 
 const char *dict_get_string(dict *d, const char *key)
 /*=================================================*/
 {
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == VALUE_TYPE_STRING) return value_get_string(v) ;
-  return NULL ;
+  return value_get_string(dict_get_value(d, key, NULL)) ;
   }
 
 long dict_get_integer(dict *d, const char *key)
 /*===========================================*/
 {
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == VALUE_TYPE_INTEGER) return value_get_integer(v) ;
-  return 0 ;
+  return value_get_integer(dict_get_value(d, key, NULL)) ;
   }
 
 double dict_get_real(dict *d, const char *key)
 /*==========================================*/
 {
-  VALUE_TYPE vt ;
-  Value *v = dict_get_value(d, key, &vt) ;
-  if (v && v->type == VALUE_TYPE_REAL) return value_get_real(v) ;
-  return 0.0 ;
+  return value_get_real(dict_get_value(d, key, NULL)) ;
   }
 
 
