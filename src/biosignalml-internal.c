@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "biosignalml.h"
 #include "biosignalml-internal.h"
 
 
@@ -21,7 +22,7 @@ void bsml_log_error(const char *format, ...)
 {
   va_list ap ;
   va_start(ap, format) ;
-  vprintf(stderr, format, ap) ;
+  vfprintf(stderr, format, ap) ;
   va_end(ap) ;
   }
 
