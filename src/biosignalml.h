@@ -69,7 +69,7 @@ bsml_rdf_graph *bsml_rdf_graph_create_and_load_rdf(const char *uri, const char *
 typedef struct bsml_Repository bsml_repository ;
 
 /*!
- * Create a BioSignalML repository object.
+ * Create a repository object and load its metadata from a BioSignalML repository.
  *
  * @param uri The URI of the repository
  * @return A ::bsml_repository, or NULL if errors
@@ -82,14 +82,6 @@ bsml_repository *bsml_new_repository(const char *uri) ;
  * @param repo The ::bsml_repository to free
  */ 
 void bsml_free_repository(bsml_repository *repo) ;
-
-/*!
- * Connect to a BioSignalML repository.
- *
- * @param uri The URI of the repository to connect to
- * @return A ::bsml_repository, or NULL if errors
- */ 
-bsml_repository *bsml_repository_connect(const char *uri) ;
 
 /*!
  * Get metadata from a repository describing an object.

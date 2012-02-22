@@ -25,6 +25,7 @@ bsml_repository *bsml_new_repository(const char *uri)
     int noslash = (*last == '/' || *last == '#') ;
     repo->metadata_uri = string_cat(uri, noslash ? "metadata/" : "/metadata/") ;
     repo->stream_uri   = string_cat(uri, noslash ? "stream/"   : "/stream/") ;
+    repo->graph = bsml_rdf_graph_create_and_load_rdf(repo->uri, repo->metadata_uri) ;
     }
   return repo ;
   }
@@ -40,15 +41,6 @@ void bsml_free_repository(bsml_repository *repo)
     if (repo->metadata_uri) free((char *)repo->metadata_uri) ;
     free(repo) ;
     }
-  }
-
-
-bsml_repository *bsml_repository_connect(const char *uri)
-/*=====================================================*/
-{
-  bsml_repository *repo = bsml_new_repository(uri) ;
-  if (repo) repo->graph = bsml_rdf_graph_create_and_load_rdf(uri, repo->metadata_uri) ;
-  return repo ;
   }
 
 
