@@ -27,6 +27,21 @@ const char *string_copy(const char *s)
   else return NULL ;
   }
 
+const char *string_cat(const char *s, const char *t)
+/*================================================*/
+{
+  if (s && t) {
+    char *u = malloc(strlen(s)+strlen(t)+1) ;
+    strcpy(u, s) ;
+    strcat(u, t) ;
+    return u ;
+    }
+  else if (s)
+    return string_copy(s) ;
+  else
+    return string_copy(t) ;
+  }
+
 
 void value_free(Value *v)
 /*=====================*/
