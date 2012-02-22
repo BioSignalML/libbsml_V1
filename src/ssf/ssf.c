@@ -63,6 +63,7 @@ void stream_free_block(StreamBlock *blk)
     if (blk->content) free(blk->content) ;
     blk->header = NULL ;
     blk->content = NULL ;
+    free(blk) ;
     }
   }
 
