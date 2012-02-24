@@ -149,7 +149,7 @@ int stream_process_data(StreamReader *sp, char *data, int len)
         break ;
         }
 
-      case STREAM_STATE_TYPE: {              // Getting block type 
+      case STREAM_STATE_TYPE: {              // Getting block type
         sp->block->type = *pos ;
         pos++, len-- ;
         if (sp->block->type != '#') {
@@ -300,7 +300,13 @@ int stream_process_data(StreamReader *sp, char *data, int len)
 void stream_process_block(StreamBlock *sb)
 /*======================================*/
 {
-  printf("Got block %d: %c (%d)\n", sb->number, sb->type, sb->length) ;
+  printf("Got block %d: %c (%d)\n", sb->number, sb->type, sb->length, sb->header) ;
+
+          if (sp->block->header) {
+            cJSON *lenp = cJSON_GetObjectItem(sp->block->header, "length") ;
+            if (lenp && lenp->type == cJSON_Number) sp->block->length = lenp->valueint ;
+            cJSON_DeleteItemFromObject(sp->block->header, "length") ;
+
   }
 
 /**
@@ -308,8 +314,13 @@ void stream_process_block(StreamBlock *sb)
   */
 
 typedef struct {
+  char *uri ;
+  double start ;
+  double end ;
+
   int state ;
   StreamReader *sp ;
+  struct libwebsocket *ws ;
   } StreamData ;
 
 
@@ -319,8 +330,6 @@ static int stream_callback(struct libwebsocket_context *this,
                            enum libwebsocket_callback_reasons rsn,
                            void *userdata, void *data, size_t len)
 {
-  unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 4096 + LWS_SEND_BUFFER_POST_PADDING] ;
-
   StreamData *sd = (StreamData *)userdata ;
 
   switch (rsn) {
@@ -340,6 +349,7 @@ static int stream_callback(struct libwebsocket_context *this,
       sd->sp->state = STREAM_STATE_RESET ;
       sd->sp->number = -1 ;
       sd->state = 0 ;
+      sd->ws = ws ;
       libwebsocket_callback_on_writable(this, ws) ;
       }
     else {             // Out of memory...
@@ -351,11 +361,19 @@ printf("No mem????\n") ;
 
    case LWS_CALLBACK_CLIENT_RECEIVE:
     while (len > 0) {
-printf("Got %d bytes...\n", len) ;
+//printf("Got %d bytes...\n", len) ;
       int n = stream_process_data(sd->sp, data, len) ;
       if (sd->sp->error == STREAM_ERROR_NONE) {
         if (sd->sp->state == STREAM_STATE_BLOCK) {
           // Take sd->sp->block and RESET state
+
+          // But if can't take block then need to pause sender...
+          libwebsocket_rx_flow_control(ws, 0) ;
+
+          // And re-enable when OK...
+          libwebsocket_rx_flow_control(ws, 1) ;
+
+
           stream_process_block(sd->sp->block) ;
           sd->sp->state = STREAM_STATE_RESET ;
           }
@@ -370,11 +388,11 @@ printf("Got %d bytes...\n", len) ;
 
    case LWS_CALLBACK_CLIENT_WRITEABLE:
     if (sd->state == 0) {
-      printf("Request...\n") ;
+      unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
+      int n = sprintf(buf + LWS_SEND_BUFFER_PRE_PADDING,
+                     "{'uri': '%s', 'start': %f, 'end': %f}", sd->uri, sd->start, sd->end) ;
+      libwebsocket_write(ws, buf + LWS_SEND_BUFFER_PRE_PADDING, n, LWS_WRITE_TEXT) ;
       sd->state = 1 ;
-      char *request = "{'uri': 'http://example.org/signal', 'start': 0.0, 'end': 10.0}" ;
-      strcpy(buf + LWS_SEND_BUFFER_PRE_PADDING, request) ;
-      libwebsocket_write(ws, buf + LWS_SEND_BUFFER_PRE_PADDING, strlen(request), LWS_WRITE_BINARY) ;
       }
     break ;
 
@@ -390,6 +408,33 @@ static struct libwebsocket_protocols protocols[] = {
     { STREAM_PROTOCOL, stream_callback, 0 },
     { NULL,            NULL,            0 }
   } ;
+
+
+StreamData *stream_open(ctx, char *host, int port, char *uri, double start, double end)
+/*==========*/
+{
+  struct libwebsocket *ws ;
+
+  strm.uri = string_copy(uri) ;
+  strm.start = start ;
+  strm.end = end ;
+  strm.state = -1 ;
+  ws = libwebsocket_client_connect_extended(ctx, address, port, 0,
+      "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
+
+
+
+
+//  request from ws end point a stream of data
+
+//  when data arrives call some callback function
+
+  if (ws) while (libwebsocket_service(ctx, 10000) >= 0 && strm.state < 9) ;
+
+  libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
+  }
+
+
 
 
 int main(void)
@@ -421,7 +466,7 @@ int main(void)
 
 //  when data arrives call some callback function
 
-  if (ws) while (libwebsocket_service(ctx, 10000) >= 0 && strm.state < 9) ;
+  if (ws) while (libwebsocket_service(ctx, 1) >= 0 && strm.state < 9) ;
 
   libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
   }
