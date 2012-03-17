@@ -13,6 +13,7 @@
 
 #define STREAM_PROTOCOL "biosignalml-ssf"
 
+#define VERSION 1
 
 typedef enum {
   STREAM_ERROR_NONE = 0,
@@ -22,7 +23,10 @@ typedef enum {
   STREAM_ERROR_INVALID_CHECKSUM,
   STREAM_ERROR_MISSING_TRAILER_LF,
   STREAM_ERROR_HASHRESERVED,
-  STREAM_ERROR_WRITEOF
+  STREAM_ERROR_WRITEOF,
+  STREAM_ERROR_VERSION_MISMATCH,
+  STREAM_ERROR_INVALID_MORE_FLAG,
+  STREAM_ERROR_BAD_JSON_HEADER,
   } STREAM_ERROR ;
 
 typedef enum {
@@ -37,8 +41,11 @@ typedef enum {
   STREAM_STATE_ENDED = -1,
   STREAM_STATE_RESET,
   STREAM_STATE_TYPE,
+  STREAM_STATE_VERSION,
+  STREAM_STATE_MORE,
   STREAM_STATE_HDRLEN,
   STREAM_STATE_HEADER,
+  STREAM_STATE_DATALEN,
   STREAM_STATE_HDREND,
   STREAM_STATE_CONTENT,
   STREAM_STATE_TRAILER,
@@ -67,6 +74,8 @@ typedef struct {
   StreamBlock *block ;
   int number ;
 
+  int version ;
+  int more ;
   int expected ;
   char *storepos ;
 
@@ -92,6 +101,9 @@ char *stream_error_text(STREAM_ERROR errno)
          : (errno == STREAM_ERROR_MISSING_TRAILER_LF) ? "Missing LF on trailer"
          : (errno == STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
          : (errno == STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
+         : (errno == STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
+         : (errno == STREAM_ERROR_INVALID_MORE_FLAG)  ? "Invalid value for 'more' flag"
+         : (errno == STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
          :                                              "" ) ;
   }
 
@@ -155,10 +167,35 @@ int stream_process_data(StreamReader *sp, char *data, int len)
         if (sp->block->type != '#') {
           md5_append(&sp->md5, (const md5_byte_t *)&sp->block->type, 1) ;
           sp->block->number = sp->number += 1 ;
+          sp->version = 0 ;
+          sp->state = STREAM_STATE_VERSION ;
+          }
+        else sp->error = STREAM_ERROR_UNEXPECTED_TRAILER ;
+        break ;
+        }
+
+      case STREAM_STATE_VERSION: {           // Getting version number
+        while (len > 0 && isdigit(*pos)) {
+          sp->version = 10*sp->version + (*pos - '0') ;
+          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          pos += 1 ;
+          len -= 1 ;
+          }
+        if (len > 0) sp->state = STREAM_STATE_MORE ;
+        break ;
+        }
+
+      case STREAM_STATE_MORE: {              // 'C' or 'M'
+        if (sp->version != VERSION) sp->error = STREAM_ERROR_VERSION_MISMATCH ;
+        else if (*pos == 'C' || *pos == 'M') {
+          sp->more = (*pos == 'M') ;
+          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          pos += 1 ;
+          len -= 1 ;
           sp->expected = 0 ;
           sp->state = STREAM_STATE_HDRLEN ;
           }
-        else sp->error = STREAM_ERROR_UNEXPECTED_TRAILER ;
+        else sp->error = STREAM_ERROR_INVALID_MORE_FLAG ;
         break ;
         }
 
@@ -187,8 +224,19 @@ int stream_process_data(StreamReader *sp, char *data, int len)
           }
         if (sp->expected == 0) {
           if (*sp->jsonhdr) sp->block->header = cJSON_Parse(sp->jsonhdr) ;
-          sp->state = STREAM_STATE_HDREND ;
+          sp->state = STREAM_STATE_DATALEN ;
           }
+        break ;
+        }
+
+      case STREAM_STATE_DATALEN: {           // Getting content length
+        while (len > 0 && isdigit(*pos)) {
+          sp->expected = 10*sp->expected + (*pos - '0') ;
+          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          pos += 1 ;
+          len -= 1 ;
+          }
+        if (len > 0) sp->state = STREAM_STATE_HDREND ;
         break ;
         }
 
@@ -205,7 +253,6 @@ int stream_process_data(StreamReader *sp, char *data, int len)
             }
           sp->block->content = calloc(sp->block->length+1, 1) ;
           sp->storepos = sp->block->content ;
-          sp->expected = sp->block->length ;
           sp->state = STREAM_STATE_CONTENT ;
           }
         else sp->error = STREAM_ERROR_MISSING_HEADER_LF ;
@@ -302,23 +349,28 @@ void stream_process_block(StreamBlock *sb)
 {
   printf("Got block %d: %c (%d)\n", sb->number, sb->type, sb->length, sb->header) ;
 
-          if (sp->block->header) {
-            cJSON *lenp = cJSON_GetObjectItem(sp->block->header, "length") ;
-            if (lenp && lenp->type == cJSON_Number) sp->block->length = lenp->valueint ;
-            cJSON_DeleteItemFromObject(sp->block->header, "length") ;
-
   }
 
 /**
   * What we use to pass data to the callback...
   */
 
+
+typedef enun {
+  STREAM_STARTING = -1,
+  STREAM_OPENED,
+  STREAM_RUNNING,
+  STREAM_CLOSED
+  } STREAM_STATE ;
+
 typedef struct {
   char *uri ;
   double start ;
-  double end ;
+  double duration ;
 
-  int state ;
+  //  offset, count, maxsize
+
+  STREAM_STATE state ;
   StreamReader *sp ;
   struct libwebsocket *ws ;
   } StreamData ;
@@ -340,7 +392,7 @@ static int stream_callback(struct libwebsocket_context *this,
       if (sd->sp->jsonhdr) free(sd->sp->jsonhdr) ;
       free(sd->sp) ;
       }
-    sd->state = 9 ;
+    sd->state = STREAM_CLOSED ;
     break ;
 
    case LWS_CALLBACK_CLIENT_ESTABLISHED:
@@ -348,13 +400,13 @@ static int stream_callback(struct libwebsocket_context *this,
     if (sd->sp) {
       sd->sp->state = STREAM_STATE_RESET ;
       sd->sp->number = -1 ;
-      sd->state = 0 ;
+      sd->state = STREAM_OPENED ;
       sd->ws = ws ;
       libwebsocket_callback_on_writable(this, ws) ;
       }
     else {             // Out of memory...
 printf("No mem????\n") ;
-      sd->state = 9 ;
+      sd->state = STREAM_CLOSED ;
       libwebsocket_close_and_free_session(this,	ws, LWS_CLOSE_STATUS_GOINGAWAY) ;
       }
     break ;
@@ -387,12 +439,12 @@ printf("No mem????\n") ;
     break ;
 
    case LWS_CALLBACK_CLIENT_WRITEABLE:
-    if (sd->state == 0) {
+    if (sd->state == STREAM_OPENED) {
       unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
       int n = sprintf(buf + LWS_SEND_BUFFER_PRE_PADDING,
-                     "{'uri': '%s', 'start': %f, 'end': %f}", sd->uri, sd->start, sd->end) ;
+                     "{'uri': '%s', 'start': %f, 'duration': %f}", sd->uri, sd->start, sd->duration) ;
       libwebsocket_write(ws, buf + LWS_SEND_BUFFER_PRE_PADDING, n, LWS_WRITE_TEXT) ;
-      sd->state = 1 ;
+      sd->state = STREAM_RUNNING ;
       }
     break ;
 
@@ -410,15 +462,17 @@ static struct libwebsocket_protocols protocols[] = {
   } ;
 
 
-StreamData *stream_open(ctx, char *host, int port, char *uri, double start, double end)
-/*==========*/
+/***
+StreamData *stream_open(struct libwebsocket_context *ctx,
+  char *host, int port, char *uri, double start, double end)
+/*==========*
 {
   struct libwebsocket *ws ;
 
   strm.uri = string_copy(uri) ;
   strm.start = start ;
   strm.end = end ;
-  strm.state = -1 ;
+  strm.state = STREAM_STARTING ;
   ws = libwebsocket_client_connect_extended(ctx, address, port, 0,
       "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
 
@@ -429,12 +483,12 @@ StreamData *stream_open(ctx, char *host, int port, char *uri, double start, doub
 
 //  when data arrives call some callback function
 
-  if (ws) while (libwebsocket_service(ctx, 10000) >= 0 && strm.state < 9) ;
+  if (ws) while (libwebsocket_service(ctx, 10000) >= 0 && strm.state < STREAM_CLOSED) ;
 
   libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
   }
 
-
+**************/
 
 
 int main(void)
@@ -457,7 +511,7 @@ int main(void)
 
 
   StreamData strm ;
-  strm.state = -1 ;
+  strm.state = STREAM_STARTING ;
 
   ws = libwebsocket_client_connect_extended(ctx, address, port, use_ssl,
       "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
@@ -466,7 +520,7 @@ int main(void)
 
 //  when data arrives call some callback function
 
-  if (ws) while (libwebsocket_service(ctx, 1) >= 0 && strm.state < 9) ;
+  if (ws) while (libwebsocket_service(ctx, 1) >= 0 && strm.state < STREAM_CLOSED) ;
 
   libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
   }
