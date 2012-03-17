@@ -146,6 +146,56 @@ bsml_recording *bsml_recording_from_repository(bsml_repository *repo, const char
 
 /**************************************************************/
 
+/*!
+ * \defgroup signals BioSignalML Signals
+ * @{
+ */
+
+/*! A BiosignalML signal. */
+typedef struct bsml_Recording bsml_signal ;
+
+/*!
+ * Create a BioSignalML signal object.
+ *
+ * @param uri The URI of the signal
+ * @return A ::bsml_signal, or NULL if errors
+ */ 
+bsml_signal *bsml_new_signal(const char *uri) ;
+
+/*!
+ * Free a BioSignalML signal object.
+ *
+ * @param repo The ::bsml_signal to free
+ */ 
+void bsml_free_signal(bsml_signal *sig) ;
+
+/*!
+ * Open a BioSignalML signal.
+ *
+ * We attempt to obtain RDF metadata by referencing the URI and use this
+ * to create a signal object.
+ *
+ * @param uri The URI of the signal
+ * @return A ::bsml_signal, or NULL if errors
+ */ 
+bsml_signal *bsml_signal_open(const char *uri) ;
+
+/*!
+ * Open a signal in a BioSignalML repository.
+ *
+ * We attempt to obtain RDF metadata from the repository for the URI and use this
+ * to create a signal object.
+ *
+ * @param repo The ::bsml_repository to use
+ * @param uri The URI of the signal
+ * @return A ::bsml_signal, or NULL if errors
+ */ 
+bsml_signal *bsml_signal_from_repository(bsml_repository *repo, const char *uri) ;
+
+/*!@}*/
+
+/**************************************************************/
+
 
 #ifdef __cplusplus
   } ;

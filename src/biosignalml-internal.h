@@ -56,6 +56,13 @@ struct bsml_Recording {
   } ;
 
 
+/*! A BiosignalML signal. */
+struct bsml_Signal {
+  const char *uri ;           /*!< The signal's URI */
+  bsml_rdf_graph *graph ;     /*!< Metadata about the signal */
+  } ;
+
+
 #ifdef __cplusplus
   } ;
 #endif
