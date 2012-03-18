@@ -25,7 +25,11 @@ bsml_repository *bsml_new_repository(const char *uri)
     int noslash = (*last == '/' || *last == '#') ;
     repo->metadata_uri = string_cat(uri, noslash ? "metadata/" : "/metadata/") ;
     repo->stream_uri   = string_cat(uri, noslash ? "stream/"   : "/stream/") ;
-    repo->graph = bsml_rdf_graph_create_and_load_rdf(repo->uri, repo->metadata_uri) ;
+    bsml_rdf_graph *graph = graph = bsml_rdf_graph_create_and_load_rdf(repo->uri, repo->metadata_uri) ;
+    if (bsml_rdf_graph_contains(repo->uri, RDF.type, BSML.Repository))
+      repo->graph = graph ;
+    else:
+      bsml_free_rdf_graph(graph) ;
     }
   return repo ;
   }
@@ -48,10 +52,10 @@ bsml_rdf_graph *bsml_repository_get_metadata(bsml_repository *repo, const char *
 /*================================================================================*/
 {
   if (repo) {
-    const char *metadata = string_cat(repo->metadata_uri, uri) ;
+    const char *endpoint = string_cat(repo->metadata_uri, uri) ;
     if (metadata) {
-      bsml_rdf_graph *graph = bsml_rdf_graph_create_and_load_rdf(uri, metadata) ;
-      free((char *)metadata) ;
+      bsml_rdf_graph *graph = bsml_rdf_graph_create_and_load_rdf(uri, endpoint) ;
+      free((char *)endpoint) ;
       return graph ;
       }
     }

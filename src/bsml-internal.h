@@ -8,15 +8,23 @@
  *
  *****************************************************/
 
-#ifndef _BIOSIGNALML_INTERNAL_H
-#define _BIOSIGNALML_INTERNAL_H
+#ifndef _BSML_INTERNAL_H
+#define _BSML_INTERNAL_H
 
-#include <redland.h>
+#include "biosignalml.h"
+
+#include "bsml-utility.h"
+#inclide "bsml-data.h"
+#include "bsml-graph.h"
+#include "bsml-signal.h"
+#include "bsml-recording.h"
+#include "bsml-repository.h"
+#include "bsml-stream.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /*! Shortcut for allocating storage of a given type. */
 #define ALLOCATE(type) ((type *)calloc(1, sizeof(type)))
@@ -32,34 +40,17 @@ const char *string_cat(const char *s, const char *t) ;
 void bsml_log_error(const char *format, ...) ;
 
 
-/*! A RDF graph. */
-struct bsml_RDF_graph {
-  const char *uri ;           /*!< The graph's URI */
-  librdf_storage *storage ;   /*!< Where the graph is stored */
-  librdf_model *model ;       /*!< The statements in the graph */
-  } ;
-
-
-/*! A BiosignalML repository. */
-struct bsml_Repository {
-  const char *uri ;           /*!< The repository's URI */
-  const char *metadata_uri ;  /*!< The repository's metadata endpoint */
-  const char *stream_uri ;    /*!< The repository's stream endpoint */
-  bsml_rdf_graph *graph ;     /*!< Metadata about the repository */
-  } ;
-
-
 /*! A BiosignalML recording. */
 struct bsml_Recording {
   const char *uri ;           /*!< The recording's URI */
-  bsml_rdf_graph *graph ;     /*!< Metadata about the recording */
+  bsml_rdfgraph *graph ;      /*!< Metadata about the recording */
   } ;
 
 
 /*! A BiosignalML signal. */
 struct bsml_Signal {
   const char *uri ;           /*!< The signal's URI */
-  bsml_rdf_graph *graph ;     /*!< Metadata about the signal */
+  bsml_rdfgraph *graph ;      /*!< Metadata about the signal */
   } ;
 
 

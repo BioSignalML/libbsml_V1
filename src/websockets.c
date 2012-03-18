@@ -376,11 +376,9 @@ typedef struct {
   } StreamData ;
 
 
-static int stream_callback(struct libwebsocket_context *this,
-/*=========================================================*/
-                           struct libwebsocket *ws,
-                           enum libwebsocket_callback_reasons rsn,
-                           void *userdata, void *data, size_t len)
+int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
+/*===========================================================================*/
+                    enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
 {
   StreamData *sd = (StreamData *)userdata ;
 
@@ -456,15 +454,9 @@ printf("No mem????\n") ;
   }
 
 
-static struct libwebsocket_protocols protocols[] = {
-    { STREAM_PROTOCOL, stream_callback, 0 },
-    { NULL,            NULL,            0 }
-  } ;
-
 
 /***
-StreamData *stream_open(struct libwebsocket_context *ctx,
-  char *host, int port, char *uri, double start, double end)
+StreamData *stream_open(char *host, int port, char *uri, double start, double end)
 /*==========*
 {
   struct libwebsocket *ws ;
@@ -473,7 +465,7 @@ StreamData *stream_open(struct libwebsocket_context *ctx,
   strm.start = start ;
   strm.end = end ;
   strm.state = STREAM_STARTING ;
-  ws = libwebsocket_client_connect_extended(ctx, address, port, 0,
+  ws = libwebsocket_client_connect_extended(bsml.ctx, address, port, 0,
       "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
 
 
@@ -483,12 +475,13 @@ StreamData *stream_open(struct libwebsocket_context *ctx,
 
 //  when data arrives call some callback function
 
-  if (ws) while (libwebsocket_service(ctx, 10000) >= 0 && strm.state < STREAM_CLOSED) ;
+  if (ws) while (libwebsocket_service(bsml.ctx, 10000) >= 0 && strm.state < STREAM_CLOSED) ;
 
-  libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
   }
 
 **************/
+
+extern bsml_world bsml ;
 
 
 int main(void)
@@ -498,29 +491,19 @@ int main(void)
   int use_ssl = 0 ;   // 2 ; // Allow self assigned
   const char *address = "localhost" ;
 
-  struct libwebsocket_context *ctx ;
   struct libwebsocket *ws ;
-
-  ctx = libwebsocket_create_context(CONTEXT_PORT_NO_LISTEN, NULL,
-        protocols, libwebsocket_internal_extensions,  NULL, NULL, -1, -1, 0) ;
-
-  if (ctx == NULL) {
-    fprintf(stderr, "Creating libwebsocket context failed\n") ;
-    return 1 ;
-    }
 
 
   StreamData strm ;
   strm.state = STREAM_STARTING ;
 
-  ws = libwebsocket_client_connect_extended(ctx, address, port, use_ssl,
+  ws = libwebsocket_client_connect_extended(bsml.ctx, address, port, use_ssl,
       "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
 
 //  request from ws end point a stream of data
 
 //  when data arrives call some callback function
 
-  if (ws) while (libwebsocket_service(ctx, 1) >= 0 && strm.state < STREAM_CLOSED) ;
+  if (ws) while (libwebsocket_service(bsml.ctx, 1) >= 0 && strm.state < STREAM_CLOSED) ;
 
-  libwebsocket_context_destroy(ctx) ;    // Closes open sessions...
   }
