@@ -5,94 +5,51 @@
 
 #include <libwebsockets.h>
 
-
-#include "md5/md5.h"
-#include "cJSON/cJSON.h"
+#include "bsml-internal.h"
 
 
-
-#define STREAM_PROTOCOL "biosignalml-ssf"
-
-#define VERSION 1
-
-typedef enum {
-  STREAM_ERROR_NONE = 0,
-  STREAM_ERROR_UNEXPECTED_TRAILER,
-  STREAM_ERROR_MISSING_HEADER_LF,
-  STREAM_ERROR_MISSING_TRAILER,
-  STREAM_ERROR_INVALID_CHECKSUM,
-  STREAM_ERROR_MISSING_TRAILER_LF,
-  STREAM_ERROR_HASHRESERVED,
-  STREAM_ERROR_WRITEOF,
-  STREAM_ERROR_VERSION_MISMATCH,
-  STREAM_ERROR_INVALID_MORE_FLAG,
-  STREAM_ERROR_BAD_JSON_HEADER,
-  } STREAM_ERROR ;
-
-typedef enum {
-  STREAM_CHECKSUM_INHERIT = 0,
-  STREAM_CHECKSUM_STRICT,
-  STREAM_CHECKSUM_CHECK,
-  STREAM_CHECKSUM_IGNORE,
-  STREAM_CHECKSUM_NONE
-  } STREAM_CHECKSUM ;
-
-typedef enum {
-  STREAM_STATE_ENDED = -1,
-  STREAM_STATE_RESET,
-  STREAM_STATE_TYPE,
-  STREAM_STATE_VERSION,
-  STREAM_STATE_MORE,
-  STREAM_STATE_HDRLEN,
-  STREAM_STATE_HEADER,
-  STREAM_STATE_DATALEN,
-  STREAM_STATE_HDREND,
-  STREAM_STATE_CONTENT,
-  STREAM_STATE_TRAILER,
-  STREAM_STATE_CHECKSUM,
-  STREAM_STATE_CHECKDATA,
-  STREAM_STATE_BLOCKEND,
-  STREAM_STATE_BLOCK
-  } STREAM_STATE ;
+static struct libwebsocket_context *context = NULL ;
 
 
-typedef struct {
-  int number ;
-  char type ;
-  cJSON *header ;
-  int length ;
-  char *content ;
-  } StreamBlock ;
+static int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
+                           enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len) ;
 
 
-typedef struct {
-
-  STREAM_CHECKSUM checksum ;
-  STREAM_STATE state ;
-  STREAM_ERROR error ;
-
-  StreamBlock *block ;
-  int number ;
-
-  int version ;
-  int more ;
-  int expected ;
-  char *storepos ;
-
-  char *jsonhdr ;
-
-	md5_state_t md5 ;
-  char checktext[33] ;
-
-  } StreamReader ;
+static struct libwebsocket_protocols protocols[] = {
+    { STREAM_PROTOCOL, stream_callback, 0 },
+    { NULL,            NULL,            0 }
+  } ;
 
 
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 
-char *stream_error_text(STREAM_ERROR errno)
-/*=======================================*/
+void stream_initialise(void)
+/*========================*/
+{
+  if (context == NULL) {
+    context = libwebsocket_create_context(CONTEXT_PORT_NO_LISTEN, NULL, protocols,
+                                          libwebsocket_internal_extensions,  NULL, NULL, -1, -1, 0) ;
+    if (context == NULL) {
+      fprintf(stderr, "Creating libwebsocket context failed\n") ;
+      exit(1) ;
+      }
+    }
+  }
+
+void stream_finish(void)
+/*====================*/
+{
+  if (context) {
+    libwebsocket_context_destroy(context) ;
+    context = NULL ;
+    }
+  }
+
+
+char *stream_error_text(STREAM_ERROR_CODE errno)
+/*============================================*/
 {
   return ( (errno == STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
          : (errno == STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
@@ -109,16 +66,16 @@ char *stream_error_text(STREAM_ERROR errno)
 
 
 
-StreamBlock *stream_new_block(void)
-/*===============================*/
+stream_block *stream_new_block(void)
+/*================================*/
 {
-  StreamBlock *blk = (StreamBlock *)calloc(1, sizeof(StreamBlock)) ;
+  stream_block *blk = (stream_block *)calloc(1, sizeof(stream_block)) ;
   if (blk) blk->number = -1 ;
   return blk ;
   }
 
-void stream_free_block(StreamBlock *blk)
-/*====================================*/
+void stream_free_block(stream_block *blk)
+/*=====================================*/
 {
   if (blk) {
     if (blk->header) cJSON_Delete(blk->header) ;
@@ -132,8 +89,8 @@ void stream_free_block(StreamBlock *blk)
 
 
 
-int stream_process_data(StreamReader *sp, char *data, int len)
-//============================================================
+int stream_process_data(stream_reader *sp, char *data, int len)
+/*===========================================================*/
 {
   char *pos = data ;
   int size = len ;
@@ -186,7 +143,7 @@ int stream_process_data(StreamReader *sp, char *data, int len)
         }
 
       case STREAM_STATE_MORE: {              // 'C' or 'M'
-        if (sp->version != VERSION) sp->error = STREAM_ERROR_VERSION_MISMATCH ;
+        if (sp->version != STREAM_VERSION) sp->error = STREAM_ERROR_VERSION_MISMATCH ;
         else if (*pos == 'C' || *pos == 'M') {
           sp->more = (*pos == 'M') ;
           md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
@@ -344,43 +301,11 @@ int stream_process_data(StreamReader *sp, char *data, int len)
 
 
 
-void stream_process_block(StreamBlock *sb)
-/*======================================*/
+static int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
+/*==================================================================================*/
+                           enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
 {
-  printf("Got block %d: %c (%d)\n", sb->number, sb->type, sb->length, sb->header) ;
-
-  }
-
-/**
-  * What we use to pass data to the callback...
-  */
-
-
-typedef enun {
-  STREAM_STARTING = -1,
-  STREAM_OPENED,
-  STREAM_RUNNING,
-  STREAM_CLOSED
-  } STREAM_STATE ;
-
-typedef struct {
-  char *uri ;
-  double start ;
-  double duration ;
-
-  //  offset, count, maxsize
-
-  STREAM_STATE state ;
-  StreamReader *sp ;
-  struct libwebsocket *ws ;
-  } StreamData ;
-
-
-int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
-/*===========================================================================*/
-                    enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
-{
-  StreamData *sd = (StreamData *)userdata ;
+  stream_data *sd = (stream_data *)userdata ;
 
   switch (rsn) {
    case LWS_CALLBACK_CLOSED:
@@ -394,7 +319,7 @@ int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
     break ;
 
    case LWS_CALLBACK_CLIENT_ESTABLISHED:
-    sd->sp = (StreamReader *)calloc(1, sizeof(StreamReader)) ;
+    sd->sp = (stream_reader *)calloc(1, sizeof(stream_reader)) ;
     if (sd->sp) {
       sd->sp->state = STREAM_STATE_RESET ;
       sd->sp->number = -1 ;
@@ -403,7 +328,7 @@ int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
       libwebsocket_callback_on_writable(this, ws) ;
       }
     else {             // Out of memory...
-printf("No mem????\n") ;
+      fprintf(stderr, "No memory for libwebsockets ????\n") ;
       sd->state = STREAM_CLOSED ;
       libwebsocket_close_and_free_session(this,	ws, LWS_CLOSE_STATUS_GOINGAWAY) ;
       }
@@ -414,22 +339,24 @@ printf("No mem????\n") ;
 //printf("Got %d bytes...\n", len) ;
       int n = stream_process_data(sd->sp, data, len) ;
       if (sd->sp->error == STREAM_ERROR_NONE) {
+
         if (sd->sp->state == STREAM_STATE_BLOCK) {
-          // Take sd->sp->block and RESET state
-
-          // But if can't take block then need to pause sender...
-          libwebsocket_rx_flow_control(ws, 0) ;
-
-          // And re-enable when OK...
-          libwebsocket_rx_flow_control(ws, 1) ;
-
-
-          stream_process_block(sd->sp->block) ;
-          sd->sp->state = STREAM_STATE_RESET ;
+          if (sd->block == NULL) {
+            sd->block = sd->sp->block ;
+            sd->sp->block = NULL ;
+            sd->sp->state = STREAM_STATE_RESET ;
+            }
+          else {
+            libwebsocket_rx_flow_control(ws, 0) ;
+            sd->stopped = 1 ;
+            }
           }
         }
+
       else {
         fprintf(stderr, "Stream block error: %s\n", stream_error_text(sd->sp->error)) ;
+        sd->error = sd->sp->error ;
+        sd->state = STREAM_ERROR ;
         }
       data += len ;
       len -= n ;
@@ -454,56 +381,57 @@ printf("No mem????\n") ;
   }
 
 
-
-/***
-StreamData *stream_open(char *host, int port, char *uri, double start, double end)
-/*==========*
+stream_data *stream_new_data(const char *uri)
+/*=========================================*/
 {
-  struct libwebsocket *ws ;
-
-  strm.uri = string_copy(uri) ;
-  strm.start = start ;
-  strm.end = end ;
-  strm.state = STREAM_STARTING ;
-  ws = libwebsocket_client_connect_extended(bsml.ctx, address, port, 0,
-      "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
-
-
-
-
-//  request from ws end point a stream of data
-
-//  when data arrives call some callback function
-
-  if (ws) while (libwebsocket_service(bsml.ctx, 10000) >= 0 && strm.state < STREAM_CLOSED) ;
-
+  stream_data *sd = ALLOCATE(stream_data) ;
+  if (sd) sd->uri = (unsigned char *)string_copy(uri) ;
+  return sd ;
   }
 
-**************/
 
-extern bsml_world bsml ;
-
-
-int main(void)
-/*==========*/
+stream_data *stream_data_request(const char *host, int port, const char *endpoint,
+/*==============================================================================*/
+                                 const char *uri, double start, double duration)
 {
-  int port = 8088 ;
-  int use_ssl = 0 ;   // 2 ; // Allow self assigned
-  const char *address = "localhost" ;
+  stream_data *sd = stream_new_data(uri) ;
+  if (sd) {
+    sd->start = start ;
+    sd->duration = duration ;
+    sd->state = STREAM_STARTING ;
+    sd->ws = libwebsocket_client_connect_extended(context, host, port, 0, endpoint, host, host,
+                                                  STREAM_PROTOCOL, -1, sd) ;
+    }
+  return sd ;
+  }
 
-  struct libwebsocket *ws ;
+
+stream_block *stream_data_read(stream_data *sd)
+/*===========================================*/
+{
+  stream_block *result = NULL ;
+
+  while (sd->ws && sd->block == NULL && sd->state < STREAM_CLOSED)
+    libwebsocket_service(context, 10000) ;
+
+  if (sd->block != NULL) {
+    result = sd->block ;
+    sd->block = NULL ;
+    if (sd->state < STREAM_CLOSED && sd->stopped) {
+      sd->stopped = 0 ;
+      libwebsocket_rx_flow_control(sd->ws, 1) ;
+      libwebsocket_service(context, 0) ;
+      }
+    }
+  return result ;
+  }
 
 
-  StreamData strm ;
-  strm.state = STREAM_STARTING ;
-
-  ws = libwebsocket_client_connect_extended(bsml.ctx, address, port, use_ssl,
-      "/stream/", address, address, STREAM_PROTOCOL, -1, &strm) ;
-
-//  request from ws end point a stream of data
-
-//  when data arrives call some callback function
-
-  if (ws) while (libwebsocket_service(bsml.ctx, 1) >= 0 && strm.state < STREAM_CLOSED) ;
-
+void stream_free_data(stream_data *sd)
+/*==================================*/
+{
+  if (sd) {
+    if (sd->uri) free(sd->uri) ;
+    free(sd) ;
+    }
   }

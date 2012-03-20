@@ -14,8 +14,8 @@
 #include "biosignalml.h"
 
 #include "bsml-utility.h"
-#inclide "bsml-data.h"
-#include "bsml-graph.h"
+#include "bsml-data.h"
+#include "bsml-rdfgraph.h"
 #include "bsml-signal.h"
 #include "bsml-recording.h"
 #include "bsml-repository.h"
@@ -38,21 +38,6 @@ const char *string_cat(const char *s, const char *t) ;
 
 /*! Log an error message. */
 void bsml_log_error(const char *format, ...) ;
-
-
-/*! A BiosignalML recording. */
-struct bsml_Recording {
-  const char *uri ;           /*!< The recording's URI */
-  bsml_rdfgraph *graph ;      /*!< Metadata about the recording */
-  } ;
-
-
-/*! A BiosignalML signal. */
-struct bsml_Signal {
-  const char *uri ;           /*!< The signal's URI */
-  bsml_rdfgraph *graph ;      /*!< Metadata about the signal */
-  } ;
-
 
 #ifdef __cplusplus
   } ;

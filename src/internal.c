@@ -13,52 +13,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <redland.h>
-#include <libwebsockets.h>
-
 #include "bsml-internal.h"
-
-struct {
-  librdf_world *rdfworld ;
-  struct libwebsocket_context *ctx ;
-  } bsml_world ;
-
-bsml_world bsml = { NULL, NULL } ;
-
-static struct libwebsocket_protocols protocols[] = {
-    { STREAM_PROTOCOL, stream_callback, 0 },
-    { NULL,            NULL,            0 }
-  } ;
 
 
 int bsml_initialise(void)
 /*=====================*/
 {
-  bsml.world = librdf_new_world() ;
-  if (bsml.world == NULL) {
-    fprintf(stderr, "Creating Redland RDF world failed\n") ;
-    return 1 ;
-    }
-  librdf_world_open(bsml.world) ;
+  bsml_rdfgraph_initialise() ;
+
   //bsml_rdfmapping_initialise() ;
 
-  bsml.ctx = libwebsocket_create_context(CONTEXT_PORT_NO_LISTEN, NULL, protocols,
-               libwebsocket_internal_extensions,  NULL, NULL, -1, -1, 0) ;
-  if (bsml.ctx == NULL) {
-    fprintf(stderr, "Creating libwebsocket context failed\n") ;
-    return 1 ;
-    }
+  bsml_stream_initialise() ;
 
+  bsml_repository_initialise() ;
   }
+
 
 
 void bsml_finish(void)
 /*===================*/
 {
-  if (bsml.ctx) libwebsocket_context_destroy(bsml.ctx) ;
+  bsml_repository_finish() ;
+
+  bsml_stream_finish() ;
 
   //bsml_rdfmapping_finish() ;
-  if (bsml.world) librdf_free_world(bsml.world) ;
+  bsml_rdfgraph_finish() ;
   }
 
 
