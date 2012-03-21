@@ -237,6 +237,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
 
       case STREAM_STATE_TRAILER: {           // Getting trailer
         if (*pos == '#') {
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           sp->expected -= 1 ;
