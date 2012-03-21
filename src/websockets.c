@@ -80,7 +80,7 @@ void stream_free_block(stream_block *blk)
 /*=====================================*/
 {
   if (blk) {
-    if (blk->header) cJSON_Delete(blk->header) ;
+    if (blk->header) json_decref(blk->header) ;
     if (blk->content) free(blk->content) ;
     blk->header = NULL ;
     blk->content = NULL ;
@@ -182,7 +182,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           sp->expected -= delta ;
           }
         if (sp->expected == 0) {
-          if (*sp->jsonhdr) sp->block->header = cJSON_Parse(sp->jsonhdr) ;
+          if (*sp->jsonhdr) sp->block->header = json_loads(sp->jsonhdr, 0, NULL) ;
           sp->state = STREAM_STATE_DATALEN ;
           }
         break ;

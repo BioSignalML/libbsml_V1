@@ -2,8 +2,7 @@
 #define _BSML_STREAM_H
 
 #include <libwebsockets.h>
-
-#include "cJSON/cJSON.h"
+#include <jansson.h>
 
 
 #define STREAM_PROTOCOL "biosignalml-ssf"
@@ -60,7 +59,7 @@ typedef enum {
 typedef struct {
   int number ;
   char type ;
-  cJSON *header ;
+  json_t *header ;
   int length ;
   char *content ;
   } stream_block ;
