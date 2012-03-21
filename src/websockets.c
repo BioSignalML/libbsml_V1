@@ -204,13 +204,8 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
-          sp->block->length = 0 ;
-          if (sp->block->header) {
-            cJSON *lenp = cJSON_GetObjectItem(sp->block->header, "length") ;
-            if (lenp && lenp->type == cJSON_Number) sp->block->length = lenp->valueint ;
-            cJSON_DeleteItemFromObject(sp->block->header, "length") ;
-            }
-          sp->block->content = calloc(sp->block->length+1, 1) ;
+          sp->block->length = sp->expected ;
+          sp->block->content = calloc(sp->expected+1, 1) ;
           sp->storepos = sp->block->content ;
           sp->state = STREAM_STATE_CONTENT ;
           }
