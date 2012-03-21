@@ -48,20 +48,21 @@ void stream_finish(void)
   }
 
 
-char *stream_error_text(STREAM_ERROR_CODE errno)
-/*============================================*/
+const char *stream_error_text(STREAM_ERROR_CODE code)
+/*=================================================*/
 {
-  return ( (errno == STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
-         : (errno == STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
-         : (errno == STREAM_ERROR_MISSING_TRAILER)    ? "Missing block trailer"
-         : (errno == STREAM_ERROR_INVALID_CHECKSUM)   ? "Invalid block checksum"
-         : (errno == STREAM_ERROR_MISSING_TRAILER_LF) ? "Missing LF on trailer"
-         : (errno == STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
-         : (errno == STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
-         : (errno == STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
-         : (errno == STREAM_ERROR_INVALID_MORE_FLAG)  ? "Invalid value for 'more' flag"
-         : (errno == STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
-         :                                              "" ) ;
+  return (code == STREAM_ERROR_NONE)               ? ""
+       : (code == STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
+       : (code == STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
+       : (code == STREAM_ERROR_MISSING_TRAILER)    ? "Missing block trailer"
+       : (code == STREAM_ERROR_INVALID_CHECKSUM)   ? "Invalid block checksum"
+       : (code == STREAM_ERROR_MISSING_TRAILER_LF) ? "Missing LF on trailer"
+       : (code == STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
+       : (code == STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
+       : (code == STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
+       : (code == STREAM_ERROR_INVALID_MORE_FLAG)  ? "Invalid value for 'more' flag"
+       : (code == STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
+       :                                             "Unknown Error" ;
   }
 
 

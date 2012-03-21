@@ -118,6 +118,8 @@ void stream_initialise(void) ;
 
 void stream_finish(void) ;
 
+const char *stream_error_text(STREAM_ERROR_CODE code) ;
+
 stream_data *stream_data_new(const char *uri) ;
 
 stream_data *stream_data_request(const char *host, int port, const char *endpoint,
