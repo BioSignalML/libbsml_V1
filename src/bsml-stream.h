@@ -3,7 +3,6 @@
 
 #include <libwebsockets.h>
 
-#include "md5/md5.h"
 #include "cJSON/cJSON.h"
 
 

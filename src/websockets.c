@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #include <libwebsockets.h>
+#include <mhash.h>
 
 #include "bsml-internal.h"
 
@@ -107,8 +108,8 @@ int stream_process_data(stream_reader *sp, char *data, int len)
         if (next) {
           len -= (next - pos + 1) ;
           pos = next + 1 ;
-          md5_init(&sp->md5) ;
-          md5_append(&sp->md5, (const md5_byte_t *)"#", 1) ;
+          sp->md5 = mhash_init(MHASH_MD5) ;
+          mhash(sp->md5, "#", 1) ;
 
           if (sp->jsonhdr) free(sp->jsonhdr) ;
           sp->block = stream_new_block() ;
@@ -123,7 +124,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
         sp->block->type = *pos ;
         pos++, len-- ;
         if (sp->block->type != '#') {
-          md5_append(&sp->md5, (const md5_byte_t *)&sp->block->type, 1) ;
+          mhash(sp->md5, &sp->block->type, 1) ;
           sp->block->number = sp->number += 1 ;
           sp->version = 0 ;
           sp->state = STREAM_STATE_VERSION ;
@@ -135,7 +136,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
       case STREAM_STATE_VERSION: {           // Getting version number
         while (len > 0 && isdigit(*pos)) {
           sp->version = 10*sp->version + (*pos - '0') ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -147,7 +148,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
         if (sp->version != STREAM_VERSION) sp->error = STREAM_ERROR_VERSION_MISMATCH ;
         else if (*pos == 'C' || *pos == 'M') {
           sp->more = (*pos == 'M') ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           sp->expected = 0 ;
@@ -160,7 +161,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
       case STREAM_STATE_HDRLEN: {            // Getting header length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -175,7 +176,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           strncat(sp->jsonhdr, pos, delta) ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, delta) ;
+          mhash(sp->md5, pos, delta) ;
           pos += delta ;
           len -= delta ;
           sp->expected -= delta ;
@@ -190,7 +191,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
       case STREAM_STATE_DATALEN: {           // Getting content length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, 1) ;
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -200,9 +201,9 @@ int stream_process_data(stream_reader *sp, char *data, int len)
 
       case STREAM_STATE_HDREND: {            // Checking header LF
         if (*pos == '\n') {
+          mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
-          md5_append(&sp->md5, (const md5_byte_t *)"\n", 1) ;
           sp->block->length = 0 ;
           if (sp->block->header) {
             cJSON *lenp = cJSON_GetObjectItem(sp->block->header, "length") ;
@@ -221,7 +222,7 @@ int stream_process_data(stream_reader *sp, char *data, int len)
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           memcpy(sp->storepos, pos, delta) ;
-          md5_append(&sp->md5, (const md5_byte_t *)pos, delta) ;
+          mhash(sp->md5, pos, delta) ;
           sp->storepos += delta ;
           pos += delta ;
           len -= delta ;
@@ -269,10 +270,10 @@ int stream_process_data(stream_reader *sp, char *data, int len)
       case STREAM_STATE_BLOCKEND: {          // Checking for final LF
         if (sp->checksum == STREAM_CHECKSUM_STRICT
          || sp->checksum == STREAM_CHECKSUM_CHECK && sp->checktext[0]) {
-          md5_byte_t digest[16] ;
+          unsigned char digest[16] ;
+          mhash_deinit(sp->md5, digest) ;
           char hexdigest[33] ;
           int i ;
-          md5_finish(&sp->md5, digest) ;
           for (i = 0 ;  i < 16 ;  ++i) sprintf(hexdigest + 2*i, "%02x", digest[i]) ;
           if (strcmp(sp->checktext, hexdigest) != 0) sp->error = STREAM_ERROR_INVALID_CHECKSUM ;
           }
