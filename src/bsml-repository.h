@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define REPOSITORY_STREAM   "/stream/data"
+#define REPOSITORY_STREAM   "/stream/data/"
 #define REPOSITORY_METADATA "/metadata/"
 
 
