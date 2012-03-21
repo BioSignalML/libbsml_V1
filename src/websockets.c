@@ -363,10 +363,7 @@ static int stream_callback(struct libwebsocket_context *this, struct libwebsocke
 
    case LWS_CALLBACK_CLIENT_WRITEABLE:
     if (sd->state == STREAM_OPENED) {
-      unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
-      int n = sprintf(buf + LWS_SEND_BUFFER_PRE_PADDING,
-                     "{'uri': '%s', 'start': %f, 'duration': %f}", sd->uri, sd->start, sd->duration) ;
-      libwebsocket_write(ws, buf + LWS_SEND_BUFFER_PRE_PADDING, n, LWS_WRITE_TEXT) ;
+      send_data_request(sd, STREAM_CHECKSUM_STRICT) ;
       sd->state = STREAM_RUNNING ;
       }
     break ;
@@ -376,6 +373,34 @@ static int stream_callback(struct libwebsocket_context *this, struct libwebsocke
     }
 
   return 0 ;
+  }
+
+
+static void send_data_request(stream_data *sd, STREAM_CHECKSUM check)
+/*=================================================================*/
+{
+  char *hdr ;
+  int n = asprintf(&hdr, "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f}", sd->uri, sd->start, sd->duration) ;
+
+  unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
+  char *bufp = (char *)buf + LWS_SEND_BUFFER_PRE_PADDING ;
+  int buflen = sprintf(bufp, "#%c%d%c%d%s0\n##", DATA_REQUEST, STREAM_VERSION, 'C', n, hdr) ;
+  free(hdr) ;
+
+  if (check == STREAM_CHECKSUM_NONE) bufp += buflen ;
+  else {
+    MHASH md5 = mhash_init(MHASH_MD5) ;
+    mhash(md5, bufp, buflen) ;
+    unsigned char digest[16] ;
+    mhash_deinit(md5, digest) ;
+    bufp += buflen ;
+    int i ;
+    for (i = 0 ;  i < 16 ;  ++i) sprintf(bufp + 2*i, "%02x", digest[i]) ;
+    buflen += 32 ;
+    }
+  *bufp = '\n' ;
+  buflen += 1 ;
+  libwebsocket_write(sd->ws, buf + LWS_SEND_BUFFER_PRE_PADDING, buflen, LWS_WRITE_BINARY) ;
   }
 
 
