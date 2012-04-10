@@ -17,7 +17,6 @@ typedef enum {
   STREAM_STATE_RESET,
   STREAM_STATE_TYPE,
   STREAM_STATE_VERSION,
-  STREAM_STATE_MORE,
   STREAM_STATE_HDRLEN,
   STREAM_STATE_HEADER,
   STREAM_STATE_DATALEN,
@@ -39,7 +38,6 @@ struct Stream_Reader {
   int number ;
 
   int version ;
-  int more ;
   int expected ;
   char *storepos ;
   char *jsonhdr ;
@@ -97,8 +95,8 @@ const char *stream_error_text(STREAM_ERROR_CODE code)
        : (code == STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
        : (code == STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
        : (code == STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
-       : (code == STREAM_ERROR_INVALID_MORE_FLAG)  ? "Invalid value for 'more' flag"
        : (code == STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
+       : (code == STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
        :                                             "Unknown Error" ;
   }
 
@@ -175,21 +173,18 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           pos += 1 ;
           len -= 1 ;
           }
-        if (len > 0) sp->state = STREAM_STATE_MORE ;
-        break ;
-        }
-
-      case STREAM_STATE_MORE: {              // 'C' or 'M'
-        if (sp->version != STREAM_VERSION) sp->error = STREAM_ERROR_VERSION_MISMATCH ;
-        else if (*pos == 'C' || *pos == 'M') {
-          sp->more = (*pos == 'M') ;
-          mhash(sp->md5, pos, 1) ;
-          pos += 1 ;
-          len -= 1 ;
-          sp->expected = 0 ;
-          sp->state = STREAM_STATE_HDRLEN ;
+        if (len > 0) {
+          if (*pos != 'V')
+            sp->error = ERROR.BAD_FORMAT ;
+          else if (sp->version != STREAM_VERSION)
+            sp->error = STREAM_ERROR_VERSION_MISMATCH ;
+          else {
+            pos += 1 ;
+            len -= 1 ;
+            sp->expected = 0 ;
+            sp->state = STREAM_STATE_HDRLEN ;
+            }
           }
-        else sp->error = STREAM_ERROR_INVALID_MORE_FLAG ;
         break ;
         }
 
