@@ -6,35 +6,37 @@
 #include <libwebsockets.h>
 #include <mhash.h>
 
-#include "bsml-internal.h"
+#include "bsml_stream.h"
+#include "bsml_internal.h"
+#include "utility/bsml_string.h"
 
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 
 typedef enum {
-  STREAM_STATE_ENDED = -1,
-  STREAM_STATE_RESET,
-  STREAM_STATE_TYPE,
-  STREAM_STATE_VERSION,
-  STREAM_STATE_HDRLEN,
-  STREAM_STATE_HEADER,
-  STREAM_STATE_DATALEN,
-  STREAM_STATE_HDREND,
-  STREAM_STATE_CONTENT,
-  STREAM_STATE_TRAILER,
-  STREAM_STATE_CHECKSUM,
-  STREAM_STATE_CHECKDATA,
-  STREAM_STATE_BLOCKEND,
-  STREAM_STATE_BLOCK
-  } STREAM_READER_STATE ;
+  BSML_STREAM_STATE_ENDED = -1,
+  BSML_STREAM_STATE_RESET,
+  BSML_STREAM_STATE_TYPE,
+  BSML_STREAM_STATE_VERSION,
+  BSML_STREAM_STATE_HDRLEN,
+  BSML_STREAM_STATE_HEADER,
+  BSML_STREAM_STATE_DATALEN,
+  BSML_STREAM_STATE_HDREND,
+  BSML_STREAM_STATE_CONTENT,
+  BSML_STREAM_STATE_TRAILER,
+  BSML_STREAM_STATE_CHECKSUM,
+  BSML_STREAM_STATE_CHECKDATA,
+  BSML_STREAM_STATE_BLOCKEND,
+  BSML_STREAM_STATE_BLOCK
+  } BSML_STREAM_READER_STATE ;
 
 
-struct Stream_Reader {
-  STREAM_CHECKSUM checksum ;
-  STREAM_READER_STATE state ;
-  STREAM_ERROR_CODE error ;
-  stream_block *block ;
+struct bsml_Stream_Reader {
+  BSML_STREAM_CHECKSUM checksum ;
+  BSML_STREAM_READER_STATE state ;
+  BSML_STREAM_ERROR_CODE error ;
+  bsml_stream_block *block ;
   int number ;
 
   int version ;
@@ -48,20 +50,20 @@ struct Stream_Reader {
 
 static struct libwebsocket_context *context = NULL ;
 
-static int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
+static int bsml_stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
                            enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len) ;
 
-static void send_data_request(stream_data *sd, STREAM_CHECKSUM check) ;
+static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check) ;
 
 
 static struct libwebsocket_protocols protocols[] = {
-    { STREAM_PROTOCOL, stream_callback, 0 },
+    { BSML_STREAM_PROTOCOL, bsml_stream_callback, 0 },
     { NULL,            NULL,            0 }
   } ;
 
 
-void stream_initialise(void)
-/*========================*/
+void bsml_stream_initialise(void)
+/*=============================*/
 {
   if (context == NULL) {
     context = libwebsocket_create_context(CONTEXT_PORT_NO_LISTEN, NULL, protocols,
@@ -73,8 +75,8 @@ void stream_initialise(void)
     }
   }
 
-void stream_finish(void)
-/*====================*/
+void bsml_stream_finish(void)
+/*=========================*/
 {
   if (context) {
     libwebsocket_context_destroy(context) ;
@@ -83,35 +85,35 @@ void stream_finish(void)
   }
 
 
-const char *stream_error_text(STREAM_ERROR_CODE code)
-/*=================================================*/
+const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code)
+/*===========================================================*/
 {
-  return (code == STREAM_ERROR_NONE)               ? ""
-       : (code == STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
-       : (code == STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
-       : (code == STREAM_ERROR_MISSING_TRAILER)    ? "Missing block trailer"
-       : (code == STREAM_ERROR_INVALID_CHECKSUM)   ? "Invalid block checksum"
-       : (code == STREAM_ERROR_MISSING_TRAILER_LF) ? "Missing LF on trailer"
-       : (code == STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
-       : (code == STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
-       : (code == STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
-       : (code == STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
-       : (code == STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
-       :                                             "Unknown Error" ;
+  return (code == BSML_STREAM_ERROR_NONE)               ? ""
+       : (code == BSML_STREAM_ERROR_UNEXPECTED_TRAILER) ? "Unexpected block trailer"
+       : (code == BSML_STREAM_ERROR_MISSING_HEADER_LF)  ? "Missing LF on header"
+       : (code == BSML_STREAM_ERROR_MISSING_TRAILER)    ? "Missing block trailer"
+       : (code == BSML_STREAM_ERROR_INVALID_CHECKSUM)   ? "Invalid block checksum"
+       : (code == BSML_STREAM_ERROR_MISSING_TRAILER_LF) ? "Missing LF on trailer"
+       : (code == BSML_STREAM_ERROR_HASHRESERVED)       ? "Block type of '#' is reserved"
+       : (code == BSML_STREAM_ERROR_WRITEOF)            ? "Unexpected error when writing"
+       : (code == BSML_STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
+       : (code == BSML_STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
+       : (code == BSML_STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
+       :                                                  "Unknown Error" ;
   }
 
 
 
-stream_block *stream_new_block(void)
-/*================================*/
+bsml_stream_block *bsml_stream_new_block(void)
+/*==========================================*/
 {
-  stream_block *blk = ALLOCATE(stream_block) ;
+  bsml_stream_block *blk = ALLOCATE(bsml_stream_block) ;
   if (blk) blk->number = -1 ;
   return blk ;
   }
 
-void stream_free_block(stream_block *blk)
-/*=====================================*/
+void bsml_stream_free_block(bsml_stream_block *blk)
+/*===============================================*/
 {
   if (blk) {
     if (blk->header) json_decref(blk->header) ;
@@ -124,19 +126,19 @@ void stream_free_block(stream_block *blk)
 
 
 
-int stream_process_data(stream_reader *sp, char *data, int len)
-/*===========================================================*/
+int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
+/*=====================================================================*/
 {
   char *pos = data ;
   int size = len ;
 
-  sp->error = STREAM_ERROR_NONE ;
+  sp->error = BSML_STREAM_ERROR_NONE ;
   while (len > 0
-      && sp->error == STREAM_ERROR_NONE
-      && sp->state != STREAM_STATE_BLOCK) {
+      && sp->error == BSML_STREAM_ERROR_NONE
+      && sp->state != BSML_STREAM_STATE_BLOCK) {
 
     switch (sp->state) {
-      case STREAM_STATE_RESET: {             // Looking for a block
+      case BSML_STREAM_STATE_RESET: {             // Looking for a block
         char *next = memchr(pos, '#', len) ;
         if (next) {
           len -= (next - pos + 1) ;
@@ -145,28 +147,28 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           mhash(sp->md5, "#", 1) ;
 
           if (sp->jsonhdr) free(sp->jsonhdr) ;
-          sp->block = stream_new_block() ;
+          sp->block = bsml_stream_new_block() ;
 
-          sp->state = STREAM_STATE_TYPE ;
+          sp->state = BSML_STREAM_STATE_TYPE ;
           }
         else len = 0 ;
         break ;
         }
 
-      case STREAM_STATE_TYPE: {              // Getting block type
+      case BSML_STREAM_STATE_TYPE: {              // Getting block type
         sp->block->type = *pos ;
         pos++, len-- ;
         if (sp->block->type != '#') {
           mhash(sp->md5, &sp->block->type, 1) ;
           sp->block->number = sp->number += 1 ;
           sp->version = 0 ;
-          sp->state = STREAM_STATE_VERSION ;
+          sp->state = BSML_STREAM_STATE_VERSION ;
           }
-        else sp->error = STREAM_ERROR_UNEXPECTED_TRAILER ;
+        else sp->error = BSML_STREAM_ERROR_UNEXPECTED_TRAILER ;
         break ;
         }
 
-      case STREAM_STATE_VERSION: {           // Getting version number
+      case BSML_STREAM_STATE_VERSION: {           // Getting version number
         while (len > 0 && isdigit(*pos)) {
           sp->version = 10*sp->version + (*pos - '0') ;
           mhash(sp->md5, pos, 1) ;
@@ -175,20 +177,20 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           }
         if (len > 0) {
           if (*pos != 'V')
-            sp->error = ERROR.BAD_FORMAT ;
-          else if (sp->version != STREAM_VERSION)
-            sp->error = STREAM_ERROR_VERSION_MISMATCH ;
+            sp->error = BSML_STREAM_ERROR_BAD_FORMAT ;
+          else if (sp->version != BSML_STREAM_VERSION)
+            sp->error = BSML_STREAM_ERROR_VERSION_MISMATCH ;
           else {
             pos += 1 ;
             len -= 1 ;
             sp->expected = 0 ;
-            sp->state = STREAM_STATE_HDRLEN ;
+            sp->state = BSML_STREAM_STATE_HDRLEN ;
             }
           }
         break ;
         }
 
-      case STREAM_STATE_HDRLEN: {            // Getting header length
+      case BSML_STREAM_STATE_HDRLEN: {            // Getting header length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
           mhash(sp->md5, pos, 1) ;
@@ -197,12 +199,12 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           }
         if (len > 0) {
           sp->jsonhdr = calloc(sp->expected + 1, 1) ;
-          sp->state = STREAM_STATE_HEADER ;
+          sp->state = BSML_STREAM_STATE_HEADER ;
           }
         break ;
         }
 
-      case STREAM_STATE_HEADER: {            // Getting header JSON
+      case BSML_STREAM_STATE_HEADER: {            // Getting header JSON
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           strncat(sp->jsonhdr, pos, delta) ;
@@ -213,23 +215,23 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           }
         if (sp->expected == 0) {
           if (*sp->jsonhdr) sp->block->header = json_loads(sp->jsonhdr, 0, NULL) ;
-          sp->state = STREAM_STATE_DATALEN ;
+          sp->state = BSML_STREAM_STATE_DATALEN ;
           }
         break ;
         }
 
-      case STREAM_STATE_DATALEN: {           // Getting content length
+      case BSML_STREAM_STATE_DATALEN: {           // Getting content length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
           mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
-        if (len > 0) sp->state = STREAM_STATE_HDREND ;
+        if (len > 0) sp->state = BSML_STREAM_STATE_HDREND ;
         break ;
         }
 
-      case STREAM_STATE_HDREND: {            // Checking header LF
+      case BSML_STREAM_STATE_HDREND: {            // Checking header LF
         if (*pos == '\n') {
           mhash(sp->md5, pos, 1) ;
           pos += 1 ;
@@ -237,13 +239,13 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           sp->block->length = sp->expected ;
           sp->block->content = calloc(sp->expected+1, 1) ;
           sp->storepos = sp->block->content ;
-          sp->state = STREAM_STATE_CONTENT ;
+          sp->state = BSML_STREAM_STATE_CONTENT ;
           }
-        else sp->error = STREAM_ERROR_MISSING_HEADER_LF ;
+        else sp->error = BSML_STREAM_ERROR_MISSING_HEADER_LF ;
         break ;
         }
 
-      case STREAM_STATE_CONTENT: {           // Getting content
+      case BSML_STREAM_STATE_CONTENT: {           // Getting content
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           memcpy(sp->storepos, pos, delta) ;
@@ -255,62 +257,62 @@ int stream_process_data(stream_reader *sp, char *data, int len)
           }
         if (sp->expected == 0) {
           sp->expected = 2 ;
-          sp->state = STREAM_STATE_TRAILER ;
+          sp->state = BSML_STREAM_STATE_TRAILER ;
           }
         break ;
         }
 
-      case STREAM_STATE_TRAILER: {           // Getting trailer
+      case BSML_STREAM_STATE_TRAILER: {           // Getting trailer
         if (*pos == '#') {
           mhash(sp->md5, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           sp->expected -= 1 ;
-          if (sp->expected == 0) sp->state = STREAM_STATE_CHECKSUM ;
+          if (sp->expected == 0) sp->state = BSML_STREAM_STATE_CHECKSUM ;
           }
-        else sp->error = STREAM_ERROR_MISSING_TRAILER ;
+        else sp->error = BSML_STREAM_ERROR_MISSING_TRAILER ;
         break ;
         }
 
-      case STREAM_STATE_CHECKSUM: {          // Checking for checksum
-        if (*pos != '\n' && sp->checksum != STREAM_CHECKSUM_NONE) {
+      case BSML_STREAM_STATE_CHECKSUM: {          // Checking for checksum
+        if (*pos != '\n' && sp->checksum != BSML_STREAM_CHECKSUM_NONE) {
           sp->storepos = sp->checktext ;
           sp->expected = 32 ;
-          sp->state = STREAM_STATE_CHECKDATA ;
+          sp->state = BSML_STREAM_STATE_CHECKDATA ;
           }
-        else sp->state = STREAM_STATE_BLOCKEND ;
+        else sp->state = BSML_STREAM_STATE_BLOCKEND ;
         sp->checktext[0] = '\0' ;
         break ;
         }
 
-      case STREAM_STATE_CHECKDATA: {         // Getting checksum
+      case BSML_STREAM_STATE_CHECKDATA: {         // Getting checksum
         while (len > 0 && sp->expected > 0 && isxdigit(*pos)) {
           *sp->storepos++ = *pos++ ;
           len -= 1 ;
           sp->expected -= 1 ;
           }
-        if (len > 0) sp->state = STREAM_STATE_BLOCKEND ;
+        if (len > 0) sp->state = BSML_STREAM_STATE_BLOCKEND ;
         break ;
         }
 
-      case STREAM_STATE_BLOCKEND: {          // Checking for final LF
-        if (sp->checksum == STREAM_CHECKSUM_STRICT
-         || sp->checksum == STREAM_CHECKSUM_CHECK && sp->checktext[0]) {
+      case BSML_STREAM_STATE_BLOCKEND: {          // Checking for final LF
+        if (sp->checksum == BSML_STREAM_CHECKSUM_STRICT
+         || sp->checksum == BSML_STREAM_CHECKSUM_CHECK && sp->checktext[0]) {
           unsigned char digest[16] ;
           mhash_deinit(sp->md5, digest) ;
           char hexdigest[33] ;
           int i ;
           for (i = 0 ;  i < 16 ;  ++i) sprintf(hexdigest + 2*i, "%02x", digest[i]) ;
-          if (strcmp(sp->checktext, hexdigest) != 0) sp->error = STREAM_ERROR_INVALID_CHECKSUM ;
+          if (strcmp(sp->checktext, hexdigest) != 0) sp->error = BSML_STREAM_ERROR_INVALID_CHECKSUM ;
           }
-        if (sp->error == STREAM_ERROR_NONE) {
+        if (sp->error == BSML_STREAM_ERROR_NONE) {
           if (*pos == '\n') {
             pos += 1 ;
             len -= 1 ;
             }
-          else sp->error = STREAM_ERROR_MISSING_TRAILER_LF ;
+          else sp->error = BSML_STREAM_ERROR_MISSING_TRAILER_LF ;
           }
-        sp->state = STREAM_STATE_BLOCK ;     // All done, exit loop
+        sp->state = BSML_STREAM_STATE_BLOCK ;     // All done, exit loop
         break ;
         }
       }
@@ -318,10 +320,10 @@ int stream_process_data(stream_reader *sp, char *data, int len)
 
   if (sp->error) {
     if (sp->block) {
-      stream_free_block(sp->block) ;
+      bsml_stream_free_block(sp->block) ;
       sp->block = NULL ;
       }
-    sp->state = STREAM_STATE_RESET ;
+    sp->state = BSML_STREAM_STATE_RESET ;
     }
 
   return(size - len) ;  // Bytes we've consumed
@@ -329,52 +331,52 @@ int stream_process_data(stream_reader *sp, char *data, int len)
 
 
 
-static int stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
+static int bsml_stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
 /*==================================================================================*/
                            enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
 {
-  stream_data *sd = (stream_data *)userdata ;
+  bsml_stream_data *sd = (bsml_stream_data *)userdata ;
 
   switch (rsn) {
    case LWS_CALLBACK_CLOSED:
    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
     if (sd->sp) {
-      if (sd->sp->state != STREAM_STATE_BLOCK && sd->sp->block) stream_free_block(sd->sp->block) ;
+      if (sd->sp->state != BSML_STREAM_STATE_BLOCK && sd->sp->block) bsml_stream_free_block(sd->sp->block) ;
       if (sd->sp->jsonhdr) free(sd->sp->jsonhdr) ;
       free(sd->sp) ;
       }
     if (rsn == LWS_CALLBACK_CLIENT_CONNECTION_ERROR)
-      sd->error = STREAM_ERROR_NO_CONNECTION ;
-    sd->state = STREAM_CLOSED ;
+      sd->error = BSML_STREAM_ERROR_NO_CONNECTION ;
+    sd->state = BSML_STREAM_CLOSED ;
     break ;
 
    case LWS_CALLBACK_CLIENT_ESTABLISHED:
-    sd->sp = ALLOCATE(stream_reader) ;
+    sd->sp = ALLOCATE(bsml_stream_reader) ;
     if (sd->sp) {
-      sd->sp->state = STREAM_STATE_RESET ;
-      sd->sp->checksum = STREAM_CHECKSUM_CHECK ;  // Set from stream data structure ??
+      sd->sp->state = BSML_STREAM_STATE_RESET ;
+      sd->sp->checksum = BSML_STREAM_CHECKSUM_CHECK ;  // Set from stream data structure ??
       sd->sp->number = -1 ;
-      sd->state = STREAM_OPENED ;
+      sd->state = BSML_STREAM_OPENED ;
       sd->ws = ws ;
       libwebsocket_callback_on_writable(this, ws) ;
       }
     else {             // Out of memory...
       fprintf(stderr, "No memory for libwebsockets ????\n") ;
-      sd->state = STREAM_CLOSED ;
+      sd->state = BSML_STREAM_CLOSED ;
       libwebsocket_close_and_free_session(this,  ws, LWS_CLOSE_STATUS_GOINGAWAY) ;
       exit(1) ;
       }
     break ;
 
    case LWS_CALLBACK_CLIENT_RECEIVE:
-    while (sd->state != STREAM_ERROR && len > 0) {
-      int n = stream_process_data(sd->sp, data, len) ;
-      if (sd->sp->error == STREAM_ERROR_NONE) {
-        if (sd->sp->state == STREAM_STATE_BLOCK) {
+    while (sd->state != BSML_STREAM_ERROR && len > 0) {
+      int n = bsml_stream_process_data(sd->sp, data, len) ;
+      if (sd->sp->error == BSML_STREAM_ERROR_NONE) {
+        if (sd->sp->state == BSML_STREAM_STATE_BLOCK) {
           if (sd->block == NULL) {
             sd->block = sd->sp->block ;
             sd->sp->block = NULL ;
-            sd->sp->state = STREAM_STATE_RESET ;
+            sd->sp->state = BSML_STREAM_STATE_RESET ;
             }
           else {
             libwebsocket_rx_flow_control(ws, 0) ;
@@ -384,7 +386,7 @@ static int stream_callback(struct libwebsocket_context *this, struct libwebsocke
         }
       else {
         sd->error = sd->sp->error ;
-        sd->state = STREAM_ERROR ;
+        sd->state = BSML_STREAM_ERROR ;
         }
       data += len ;
       len -= n ;
@@ -392,9 +394,9 @@ static int stream_callback(struct libwebsocket_context *this, struct libwebsocke
     break ;
 
    case LWS_CALLBACK_CLIENT_WRITEABLE:
-    if (sd->state == STREAM_OPENED) {
-      send_data_request(sd, STREAM_CHECKSUM_STRICT) ;
-      sd->state = STREAM_RUNNING ;
+    if (sd->state == BSML_STREAM_OPENED) {
+      send_data_request(sd, BSML_STREAM_CHECKSUM_STRICT) ;
+      sd->state = BSML_STREAM_RUNNING ;
       }
     break ;
 
@@ -406,8 +408,8 @@ static int stream_callback(struct libwebsocket_context *this, struct libwebsocke
   }
 
 
-static void send_data_request(stream_data *sd, STREAM_CHECKSUM check)
-/*=================================================================*/
+static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check)
+/*===========================================================================*/
 {
   char *hdr ;
   int n = asprintf(&hdr, "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f}",
@@ -415,10 +417,10 @@ static void send_data_request(stream_data *sd, STREAM_CHECKSUM check)
 
   unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
   char *bufp = (char *)buf + LWS_SEND_BUFFER_PRE_PADDING ;
-  int buflen = sprintf(bufp, "#%c%d%c%d%s0\n##", DATA_REQUEST, STREAM_VERSION, 'C', n, hdr) ;
+  int buflen = sprintf(bufp, "#%c%d%c%d%s0\n##", BSML_STREAM_DATA_REQUEST, BSML_STREAM_VERSION, 'C', n, hdr) ;
   free(hdr) ;
 
-  if (check == STREAM_CHECKSUM_NONE) bufp += buflen ;
+  if (check == BSML_STREAM_CHECKSUM_NONE) bufp += buflen ;
   else {
     MHASH md5 = mhash_init(MHASH_MD5) ;
     mhash(md5, bufp, buflen) ;
@@ -435,43 +437,43 @@ static void send_data_request(stream_data *sd, STREAM_CHECKSUM check)
   }
 
 
-stream_data *stream_new_data(const char *uri)
-/*=========================================*/
+bsml_stream_data *bsml_stream_new_data(const char *uri)
+/*===================================================*/
 {
-  stream_data *sd = ALLOCATE(stream_data) ;
-  if (sd) sd->uri = string_copy(uri) ;
+  bsml_stream_data *sd = ALLOCATE(bsml_stream_data) ;
+  if (sd) sd->uri = bsml_string_copy(uri) ;
   return sd ;
   }
 
 
-stream_data *stream_data_request(const char *host, int port, const char *endpoint,
-/*==============================================================================*/
+bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
+/*========================================================================================*/
                                  const char *uri, double start, double duration)
 {
-  stream_data *sd = stream_new_data(uri) ;
+  bsml_stream_data *sd = bsml_stream_new_data(uri) ;
   if (sd) {
     sd->start = start ;
     sd->duration = duration ;
-    sd->state = STREAM_STARTING ;
+    sd->state = BSML_STREAM_STARTING ;
     sd->ws = libwebsocket_client_connect_extended(context, host, port, 0, endpoint, host, host,
-                                                  STREAM_PROTOCOL, -1, sd) ;
+                                                  BSML_STREAM_PROTOCOL, -1, sd) ;
     }
   return sd ;
   }
 
 
-stream_block *stream_data_read(stream_data *sd)
-/*===========================================*/
+bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd)
+/*==========================================================*/
 {
-  stream_block *result = NULL ;
+  bsml_stream_block *result = NULL ;
 
-  while (sd->ws && sd->block == NULL && sd->state != STREAM_ERROR && sd->state < STREAM_CLOSED)
+  while (sd->ws && sd->block == NULL && sd->state != BSML_STREAM_ERROR && sd->state < BSML_STREAM_CLOSED)
     libwebsocket_service(context, 100) ;
 
   if (sd->block != NULL) {
     result = sd->block ;
     sd->block = NULL ;
-    if (sd->state < STREAM_CLOSED && sd->stopped) {
+    if (sd->state < BSML_STREAM_CLOSED && sd->stopped) {
       sd->stopped = 0 ;
       libwebsocket_rx_flow_control(sd->ws, 1) ;
       libwebsocket_service(context, 0) ;
@@ -481,12 +483,12 @@ stream_block *stream_data_read(stream_data *sd)
   }
 
 
-void stream_free_data(stream_data *sd)
-/*==================================*/
+void bsml_stream_free_data(bsml_stream_data *sd)
+/*============================================*/
 {
   if (sd) {
-    if (sd->uri) free((char *)sd->uri) ;
-    if (sd->block) stream_free_block(sd->block) ;
+    bsml_string_free(sd->uri) ;
+    bsml_stream_free_block(sd->block) ;
     free(sd) ;
     }
   }

@@ -5,96 +5,96 @@
 #include <jansson.h>
 
 
-#define STREAM_PROTOCOL "biosignalml-ssf"
+#define BSML_STREAM_PROTOCOL "biosignalml-ssf"
 
-#define STREAM_VERSION  1
+#define BSML_STREAM_VERSION  1
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef char STREAM_BLOCK_TYPE ;
+typedef char BSML_STREAM_BLOCK_TYPE ;
 
-#define DATA_REQUEST 'd'
-#define DATA_BLOCK   'D'
-#define ERROR_BLOCK  'E'
+#define BSML_STREAM_DATA_REQUEST 'd'
+#define BSML_STREAM_DATA_BLOCK   'D'
+#define BSML_STREAM_ERROR_BLOCK  'E'
 
-
-typedef enum {
-  STREAM_ERROR_NONE = 0,
-  STREAM_ERROR_UNEXPECTED_TRAILER,
-  STREAM_ERROR_MISSING_HEADER_LF,
-  STREAM_ERROR_MISSING_TRAILER,
-  STREAM_ERROR_INVALID_CHECKSUM,
-  STREAM_ERROR_MISSING_TRAILER_LF,
-  STREAM_ERROR_HASHRESERVED,
-  STREAM_ERROR_WRITEOF,
-  STREAM_ERROR_VERSION_MISMATCH,
-  STREAM_ERROR_BAD_JSON_HEADER,
-  STREAM_ERROR_BAD_FORMAT,
-  STREAM_ERROR_NO_CONNECTION,
-  } STREAM_ERROR_CODE ;
 
 typedef enum {
-  STREAM_CHECKSUM_INHERIT = 0,
-  STREAM_CHECKSUM_STRICT,
-  STREAM_CHECKSUM_CHECK,
-  STREAM_CHECKSUM_IGNORE,
-  STREAM_CHECKSUM_NONE
-  } STREAM_CHECKSUM ;
+  BSML_STREAM_ERROR_NONE = 0,
+  BSML_STREAM_ERROR_UNEXPECTED_TRAILER,
+  BSML_STREAM_ERROR_MISSING_HEADER_LF,
+  BSML_STREAM_ERROR_MISSING_TRAILER,
+  BSML_STREAM_ERROR_INVALID_CHECKSUM,
+  BSML_STREAM_ERROR_MISSING_TRAILER_LF,
+  BSML_STREAM_ERROR_HASHRESERVED,
+  BSML_STREAM_ERROR_WRITEOF,
+  BSML_STREAM_ERROR_VERSION_MISMATCH,
+  BSML_STREAM_ERROR_BAD_JSON_HEADER,
+  BSML_STREAM_ERROR_BAD_FORMAT,
+  BSML_STREAM_ERROR_NO_CONNECTION,
+  } BSML_STREAM_ERROR_CODE ;
 
 typedef enum {
-  STREAM_STARTING = -1,
-  STREAM_OPENED,
-  STREAM_RUNNING,
-  STREAM_ERROR,
-  STREAM_CLOSED
-  } STREAM_STATE ;
+  BSML_STREAM_CHECKSUM_INHERIT = 0,
+  BSML_STREAM_CHECKSUM_STRICT,
+  BSML_STREAM_CHECKSUM_CHECK,
+  BSML_STREAM_CHECKSUM_IGNORE,
+  BSML_STREAM_CHECKSUM_NONE
+  } BSML_STREAM_CHECKSUM ;
+
+typedef enum {
+  BSML_STREAM_STARTING = -1,
+  BSML_STREAM_OPENED,
+  BSML_STREAM_RUNNING,
+  BSML_STREAM_ERROR,
+  BSML_STREAM_CLOSED
+  } BSML_STREAM_STATE ;
 
 
 typedef struct {
   int number ;
-  STREAM_BLOCK_TYPE type ;
+  BSML_STREAM_BLOCK_TYPE type ;
   json_t *header ;
   int length ;
   char *content ;
-  } stream_block ;
+  } bsml_stream_block ;
 
 
-typedef struct Stream_Reader
-  stream_reader ;
+typedef struct bsml_Stream_Reader
+  bsml_stream_reader ;
 
 typedef struct {
   const char *uri ;
   double start ;
   double duration ;
   //  offset, count, maxsize
-  STREAM_STATE state ;
-  STREAM_ERROR_CODE error ;
+  BSML_STREAM_STATE state ;
+  BSML_STREAM_ERROR_CODE error ;
   int stopped ;
-  stream_block *block ;
-  stream_reader *sp ;
+  bsml_stream_block *block ;
+  bsml_stream_reader *sp ;
   struct libwebsocket *ws ;
-  } stream_data ;
+  } bsml_stream_data ;
 
 
-void stream_initialise(void) ;
+void bsml_stream_initialise(void) ;
 
-void stream_finish(void) ;
+void bsml_stream_finish(void) ;
 
-const char *stream_error_text(STREAM_ERROR_CODE code) ;
+const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code) ;
 
-void stream_free_block(stream_block *sb) ;
+void bsml_stream_free_block(bsml_stream_block *sb) ;
 
-stream_data *stream_data_new(const char *uri) ;
+bsml_stream_data *bsml_stream_data_new(const char *uri) ;
 
-stream_data *stream_data_request(const char *host, int port, const char *endpoint,
+bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
                                  const char *uri, double start, double duration) ;
 
-stream_block *stream_data_read(stream_data *sd) ;
+bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd) ;
 
-void stream_free_data(stream_data *sd) ;
+void bsml_stream_free_data(bsml_stream_data *sd) ;
 
 #ifdef __cplusplus
   } ;
