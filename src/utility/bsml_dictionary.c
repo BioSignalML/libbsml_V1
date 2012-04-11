@@ -12,8 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bsml_dictionary.h"
-#include "bsml_string.h"
+#include "bsml_internal.h"
+#include "utility/bsml_dictionary.h"
+#include "utility/bsml_string.h"
 
 
 static bsml_dictionary_element *bsml_dictionary_element_get(bsml_dictionary *d, const char *key)
@@ -22,20 +23,12 @@ static bsml_dictionary_element *bsml_dictionary_element_get(bsml_dictionary *d, 
   bsml_dictionary_element *e = d->elements ;
   while (e && strcmp(e->key, key)) e = e->next ;
   if (e == NULL) {                // Create a new entry if not found
-    e = (bsml_dictionary_element *)calloc(sizeof(bsml_dictionary_element), 1) ;
+    e = ALLOCATE(bsml_dictionary_element) ;
     e->key = bsml_string_copy(key) ;
     e->next = d->elements ;       // Link into start of list
     d->elements = e ;
     d->length += 1 ;
     }
-  return e ;
-  }
-
-bsml_dictionary_element *bsml_dictionary_element_find(bsml_dictionary *d, const char *key)
-/*======================================================================================*/
-{
-  bsml_dictionary_element *e = d->elements ;
-  while (e && strcmp(e->key, key)) e = e->next ;
   return e ;
   }
 
@@ -60,7 +53,7 @@ static void bsml_dictionary_element_free(bsml_dictionary_element *e)
 bsml_dictionary *bsml_dictionary_create(void)
 /*=========================================*/
 {
-  bsml_dictionary *d = (bsml_dictionary *)calloc(sizeof(bsml_dictionary), 1) ;
+  bsml_dictionary *d = ALLOCATE(bsml_dictionary) ;
   d->usecount = 1 ;
   return d ;
   }
@@ -86,24 +79,11 @@ void bsml_dictionary_free(bsml_dictionary *d)
     }
   }
 
-
-void bsml_dictionary_delete(bsml_dictionary *d, const char *key)
-/*============================================================*/
+int bsml_dictionary_length(bsml_dictionary *d)
+/*==========================================*/
 {
-  bsml_dictionary_element *prev = NULL ;
-  bsml_dictionary_element *e = d->elements ;
-  while (e && strcmp(e->key, key)) {
-    prev = e ;
-    e = e->next ;
-    }
-  if (e) {
-    if (prev) prev->next = e->next ;
-    else      d->elements = e->next ;
-    bsml_dictionary_element_free(e) ;
-    d->length -= 1 ;
-    }
+  return d->length ;
   }
-
 
 
 void bsml_dictionary_iterate(bsml_dictionary *d, IterateDictionary *f, void *param)
@@ -176,6 +156,14 @@ void bsml_dictionary_set_pointer(bsml_dictionary *d, const char *key, void *v, F
   }
 
 
+bsml_dictionary_element *bsml_dictionary_element_find(bsml_dictionary *d, const char *key)
+/*======================================================================================*/
+{
+  bsml_dictionary_element *e = d->elements ;
+  while (e && strcmp(e->key, key)) e = e->next ;
+  return e ;
+  }
+
 int bsml_dictionary_get_long(bsml_dictionary *d, const char *key, long *v)
 /*======================================================================*/
 {
@@ -213,6 +201,24 @@ void *bsml_dictionary_get_pointer(bsml_dictionary *d, const char *key)
   bsml_dictionary_element *e = bsml_dictionary_element_find(d, key) ;
   if (e && e->type == DICTIONARY_TYPE_POINTER) return e->pointer ;
   return NULL ;
+  }
+
+
+void bsml_dictionary_delete(bsml_dictionary *d, const char *key)
+/*============================================================*/
+{
+  bsml_dictionary_element *prev = NULL ;
+  bsml_dictionary_element *e = d->elements ;
+  while (e && strcmp(e->key, key)) {
+    prev = e ;
+    e = e->next ;
+    }
+  if (e) {
+    if (prev) prev->next = e->next ;
+    else      d->elements = e->next ;
+    bsml_dictionary_element_free(e) ;
+    d->length -= 1 ;
+    }
   }
 
 

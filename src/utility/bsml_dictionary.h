@@ -78,6 +78,14 @@ bsml_dictionary *bsml_dictionary_copy(bsml_dictionary *d) ;
   */
 void bsml_dictionary_free(bsml_dictionary *d) ;
 
+
+/** Get the number of elements in a dictionary.
+  * @param d The dictionary.
+  * @return The number of elements.
+  */
+int bsml_dictionary_length(bsml_dictionary *d) ;
+
+
 /** A function called on each dictionary element when iterating.
   * @param e The current dictionary element.
   * @param p An optional parameter.
