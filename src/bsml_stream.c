@@ -410,7 +410,8 @@ static void send_data_request(stream_data *sd, STREAM_CHECKSUM check)
 /*=================================================================*/
 {
   char *hdr ;
-  int n = asprintf(&hdr, "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f}", sd->uri, sd->start, sd->duration) ;
+  int n = asprintf(&hdr, "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f}",
+    sd->uri, sd->start, sd->duration) ;  // Also set datatype...
 
   unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
   char *bufp = (char *)buf + LWS_SEND_BUFFER_PRE_PADDING ;
