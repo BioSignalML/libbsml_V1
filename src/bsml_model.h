@@ -11,8 +11,8 @@
   * The core BioSignalML resources.
   */
 
-#ifndef _BSML_SIGNAL_H
-#define _BSML_SIGNAL_H
+#ifndef _BSML_MODEL_H
+#define _BSML_MODEL_H
 
 #include "bsml_time.h"
 #include "utility/bsml_dictionary.h"
