@@ -16,10 +16,7 @@ const char *bsml_json_get_string(json_t *obj, const char *key)
 {
   json_t *entry = json_object_get(obj, key) ;
   if (entry && json_is_string(entry)) return json_string_value(entry) ;
-  else {
-    bsml_log_error("Expected a string for '%s' JSON key\n", key) ;
-    return NULL ;
-    }
+  else                                return NULL ;
   }
 
 int bsml_json_get_integer(json_t *obj, const char *key)

@@ -23,8 +23,7 @@ extern "C" {
 /** Get a string value from a JSON object.
   * @param obj A JSON object.
   * @param key The key of the string value.
-  * @return The string value if the key exists and refers to a string, otherwise an error message
-  * is written to 'stderr' and NULL is returned.
+  * @return The string value if the key exists and refers to a string otherwise NULL.
   */
 const char *bsml_json_get_string(json_t *obj, const char *key) ;
 
