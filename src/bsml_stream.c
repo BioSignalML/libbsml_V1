@@ -104,15 +104,15 @@ const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code)
 
 
 
-bsml_stream_block *bsml_stream_new_block(void)
-/*==========================================*/
+bsml_stream_block *bsml_stream_block_alloc(void)
+/*============================================*/
 {
   bsml_stream_block *blk = ALLOCATE(bsml_stream_block) ;
   if (blk) blk->number = -1 ;
   return blk ;
   }
 
-void bsml_stream_free_block(bsml_stream_block *blk)
+void bsml_stream_block_free(bsml_stream_block *blk)
 /*===============================================*/
 {
   if (blk) {
@@ -320,7 +320,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
 
   if (sp->error) {
     if (sp->block) {
-      bsml_stream_free_block(sp->block) ;
+      bsml_stream_block_free(sp->block) ;
       sp->block = NULL ;
       }
     sp->state = BSML_STREAM_STATE_RESET ;
@@ -341,7 +341,7 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
    case LWS_CALLBACK_CLOSED:
    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
     if (sd->sp) {
-      if (sd->sp->state != BSML_STREAM_STATE_BLOCK && sd->sp->block) bsml_stream_free_block(sd->sp->block) ;
+      if (sd->sp->state != BSML_STREAM_STATE_BLOCK && sd->sp->block) bsml_stream_block_free(sd->sp->block) ;
       if (sd->sp->jsonhdr) free(sd->sp->jsonhdr) ;
       free(sd->sp) ;
       }
@@ -437,8 +437,8 @@ static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check)
   }
 
 
-bsml_stream_data *bsml_stream_new_data(const char *uri)
-/*===================================================*/
+bsml_stream_data *bsml_stream_data_alloc(const char *uri)
+/*=====================================================*/
 {
   bsml_stream_data *sd = ALLOCATE(bsml_stream_data) ;
   if (sd) sd->uri = bsml_string_copy(uri) ;
@@ -450,7 +450,7 @@ bsml_stream_data *bsml_stream_data_request(const char *host, int port, const cha
 /*========================================================================================*/
                                  const char *uri, double start, double duration)
 {
-  bsml_stream_data *sd = bsml_stream_new_data(uri) ;
+  bsml_stream_data *sd = bsml_stream_data_alloc(uri) ;
   if (sd) {
     sd->start = start ;
     sd->duration = duration ;
@@ -483,7 +483,7 @@ bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd)
   }
 
 
-void bsml_stream_free_data(bsml_stream_data *sd)
+void bsml_stream_data_free(bsml_stream_data *sd)
 /*============================================*/
 {
   if (sd) {

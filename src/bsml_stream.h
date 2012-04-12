@@ -85,16 +85,18 @@ void bsml_stream_finish(void) ;
 
 const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code) ;
 
-void bsml_stream_free_block(bsml_stream_block *sb) ;
+
+bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
+                                           const char *uri, double start, double duration, const char *dtype) ;
 
 bsml_stream_data *bsml_stream_data_new(const char *uri) ;
 
-bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
-                                 const char *uri, double start, double duration) ;
+void bsml_stream_data_free(bsml_stream_data *sd) ;
+
 
 bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd) ;
 
-void bsml_stream_free_data(bsml_stream_data *sd) ;
+void bsml_stream_block_free(bsml_stream_block *sb) ;
 
 #ifdef __cplusplus
   } ;
