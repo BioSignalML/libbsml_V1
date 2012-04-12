@@ -28,6 +28,14 @@ extern "C" {
   */
 const char *bsml_json_as_string(json_t *obj, const char *key) ;
 
+/** Get an integer value from a JSON object.
+  * @param obj A JSON object.
+  * @param key The key of the integer value.
+  * @return The integer value if the key exists and refers to an integer, otherwise an error message
+  * is written to 'stderr' and 0 is returned.
+  */
+int bsml_json_as_integer(json_t *obj, const char *key) ;
+
 /** Get a numeric value from a JSON object.
   * @param obj A JSON object.
   * @param key The key of the numeric value.
