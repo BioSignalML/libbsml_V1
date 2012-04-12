@@ -33,8 +33,6 @@ void bsml_timeseries_free(bsml_timeseries *ts)
 /*==========================================*/
 {
   if (ts) {
-    if (ts->clock) free(ts->clock) ;
-    if (ts->data) free(ts->data) ;
     bsml_string_free(ts->uri) ;
     free(ts) ;
     }
