@@ -1,3 +1,16 @@
+/*****************************************************
+ *
+ *  BioSignalML API
+ *
+ *  Copyright (c) 2010-2012  David Brooks
+ *
+ *  $ID$
+ *
+ *****************************************************/
+/** @file
+  * Websocket streams.
+  */
+
 #ifndef _BSML_STREAM_H
 #define _BSML_STREAM_H
 
@@ -87,10 +100,17 @@ typedef struct {
 
 extern const char *bsml_stream_double_type ;  //!< The datatype of a double on this platform
 extern const char *bsml_stream_long_type ;    //!< The datatype of a long on this platform
+
+/** Initialise globals used for stream connections.
+  */
 void bsml_stream_initialise(void) ;
 
+/** Finished with globals used for stream connections.
+  */
 void bsml_stream_finish(void) ;
 
+/** Return human readable text for an error.
+  */
 const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code) ;
 
 
