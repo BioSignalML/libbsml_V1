@@ -35,9 +35,9 @@ bsml_repository *bsml_repository_connect(const char *uri)
 {
   bsml_repository *repo = ALLOCATE(bsml_repository) ;
   if (repo) {
-    repo->uri = string_copy(uri) ;
-    repo->metadata_end = string_cat(uri, REPOSITORY_METADATA) ;
     repo->graph = bsml_repository_get_metadata(repo, "") ;
+    repo->uri = bsml_string_copy(uri) ;
+    repo->metadata_end = bsml_string_cat(uri, BSML_REPOSITORY_RECORDING) ;
     }
   return repo ;
   }
@@ -47,9 +47,9 @@ void bsml_repository_close(bsml_repository *repo)
 /*=============================================*/
 {
   if (repo) {
-    if (repo->graph) bsml_free_rdfgraph(repo->graph) ;
-    if (repo->uri) free((char *)repo->uri) ;
-    if (repo->metadata_end) free((char *)repo->metadata_end) ;
+    bsml_rdfgraph_free(repo->graph) ;
+    bsml_string_free(repo->uri) ;
+    bsml_string_free(repo->metadata_end) ;
     free(repo) ;
     }
   }
@@ -59,10 +59,10 @@ bsml_rdfgraph *bsml_repository_get_metadata(bsml_repository *repo, const char *u
 /*================================================================================*/
 {
   if (repo) {
-    const char *md_uri = string_cat(repo->metadata_end, uri) ;
+    const char *md_uri = bsml_string_cat(repo->metadata_end, uri) ;
     if (md_uri) {
       bsml_rdfgraph *graph = bsml_rdfgraph_create_and_load_rdf(uri, md_uri) ;
-      free((char *)md_uri) ;
+      bsml_string_free(md_uri) ;
       return graph ;
       }
     }
@@ -76,11 +76,11 @@ static int send_metadata(bsml_repository *repo, const char *uri, bsml_rdfgraph *
   CURL *curl = curl_easy_init() ;
   long status = 0 ;
   if (curl) {
-    const char *md_uri = string_cat(repo->metadata_end, uri) ;
+    const char *md_uri = bsml_string_cat(repo->metadata_end, uri) ;
     curl_easy_setopt(curl, CURLOPT_URL, md_uri) ;
 
     struct curl_slist *slist = NULL ;
-    const char *ctype = string_cat("Content-Type: ", MIMETYPE_RDFXML) ;
+    const char *ctype = bsml_string_cat("Content-Type: ", MIMETYPE_RDFXML) ;
     slist = curl_slist_append(slist, ctype) ;
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist) ;
 
@@ -95,8 +95,8 @@ static int send_metadata(bsml_repository *repo, const char *uri, bsml_rdfgraph *
 
     curl_slist_free_all(slist) ;
     bsml_rdfgraph_free_string(body) ;
-    free((char *)ctype) ;
-    free((char *)md_uri) ;
+    bsml_string_free(ctype) ;
+    bsml_string_free(md_uri) ;
     curl_easy_cleanup(curl) ;
     }
   return (status != 200 || status != 201) ;
