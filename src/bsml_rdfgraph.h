@@ -14,7 +14,7 @@ extern "C" {
 
 
 #define BSML_NAMESPACE "http://www.biosignalml.org/ontologies/2011/04/biosignalml#"
-#define BSML_NS(n)     (BSML_NAMESPACE n)
+#define BSML_NS(n)     ((unsigned char *)(BSML_NAMESPACE n))
 
 typedef struct {
   librdf_node *Signal ;
@@ -31,11 +31,11 @@ typedef struct {
  */
 
 /*! A RDF graph. */
-struct bsml_RDFgraph {
+typedef struct bsml_rdfgraph {
   const char *uri ;           /*!< The graph's URI */
   librdf_storage *storage ;   /*!< Where the graph is stored */
   librdf_model *model ;       /*!< The statements in the graph */
-  } ;
+  } bsml_rdfgraph ;
 
 
 void bsml_rdfgraph_initialise(void) ;
@@ -44,19 +44,19 @@ void bsml_rdfgraph_finish(void) ;
 
 
 /*!
- * Create a rdf_graph object.
+ * Allocate a rdf_graph object.
  *
  * @param uri The URI of the RDF graph
  * @return A ::bsml_rdf_graph, or NULL if errors
  */ 
-bsml_rdfgraph *bsml_new_rdfgraph(const char *uri) ;
+bsml_rdfgraph *bsml_rdfgraph_alloc(const char *uri) ;
 
 /*!
  * Free a rdf_graph object.
  *
  * @param graph The ::bsml_rdf_graph to free
  */ 
-void bsml_free_rdfgraph(bsml_rdfgraph *graph) ;
+void bsml_rdfgraph_free(bsml_rdfgraph *graph) ;
 
 /*!
  * Create a rdf_graph from RDF at an URI.

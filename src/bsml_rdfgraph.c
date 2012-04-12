@@ -11,7 +11,9 @@
 #include <stdlib.h>
 #include <redland.h>
 
-#include "bsml-internal.h"
+#include "bsml_rdfgraph.h"
+#include "bsml_internal.h"
+#include "utility/bsml_string.h"
 
 
 RDF_Nodes RDF ;
@@ -49,12 +51,12 @@ void bsml_rdfgraph_finish(void)
   }
 
 
-bsml_rdfgraph *bsml_new_rdfgraph(const char *uri)
+bsml_rdfgraph *bsml_rdfgraph_alloc(const char *uri)
 /*===============================================*/
 {
   bsml_rdfgraph *graph = ALLOCATE(bsml_rdfgraph) ;
   if (graph) {
-    graph->uri = string_copy(uri) ;
+    graph->uri = bsml_string_copy(uri) ;
     graph->storage = librdf_new_storage(world, "hashes", "triples", "hash-type='memory'") ;
     graph->model = librdf_new_model(world, graph->storage, NULL) ;
     }
@@ -62,13 +64,13 @@ bsml_rdfgraph *bsml_new_rdfgraph(const char *uri)
   }
 
 
-void bsml_free_rdfgraph(bsml_rdfgraph *graph)
-/*===========================================*/
+void bsml_rdfgraph_free(bsml_rdfgraph *graph)
+/*==========================================*/
 {
   if (graph) {
     if (graph->model) librdf_free_model(graph->model) ;
     if (graph->storage) librdf_free_storage(graph->storage) ;
-    if (graph->uri) free((char *)graph->uri) ;
+    bsml_string_free(graph->uri) ;
     free(graph) ;
     }
   }
@@ -77,15 +79,15 @@ void bsml_free_rdfgraph(bsml_rdfgraph *graph)
 bsml_rdfgraph *bsml_rdfgraph_create_and_load_rdf(const char *uri, const char *rdf_uri)
 /*===================================================================================*/
 {
-  bsml_rdfgraph *graph = bsml_new_rdfgraph(uri) ;
+  bsml_rdfgraph *graph = bsml_rdfgraph_alloc(uri) ;
 
   librdf_parser *parser = librdf_new_parser(world, "guess", NULL, NULL) ;
   librdf_uri *base = librdf_new_uri(world, (const unsigned char *)uri) ;
   librdf_uri *rdf  = librdf_new_uri(world, (const unsigned char *)rdf_uri) ;
 
   if (librdf_parser_parse_into_model(parser, rdf, base, graph->model)) {
-    bsml_log_error("Failed to parse: %s\n", rdf_uri) ;
-    bsml_free_rdfgraph(graph) ;
+    bsml_log_error("Failed to parse: %s (base: %s)\n", rdf_uri, uri) ;
+    bsml_rdfgraph_free(graph) ;
     graph = NULL ;
     }
 
