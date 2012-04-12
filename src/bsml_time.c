@@ -168,7 +168,7 @@ bsml_timestamp *bsml_timestamp_from_string(const char *s)
       }
     if (*end == '\0') return ts ;
     }
-  free(ts) ;
+  bsml_timestamp_free(ts) ;
   return NULL ;     // Errors
   }
 
@@ -223,7 +223,7 @@ void bsml_timestamp_normalise(bsml_timestamp *ts)
 void bsml_timestamp_free(bsml_timestamp *ts)
 /*========================================*/
 {
-  free(ts) ;
+  if (ts) free(ts) ;
   }
 
 
