@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <curl/curl.h>
+#include <uriparser/Uri.h>
 
 #include "bsml-internal.h"
 
@@ -33,10 +34,26 @@ void bsml_repository_finish(void)
 bsml_repository *bsml_repository_connect(const char *uri)
 /*=====================================================*/
 {
+  // First parse URI to check validity and to get host and port components
+  UriParserStateA parse_state ;
+  UriUriA parsed_uri ;
+  parse_state.uri = &parsed_uri ;
+  if (uriParseUriA(&parse_state, uri) != URI_SUCCESS || parsed_uri.hostText.first == NULL) {
+    uriFreeUriMembersA(&parsed_uri);
+    return NULL ;
+    }
+  int hostlen = parsed_uri.hostText.afterLast - parsed_uri.hostText.first ;
+  int port ;
+  if (parsed_uri.portText.first != NULL) sscanf(parsed_uri.portText.first, "%d", &port) ;
+  else port = 80 ;
+  uriFreeUriMembersA(&parsed_uri);
   bsml_repository *repo = ALLOCATE(bsml_repository) ;
   if (repo) {
     repo->graph = bsml_repository_get_metadata(repo, "") ;
     repo->uri = bsml_string_copy(uri) ;
+    repo->host = bsml_string_copy(parsed_uri.hostText.first) ;
+    ((char *)repo->host)[hostlen] = '\0' ;
+    repo->port = port ;
     repo->metadata_end = bsml_string_cat(uri, BSML_REPOSITORY_RECORDING) ;
     }
   return repo ;
@@ -49,6 +66,7 @@ void bsml_repository_close(bsml_repository *repo)
   if (repo) {
     bsml_rdfgraph_free(repo->graph) ;
     bsml_string_free(repo->uri) ;
+    bsml_string_free(repo->host) ;
     bsml_string_free(repo->metadata_end) ;
     free(repo) ;
     }

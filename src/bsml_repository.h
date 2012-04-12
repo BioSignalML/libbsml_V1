@@ -25,10 +25,12 @@ extern "C" {
 
 
 /*! A BiosignalML repository. */
-typedef struct bsml_Repository
-  const char *uri ;           /*!< The repository's URI */
-  const char *metadata_end ;  /*!< The repository's metadata endpoint */
-  bsml_rdfgraph *graph ;      /*!< Metadata about the repository */
+typedef struct bsml_Repository {
+  const char *uri ;           //!< The repository's URI
+  const char *host ;          //!< The hostrname of the remote repository
+  int port ;                  //!< The TCP/IP port of the remote repository
+  const char *metadata_end ;  //!< The repository's metadata endpoint
+  bsml_rdfgraph *graph ;      //!< Metadata about the repository
   } bsml_repository ;
 
 
