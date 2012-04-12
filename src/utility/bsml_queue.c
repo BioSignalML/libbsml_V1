@@ -30,7 +30,8 @@ bsml_queue *bsml_queue_alloc(int size)
   if (q) {
     q->size = size ;
     q->buffer = calloc(sizeof(void *), size) ;
-    q->head = q->tail = q->bufend ;
+    q->head = q->tail = q->buffer ;
+    q->bufend = q->buffer + size ;
     }
   return q ;
   }
