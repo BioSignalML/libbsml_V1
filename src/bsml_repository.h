@@ -87,6 +87,13 @@ bsml_recording *bsml_repository_get_recording(bsml_repository *repo, const char 
  */ 
 bsml_signal *bsml_repository_get_signal(bsml_repository *repo, const char *uri) ;
 
+
+typedef void (TimeseriesProcess)(bsml_timeseries *ts) ;
+
+void bsml_repository_get_timeseries(bsml_repository *repo, const char *data_uri,
+                                    double start, double duration, TimeseriesProcess process) ;
+
+
 #ifdef __cplusplus
   } ;
 #endif

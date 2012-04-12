@@ -199,30 +199,63 @@ bsml_recording *bsml_repository_get_recording_with_signals(bsml_repository *repo
 */
 
 
-static void *get_data(bsml_repository *repo, const char *uri, double start, double duration,
-/*========================================================================================*/
-                                                             long offset, long count)
+void bsml_repository_get_timeseries(bsml_repository *repo, const char *data_uri,
+/*============================================================================*/
+                                     double start, double duration, TimeseriesProcess process)
 {
-  stream_data *strm = stream_data_request(host, port,
-    REPOSITORY_STREAM, uri, start, duration) ;
+  bsml_stream_data *strm = bsml_stream_data_request(repo->host, repo->port,
+    BSML_REPOSITORY_STREAM, data_uri, start, duration, bsml_stream_double_type) ;
 
-  stream_block *sb ;
+  bsml_stream_block *sb ;
 
-  while ((sb = stream_data_read(strm)) != NULL) {
+  while ((sb = bsml_stream_data_read(strm)) != NULL) {
+    switch (sb->type) {
+     case BSML_STREAM_ERROR_BLOCK:
+      bsml_log_error("STREAM ERROR: %-*s\n", sb->length, sb->content) ;
+      break ;
 
-    if (sb->type == 'D') {
+     case BSML_STREAM_DATA_BLOCK:
+      if (strcmp(bsml_json_get_string(sb->header, "dtype"), bsml_stream_double_type))
+        bsml_log_error("ERROR: Stream returned wrong type of data\n") ;
+      else {
+        const char *ctype = bsml_json_get_string(sb->header, "ctype") ;
+        if (ctype && strcmp(ctype, bsml_stream_double_type))
+          bsml_log_error("ERROR: Stream returned wrong type of timing data\n") ;
+        else {
+          int count = bsml_json_get_integer(sb->header, "count") ;
+          int len = sb->length/sizeof(double) ;
+          if (ctype) len /= 2 ;
+          if (count != len)
+            bsml_log_error("ERROR: Stream returned wrong amount of data\n") ;
+          else {
+            double *data = (double *)sb->content ;
+            bsml_timeseries *ts = bsml_timeseries_alloc(
+              bsml_json_get_string(sb->header, "uri"),
+              bsml_time_from_seconds(bsml_json_get_number(sb->header, "start")),
+              count,
+              ctype ? 0.0 : bsml_json_get_number(sb->header, "rate"),
+              ctype ? data : NULL,
+              ctype ? data + count : data) ;
+            process(ts) ;
+            bsml_timeseries_free(ts) ;
+            }
+          }
+        }
+      break ;
 
-      // get dtype from sb->header
-      // cJSON *header ;
-
-      dtype *buffer = calloc(sb->length, sizeof(dtype)) ;
-      memcpy(buffer, (double *)sb->content, sb->length*sizeof(dtype)) ;
-
+     default:
+      bsml_log_error("STREAM UNKNOWN BLOCK: %c\n", sb->type) ;
+      break ;
       }
-    stream_free_block(sb) ;
+    bsml_stream_block_free(sb) ;
     }
-  stream_free_data(strm) ;
+  if (strm->error != BSML_STREAM_ERROR_NONE)  // Always check for errors...
+    bsml_log_error("STREAM ERROR %d: %s\n", strm->error, bsml_stream_error_text(strm->error)) ;
+  bsml_stream_data_free(strm) ;
   }
+
+
+
 
 
 /*
@@ -254,3 +287,53 @@ static void *get_data(bsml_repository *repo, const char *uri, double start, doub
     return rec
 
 **/
+
+#ifdef TEST_REPOSITORY
+
+#define REPOSITORY  "http://devel.biosignalml.org"
+
+//#define TEST_SIGNAL "http://devel.biosignalml.org/recording/test/sw4"
+//#define TEST_SIGNAL "http://devel.biosignalml.org/recording/test/ecgca102I"
+//#define TEST_SIGNAL "http://example.org/test/xx/ecg102"
+#define TEST_SIGNAL "http://example.org/test/xx/ecg102/signal/3"
+
+
+
+
+void print_data(bsml_timeseries *d)
+/*===============================*/
+{
+  printf("RCVD %d data values from %s starting at %g at rate %g\n",
+    d->length, d->uri, bsml_time_as_seconds(d->start), d->rate) ;
+
+  int l = d->length ;
+  double *dp = d->data ;
+  while (l > 0) {
+    printf("%f\n", *dp) ;
+    ++dp ;
+    --l ;
+    }
+
+  }
+
+
+int main(void)
+/*==========*/
+{
+  bsml_initialise() ;
+
+  bsml_repository *repo = bsml_repository_connect(REPOSITORY) ;
+
+  double t = 0.0 ;
+  double d = 0.1 ;
+  while (t < 1.0) {
+    bsml_repository_get_timeseries(repo, TEST_SIGNAL, t, d, print_data) ;
+    t += d ;
+    }
+
+  bsml_repository_close(repo) ;
+
+  bsml_finish() ;
+  }
+
+#endif
