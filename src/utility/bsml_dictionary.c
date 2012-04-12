@@ -68,7 +68,7 @@ bsml_dictionary *bsml_dictionary_copy(bsml_dictionary *d)
 void bsml_dictionary_free(bsml_dictionary *d)
 /*=========================================*/
 {
-  if (--d->usecount < 1) {
+  if (d && --d->usecount < 1) {
     bsml_dictionary_element *e = d->elements ;
     while (e) {
       bsml_dictionary_element *this = e ;
