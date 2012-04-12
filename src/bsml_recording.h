@@ -15,18 +15,20 @@
 #define _BSML_RECORDING_H
 
 #include "bsml_units.h"
+#include "bsml_repository.h"
+#include "bsml_rdfgraph.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /*!
- * Create a BioSignalML recording object.
+ * Allocate a BioSignalML recording object.
  *
  * @param uri The URI of the recording
  * @return A ::bsml_recording, or NULL if errors
  */ 
-bsml_recording *bsml_new_recording(const char *uri) ;
+bsml_recording *bsml_recording_alloc(const char *uri) ;
 
 /*!
  * Close and free a BioSignalML recording object.
@@ -46,6 +48,8 @@ void bsml_recording_close(bsml_recording *rec) ;
  */ 
 bsml_recording *bsml_recording_open(const char *uri) ;
 
+
+bsml_recording *bsml_recording_create_from_graph(const char *uri, bsml_rdfgraph *graph, bsml_repository *repo) ;
 
 bsml_signal *bsml_recording_new_signal_by_id(bsml_recording *rec, const char *id, BSML_UNITS units) ;
 
