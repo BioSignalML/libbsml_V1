@@ -41,7 +41,6 @@ struct bsml_Stream_Reader {
   BSML_STREAM_ERROR_CODE error ;
   bsml_stream_block *block ;
   int number ;
-
   int version ;
   int expected ;
   char *storepos ;
@@ -191,6 +190,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
           else if (sp->version != BSML_STREAM_VERSION)
             sp->error = BSML_STREAM_ERROR_VERSION_MISMATCH ;
           else {
+            mhash(sp->md5, pos, 1) ;
             pos += 1 ;
             len -= 1 ;
             sp->expected = 0 ;
@@ -335,7 +335,6 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       }
     sp->state = BSML_STREAM_STATE_RESET ;
     }
-
   return(size - len) ;  // Bytes we've consumed
   }
 
@@ -346,7 +345,6 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
                            enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
 {
   bsml_stream_data *sd = (bsml_stream_data *)userdata ;
-
   switch (rsn) {
    case LWS_CALLBACK_CLOSED:
    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
@@ -426,7 +424,7 @@ static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check)
 
   unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
   char *bufp = (char *)buf + LWS_SEND_BUFFER_PRE_PADDING ;
-  int buflen = sprintf(bufp, "#%c%d%c%d%s0\n##", BSML_STREAM_DATA_REQUEST, BSML_STREAM_VERSION, 'C', n, hdr) ;
+  int buflen = sprintf(bufp, "#%c%dV%d%s0\n##", BSML_STREAM_DATA_REQUEST, BSML_STREAM_VERSION, n, hdr) ;
   free(hdr) ;
 
   if (check == BSML_STREAM_CHECKSUM_NONE) bufp += buflen ;
