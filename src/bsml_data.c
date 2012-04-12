@@ -12,13 +12,15 @@
 #include "bsml_data.h"
 #include "bsml_time.h"
 #include "bsml_internal.h"
+#include "utility/bsml_string.h"
 
 
-bsml_timeseries *bsml_timeseries_alloc(bsml_time start, int length,
-/*===============================================================*/
-                          double rate, double *clock, double *data)
+bsml_timeseries *bsml_timeseries_alloc(const char *uri, bsml_time start, int length,
+/*===============================================================================*/
+                                       double rate, double *clock, double *data)
 {
   bsml_timeseries *ts = ALLOCATE(bsml_timeseries) ;
+  ts->uri = bsml_string_copy(uri) ;
   ts->start = start ;
   ts->length = length ;
   ts->rate = rate ;
@@ -33,6 +35,7 @@ void bsml_timeseries_free(bsml_timeseries *ts)
   if (ts) {
     if (ts->clock) free(ts->clock) ;
     if (ts->data) free(ts->data) ;
+    bsml_string_free(ts->uri) ;
     free(ts) ;
     }
   }

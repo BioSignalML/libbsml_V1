@@ -7,6 +7,9 @@
  *  $ID$
  *
  *****************************************************/
+/** @file
+  * Timeseries data.
+  */
 
 #ifndef _BSML_DATA_H
 #define _BSML_DATA_H
@@ -18,6 +21,7 @@ extern "C" {
 #endif
 
 typedef struct bsml_timeseries {
+  const char *uri ;
   bsml_time start ;
   int length ;
   double rate ;
@@ -27,6 +31,7 @@ typedef struct bsml_timeseries {
 
 
 bsml_timeseries *bsml_timeseries_alloc(
+  const char *uri,
   bsml_time start,
   int length,
   double rate,
