@@ -43,5 +43,5 @@ const char *bsml_string_cat(const char *s, const char *t)
 void bsml_string_free(const char *s)
 /*================================*/
 {
-  free((void *)s) ;
+  if (s) free((void *)s) ;
   }
