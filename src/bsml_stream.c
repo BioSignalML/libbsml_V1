@@ -157,10 +157,8 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
           pos = next + 1 ;
           sp->md5 = mhash_init(MHASH_MD5) ;
           mhash(sp->md5, "#", 1) ;
-
           if (sp->jsonhdr) free(sp->jsonhdr) ;
-          sp->block = bsml_stream_new_block() ;
-
+          sp->block = bsml_stream_block_alloc() ;
           sp->state = BSML_STREAM_STATE_TYPE ;
           }
         else len = 0 ;
