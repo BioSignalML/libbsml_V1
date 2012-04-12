@@ -14,7 +14,22 @@
 #include <curl/curl.h>
 #include <uriparser/Uri.h>
 
-#include "bsml-internal.h"
+#include "bsml_repository.h"
+#include "bsml_recording.h"
+#include "bsml_internal.h"
+#include "bsml_stream.h"
+#include "bsml_data.h"
+#include "utility/bsml_string.h"
+#include "utility/bsml_json.h"
+
+
+typedef enum {
+  HTTP_GET = 1,
+  HTTP_PUT,
+  HTTP_POST,
+  HTTP_DELETE
+  } HTTP_METHOD ;
+
 
 
 void bsml_repository_initialise(void)

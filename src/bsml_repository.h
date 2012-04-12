@@ -14,7 +14,9 @@
 #ifndef _BSML_REPOSITORY_H
 #define _BSML_REPOSITORY_H
 
+#include "bsml_model.h"
 #include "bsml_rdfgraph.h"
+#include "bsml_data.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +36,10 @@ typedef struct bsml_Repository {
   } bsml_repository ;
 
 
+void bsml_repository_initialise(void) ;
+
+void bsml_repository_finish(void) ;
+
 /*!
  * Connect to a BioSignalML repository.
  *
@@ -43,7 +49,7 @@ typedef struct bsml_Repository {
 bsml_repository *bsml_repository_connect(const char *uri) ;
 
 /*!
- * Close the connection to a BioSignalML repository.
+ * Close the connection and free a BioSignalML repository object.
  *
  * @param repo The ::bsml_repository to close
  */ 
