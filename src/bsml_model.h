@@ -8,12 +8,13 @@
  *
  *****************************************************/
 /** @file
-  * The core BioSignalML resources.
+  * Core BioSignalML objects.
   */
 
 #ifndef _BSML_MODEL_H
 #define _BSML_MODEL_H
 
+#include "bsml_units.h"
 #include "bsml_time.h"
 #include "utility/bsml_dictionary.h"
 
@@ -79,4 +80,3 @@ typedef struct bsml_annotation {
 #endif
 
 #endif
-
