@@ -8,6 +8,7 @@
  *
  *****************************************************/
 
+#include <stdlib.h>
 
 #include "bsml_data.h"
 #include "bsml_time.h"
@@ -47,20 +48,24 @@ int bsml_timeseries_length(bsml_timeseries *ts)
 bsml_time bsml_timeseries_time(bsml_timeseries *ts, int i)
 /*======================================================*/
 {
-  if (i < 0 || i >= ts->length)
-    bsml_log_error('INVALID INDEX for timeseries: %d\n', i) ;
+  if (i < 0 || i >= ts->length) {
+    bsml_log_error("INVALID INDEX for timeseries: %d\n", i) ;
+    return 0.0 ;
+    }
   else if (ts->clock)
-    return bsml_time_from_seconds(ts->clock[i]) ;
+    return ts->start + bsml_time_from_seconds(ts->clock[i]) ;
   else
-    return bsml_time_from_seconds((double)i/ts->rate) ;
+    return ts->start + bsml_time_from_seconds((double)i/ts->rate) ;
   }
 
 
-double bsml_timeseries_date(bsml_timeseries *ts, int i)
+double bsml_timeseries_data(bsml_timeseries *ts, int i)
 /*===================================================*/
 {
-  if (i < 0 || i >= ts->length)
-    bsml_log_error('INVALID INDEX for timeseries: %d\n', i) ;
+  if (i < 0 || i >= ts->length) {
+    bsml_log_error("INVALID INDEX for timeseries: %d\n", i) ;
+    return 0.0 ;
+    }
   else
     return ts->data[i] ;
   }
