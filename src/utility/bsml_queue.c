@@ -10,17 +10,17 @@
 
 #include <stdlib.h>
 
+#include "bsml_queue.h"
 #include "bsml_internal.h"
 
-
-typedef struct bsml_queue {
+struct bsml_queue {
   int size ;
   int count ;
   void **head ;
   void **tail ;
   void **bufend ;
   void **buffer ;
-  } bsml_queue ;
+  } ;
 
 
 bsml_queue *bsml_queue_alloc(int size)

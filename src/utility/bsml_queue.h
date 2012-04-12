@@ -19,13 +19,7 @@
 extern "C" {
 #endif
 
-typedef struct bsml_queue {
-  int size ;
-  int count ;
-  void **head ;
-  void **tail ;
-  void **buffer ;
-  } bsml_queue ;
+typedef struct bsml_queue bsml_queue ;
 
 
 bsml_queue *bsml_queue_alloc(int size) ;
