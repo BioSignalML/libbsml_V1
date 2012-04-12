@@ -69,6 +69,7 @@ typedef struct {
   const char *uri ;
   double start ;
   double duration ;
+  const char *dtype ;
   //  offset, count, maxsize
   BSML_STREAM_STATE state ;
   BSML_STREAM_ERROR_CODE error ;
@@ -79,6 +80,8 @@ typedef struct {
   } bsml_stream_data ;
 
 
+extern const char *bsml_stream_double_type ;  //!< The datatype of a double on this platform
+extern const char *bsml_stream_long_type ;    //!< The datatype of a long on this platform
 void bsml_stream_initialise(void) ;
 
 void bsml_stream_finish(void) ;
