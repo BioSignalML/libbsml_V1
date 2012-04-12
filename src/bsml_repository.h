@@ -20,8 +20,8 @@
 extern "C" {
 #endif
 
-#define REPOSITORY_STREAM     "/stream/data/"
-#define REPOSITORY_RECORDINGS "/recording/"
+#define BSML_REPOSITORY_STREAM     "/stream/data/"
+#define BSML_REPOSITORY_RECORDING  "/recording/"
 
 
 /*! A BiosignalML repository. */
