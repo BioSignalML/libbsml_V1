@@ -30,7 +30,7 @@ typedef struct bsml_recording {
   bsml_timestamp starttime ;  //!< The date and time the recording began
   bsml_time duration ;        //!< The recording's duration
 
-  bsml_metadata *metadata ;   //!< Other metadata about the recording
+  bsml_dictionary *metadata ; //!< Other metadata about the recording
 // bsml_rdfgraph rdfgraph ;
   } bsml_recording ;
 //  attributes = [ 'source', 'format', 'comment', 'investigation',
@@ -45,7 +45,7 @@ typedef struct bsml_signal {
   double rate ;               //!< The sampling rate if the signal is uniformly sampled
   int index ;                 //!< The position of the signal in its recording
   bsml_recording *recording ; //!< The recording the signal is part of
-  bsml_metadata *metadata ;   //!< Other metadata about the signal
+  bsml_dictionary *metadata ; //!< Other metadata about the signal
   } bsml_signal ;
 // 'clock',
 // 'transducer', 'filter',
@@ -60,7 +60,7 @@ typedef struct bsml_event {
   bsml_time start ;           //!< ???? From when? Recording start??
   bsml_time duration ;        //!< The event's duration
   bsml_recording *recording ; //!< The recording the event is part of
-  bsml_metadata *metadata ;   //!< Other metadata about the event
+  bsml_dictionary *metadata ; //!< Other metadata about the event
   } bsml_event ;
 
 //  attributes = [ 'factor', 'time', ]
@@ -70,7 +70,7 @@ typedef struct bsml_event {
 typedef struct bsml_annotation {
   const char *uri ;           //!< The annotation's URI
   const char *description ;   //!< Text describing the annotation
-  bsml_metadata *metadata ;   //!< Other metadata about the annotation
+  bsml_dictionary *metadata ; //!< Other metadata about the annotation
   } bsml_annotation ;
 
 
