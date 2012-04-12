@@ -13,7 +13,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bsml-internal.h"
+#include "bsml_internal.h"
+#include "bsml_rdfgraph.h"
+#include "bsml_repository.h"
+#include "bsml_stream.h"
 
 
 int bsml_initialise(void)
@@ -26,6 +29,8 @@ int bsml_initialise(void)
   bsml_stream_initialise() ;
 
   bsml_repository_initialise() ;
+
+  return 1 ;
   }
 
 
@@ -50,35 +55,3 @@ void bsml_log_error(const char *format, ...)
   vfprintf(stderr, format, ap) ;
   va_end(ap) ;
   }
-
-
-const char *string_copy(const char *s)
-/*==================================*/
-{
-  if (s) {
-    int l = strlen(s) + 1 ;
-    char *t = malloc(l) ;
-    memcpy(t, s, l) ;
-    return t ;
-    }
-  else return NULL ;
-  }
-
-
-const char *string_cat(const char *s, const char *t)
-/*================================================*/
-{
-  if (s && t) {
-    int l = strlen(s) ;
-    int m = strlen(t) + 1 ;
-    char *u = malloc(l + m) ;
-    memcpy(u,     s, l) ;
-    memcpy(u + l, t, m) ;
-    return u ;
-    }
-  else if (s)
-    return string_copy(s) ;
-  else
-    return string_copy(t) ;
-  }
-

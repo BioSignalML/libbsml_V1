@@ -21,6 +21,10 @@ extern "C" {
 /*! Log an error message. */
 void bsml_log_error(const char *format, ...) ;
 
+int bsml_initialise(void) ;
+
+void bsml_finish(void) ;
+
 #ifdef __cplusplus
   } ;
 #endif
