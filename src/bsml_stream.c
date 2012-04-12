@@ -69,7 +69,7 @@ void bsml_stream_initialise(void)
     context = libwebsocket_create_context(CONTEXT_PORT_NO_LISTEN, NULL, protocols,
                                           libwebsocket_internal_extensions,  NULL, NULL, -1, -1, 0) ;
     if (context == NULL) {
-      fprintf(stderr, "Creating libwebsocket context failed\n") ;
+      bsml_log_error("Creating libwebsocket context failed\n") ;
       exit(1) ;
       }
     }
@@ -361,7 +361,7 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
       libwebsocket_callback_on_writable(this, ws) ;
       }
     else {             // Out of memory...
-      fprintf(stderr, "No memory for libwebsockets ????\n") ;
+      bsml_log_error("No memory for libwebsockets ????\n") ;
       sd->state = BSML_STREAM_CLOSED ;
       libwebsocket_close_and_free_session(this,  ws, LWS_CLOSE_STATUS_GOINGAWAY) ;
       exit(1) ;
