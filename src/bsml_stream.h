@@ -4,6 +4,8 @@
 #include <libwebsockets.h>
 #include <jansson.h>
 
+#include "utility/bsml_queue.h"
+
 
 #define BSML_STREAM_PROTOCOL "biosignalml-ssf"
 
@@ -65,6 +67,9 @@ typedef struct {
 typedef struct bsml_Stream_Reader
   bsml_stream_reader ;
 
+typedef struct bsml_stream_block_Queue
+  bsml_stream_block_queue ;
+
 typedef struct {
   const char *uri ;
   double start ;
@@ -74,7 +79,7 @@ typedef struct {
   BSML_STREAM_STATE state ;
   BSML_STREAM_ERROR_CODE error ;
   int stopped ;
-  bsml_stream_block *block ;
+  bsml_queue *blockQ ;
   bsml_stream_reader *sp ;
   struct libwebsocket *ws ;
   } bsml_stream_data ;

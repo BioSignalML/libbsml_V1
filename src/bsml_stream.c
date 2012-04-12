@@ -9,9 +9,12 @@
 #include "bsml_stream.h"
 #include "bsml_internal.h"
 #include "utility/bsml_string.h"
+#include "utility/bsml_queue.h"
 
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
+
+#define BSML_STREAM_BLOCK_QUEUE_SIZE 100
 
 
 typedef enum {
@@ -382,12 +385,10 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
       int n = bsml_stream_process_data(sd->sp, data, len) ;
       if (sd->sp->error == BSML_STREAM_ERROR_NONE) {
         if (sd->sp->state == BSML_STREAM_STATE_BLOCK) {
-          if (sd->block == NULL) {
-            sd->block = sd->sp->block ;
-            sd->sp->block = NULL ;
-            sd->sp->state = BSML_STREAM_STATE_RESET ;
-            }
-          else {
+          bsml_queue_put(sd->blockQ, sd->sp->block) ;
+          sd->sp->block = NULL ;
+          sd->sp->state = BSML_STREAM_STATE_RESET ;
+          if (bsml_queue_nearly_full(sd->blockQ)) {
             libwebsocket_rx_flow_control(ws, 0) ;
             sd->stopped = 1 ;
             }
@@ -468,6 +469,7 @@ bsml_stream_data *bsml_stream_data_request(const char *host, int port, const cha
     sd->state = BSML_STREAM_STARTING ;
     sd->ws = libwebsocket_client_connect_extended(context, host, port, 0, endpoint, host, host,
                                                   BSML_STREAM_PROTOCOL, -1, sd) ;
+    sd->blockQ = bsml_queue_alloc(BSML_STREAM_BLOCK_QUEUE_SIZE) ;
     }
   return sd ;
   }
@@ -477,13 +479,12 @@ bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd)
 /*==========================================================*/
 {
   bsml_stream_block *result = NULL ;
-
-  while (sd->ws && sd->block == NULL && sd->state != BSML_STREAM_ERROR && sd->state < BSML_STREAM_CLOSED)
-    libwebsocket_service(context, 100) ;
-
-  if (sd->block != NULL) {
-    result = sd->block ;
-    sd->block = NULL ;
+  while (sd->ws && bsml_queue_empty(sd->blockQ)
+    && sd->state != BSML_STREAM_ERROR && sd->state < BSML_STREAM_CLOSED) {
+    libwebsocket_service(context, 10) ;
+    }
+  if (!bsml_queue_empty(sd->blockQ)) {
+    result = bsml_queue_get(sd->blockQ) ;
     if (sd->state < BSML_STREAM_CLOSED && sd->stopped) {
       sd->stopped = 0 ;
       libwebsocket_rx_flow_control(sd->ws, 1) ;
@@ -499,8 +500,8 @@ void bsml_stream_data_free(bsml_stream_data *sd)
 {
   if (sd) {
     bsml_string_free(sd->uri) ;
-    bsml_stream_free_block(sd->block) ;
     bsml_string_free(sd->dtype) ;
+    bsml_queue_free(sd->blockQ) ;
     free(sd) ;
     }
   }
