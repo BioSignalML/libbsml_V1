@@ -29,10 +29,16 @@
 extern "C" {
 #endif
 
+
+#define STREAM_DOUBLE "f8"
+
+
 typedef char BSML_STREAM_BLOCK_TYPE ;
 
 #define BSML_STREAM_DATA_REQUEST 'd'
 #define BSML_STREAM_DATA_BLOCK   'D'
+#define BSML_STREAM_INFO_BLOCK   'I'
+#define BSML_STREAM_RDF_BLOCK    'R'
 #define BSML_STREAM_ERROR_BLOCK  'E'
 
 
@@ -60,7 +66,8 @@ typedef enum {
   } BSML_STREAM_CHECKSUM ;
 
 typedef enum {
-  BSML_STREAM_STARTING = -1,
+  BSML_STREAM_CREATED = -1,
+  BSML_STREAM_STARTING,
   BSML_STREAM_OPENED,
   BSML_STREAM_RUNNING,
   BSML_STREAM_ERROR,
@@ -88,14 +95,15 @@ typedef struct {
   double start ;
   double duration ;
   const char *dtype ;
-  //  offset, count, maxsize
+  //  offset, count
+  int maxsize ;
   BSML_STREAM_STATE state ;
   BSML_STREAM_ERROR_CODE error ;
   int stopped ;
   bsml_queue *blockQ ;
   bsml_stream_reader *sp ;
   struct libwebsocket *ws ;
-  } bsml_stream_data ;
+  } bsml_stream ;
 
 
 extern const char *bsml_stream_double_type ;  //!< The datatype of a double on this platform
@@ -114,15 +122,18 @@ void bsml_stream_finish(void) ;
 const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code) ;
 
 
-bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
-                                           const char *uri, double start, double duration, const char *dtype) ;
+bsml_stream *bsml_stream_create(const char *uri, double start, double duration, const char *dtype) ;
 
-bsml_stream_data *bsml_stream_data_new(const char *uri) ;
+void bsml_stream_set_maxsize(bsml_stream *stream, int size) ;
 
-void bsml_stream_data_free(bsml_stream_data *sd) ;
+/**** Replace with single 'endpoint' parameter and parse as URL.... ****/
+void bsml_stream_request(bsml_stream *stream, const char *host, int port, const char *endpoint) ;
 
+// Units...
 
-bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd) ;
+void bsml_stream_free(bsml_stream *stream) ;
+
+bsml_stream_block *bsml_stream_read(bsml_stream *stream) ;
 
 void bsml_stream_block_free(bsml_stream_block *sb) ;
 

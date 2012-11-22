@@ -58,7 +58,7 @@ static struct libwebsocket_context *context = NULL ;
 static int bsml_stream_callback(struct libwebsocket_context *this, struct libwebsocket *ws,
                            enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len) ;
 
-static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check) ;
+static void send_data_request(bsml_stream *stream, BSML_STREAM_CHECKSUM check) ;
 
 
 static struct libwebsocket_protocols protocols[] = {
@@ -344,7 +344,7 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
 /*==================================================================================*/
                            enum libwebsocket_callback_reasons rsn, void *userdata, void *data, size_t len)
 {
-  bsml_stream_data *sd = (bsml_stream_data *)userdata ;
+  bsml_stream *sd = (bsml_stream *)userdata ;
   switch (rsn) {
    case LWS_CALLBACK_CLOSED:
    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
@@ -414,13 +414,16 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
   }
 
 
-static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check)
-/*===========================================================================*/
+static void send_data_request(bsml_stream *sd, BSML_STREAM_CHECKSUM check)
+/*======================================================================*/
 {
   char *hdr ;
   int n = asprintf(&hdr,
-    "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f, \"ctype\": \"%s\", \"dtype\": \"%s\"}",
-    sd->uri, sd->start, sd->duration, bsml_stream_double_type, sd->dtype) ;
+    "{\"uri\": \"%s\", \"start\": %f, \"duration\": %f, \"ctype\": \"%s\", \"dtype\": \"%s\", \"maxsize\": %d}",
+    sd->uri, sd->start, sd->duration, bsml_stream_double_type, sd->dtype, sd->maxsize) ;
+// Could have list of uris... [ "u1", "u2", ... ]
+// And only send maxsize if > 0, etc...
+// And send units if specified...
 
   unsigned char buf[LWS_SEND_BUFFER_PRE_PADDING + 256 + LWS_SEND_BUFFER_POST_PADDING] ;
   char *bufp = (char *)buf + LWS_SEND_BUFFER_PRE_PADDING ;
@@ -444,35 +447,52 @@ static void send_data_request(bsml_stream_data *sd, BSML_STREAM_CHECKSUM check)
   }
 
 
-bsml_stream_data *bsml_stream_data_alloc(const char *uri)
-/*=====================================================*/
+bsml_stream *bsml_stream_alloc(const char *uri)
+/*===========================================*/
 {
-  bsml_stream_data *sd = ALLOCATE(bsml_stream_data) ;
+  bsml_stream *sd = ALLOCATE(bsml_stream) ;
   if (sd) sd->uri = bsml_string_copy(uri) ;
   return sd ;
   }
 
 
-bsml_stream_data *bsml_stream_data_request(const char *host, int port, const char *endpoint,
-/*========================================================================================*/
-                                 const char *uri, double start, double duration, const char *dtype)
+bsml_stream *bsml_stream_create(const char *uri, double start, double duration, const char *dtype)
+/*==============================================================================================*/
 {
-  bsml_stream_data *sd = bsml_stream_data_alloc(uri) ;
+  bsml_stream *sd = bsml_stream_alloc(uri) ;
   if (sd) {
     sd->start = start ;
     sd->duration = duration ;
     sd->dtype = bsml_string_copy(dtype) ;
-    sd->state = BSML_STREAM_STARTING ;
-    sd->ws = libwebsocket_client_connect_extended(context, host, port, 0, endpoint, host, host,
-                                                  BSML_STREAM_PROTOCOL, -1, sd) ;
-    sd->blockQ = bsml_queue_alloc(BSML_STREAM_BLOCK_QUEUE_SIZE) ;
+    sd->state = BSML_STREAM_CREATED ;
     }
   return sd ;
   }
 
 
-bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd)
-/*==========================================================*/
+void bsml_stream_set_maxsize(bsml_stream *sd, int size)
+/*===================================================*/
+{
+  if (sd) sd->maxsize = size ;
+  }
+
+
+/**** Replace with single 'endpoint' parameter and parse as URL.... ****/
+
+void bsml_stream_request(bsml_stream *sd, const char *host, int port, const char *endpoint)
+/*=======================================================================================*/
+{
+  if (sd) {
+    sd->state = BSML_STREAM_STARTING ;
+    sd->ws = libwebsocket_client_connect_extended(context, host, port, 0, endpoint, host, host,
+                                                  BSML_STREAM_PROTOCOL, -1, sd) ;
+    sd->blockQ = bsml_queue_alloc(BSML_STREAM_BLOCK_QUEUE_SIZE) ;
+    }
+  }
+
+
+bsml_stream_block *bsml_stream_read(bsml_stream *sd)
+/*================================================*/
 {
   bsml_stream_block *result = NULL ;
   while (sd->ws && bsml_queue_empty(sd->blockQ)
@@ -491,8 +511,8 @@ bsml_stream_block *bsml_stream_data_read(bsml_stream_data *sd)
   }
 
 
-void bsml_stream_data_free(bsml_stream_data *sd)
-/*============================================*/
+void bsml_stream_free(bsml_stream *sd)
+/*==================================*/
 {
   if (sd) {
     bsml_string_free(sd->uri) ;
