@@ -35,6 +35,8 @@ typedef enum {
   } BSML_STREAM_READER_STATE ;
 
 
+#define CHECKSUM_LENGTH  20    // SHA1 digest
+
 struct bsml_Stream_Reader {
   BSML_STREAM_CHECKSUM checksum ;
   BSML_STREAM_READER_STATE state ;
@@ -45,8 +47,8 @@ struct bsml_Stream_Reader {
   int expected ;
   char *storepos ;
   char *jsonhdr ;
-	MHASH md5 ;
-  char checktext[33] ;
+	MHASH sha1 ;
+  char checktext[2*CHECKSUM_LENGTH+1] ;
   } ;
 
 
@@ -154,8 +156,8 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
         if (next) {
           len -= (next - pos + 1) ;
           pos = next + 1 ;
-          sp->md5 = mhash_init(MHASH_MD5) ;
-          mhash(sp->md5, "#", 1) ;
+          sp->sha1 = mhash_init(MHASH_SHA1) ;
+          mhash(sp->sha1, "#", 1) ;
           if (sp->jsonhdr) free(sp->jsonhdr) ;
           sp->block = bsml_stream_block_alloc() ;
           sp->state = BSML_STREAM_STATE_TYPE ;
@@ -168,7 +170,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
         sp->block->type = *pos ;
         pos++, len-- ;
         if (sp->block->type != '#') {
-          mhash(sp->md5, &sp->block->type, 1) ;
+          mhash(sp->sha1, &sp->block->type, 1) ;
           sp->block->number = sp->number += 1 ;
           sp->version = 0 ;
           sp->state = BSML_STREAM_STATE_VERSION ;
@@ -180,7 +182,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       case BSML_STREAM_STATE_VERSION: {           // Getting version number
         while (len > 0 && isdigit(*pos)) {
           sp->version = 10*sp->version + (*pos - '0') ;
-          mhash(sp->md5, pos, 1) ;
+          mhash(sp->sha1, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -190,7 +192,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
           else if (sp->version != BSML_STREAM_VERSION)
             sp->error = BSML_STREAM_ERROR_VERSION_MISMATCH ;
           else {
-            mhash(sp->md5, pos, 1) ;
+            mhash(sp->sha1, pos, 1) ;
             pos += 1 ;
             len -= 1 ;
             sp->expected = 0 ;
@@ -203,7 +205,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       case BSML_STREAM_STATE_HDRLEN: {            // Getting header length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
-          mhash(sp->md5, pos, 1) ;
+          mhash(sp->sha1, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -218,7 +220,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           strncat(sp->jsonhdr, pos, delta) ;
-          mhash(sp->md5, pos, delta) ;
+          mhash(sp->sha1, pos, delta) ;
           pos += delta ;
           len -= delta ;
           sp->expected -= delta ;
@@ -233,7 +235,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       case BSML_STREAM_STATE_DATALEN: {           // Getting content length
         while (len > 0 && isdigit(*pos)) {
           sp->expected = 10*sp->expected + (*pos - '0') ;
-          mhash(sp->md5, pos, 1) ;
+          mhash(sp->sha1, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           }
@@ -243,7 +245,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
 
       case BSML_STREAM_STATE_HDREND: {            // Checking header LF
         if (*pos == '\n') {
-          mhash(sp->md5, pos, 1) ;
+          mhash(sp->sha1, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           sp->block->length = sp->expected ;
@@ -259,7 +261,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
         while (len > 0 && sp->expected > 0) {
           int delta = min(sp->expected, len) ;
           memcpy(sp->storepos, pos, delta) ;
-          mhash(sp->md5, pos, delta) ;
+          mhash(sp->sha1, pos, delta) ;
           sp->storepos += delta ;
           pos += delta ;
           len -= delta ;
@@ -274,7 +276,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
 
       case BSML_STREAM_STATE_TRAILER: {           // Getting trailer
         if (*pos == '#') {
-          mhash(sp->md5, pos, 1) ;
+          mhash(sp->sha1, pos, 1) ;
           pos += 1 ;
           len -= 1 ;
           sp->expected -= 1 ;
@@ -287,7 +289,7 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       case BSML_STREAM_STATE_CHECKSUM: {          // Checking for checksum
         if (*pos != '\n' && sp->checksum != BSML_STREAM_CHECKSUM_NONE) {
           sp->storepos = sp->checktext ;
-          sp->expected = 32 ;
+          sp->expected = 2*CHECKSUM_LENGTH ;
           sp->state = BSML_STREAM_STATE_CHECKDATA ;
           }
         else sp->state = BSML_STREAM_STATE_BLOCKEND ;
@@ -308,11 +310,11 @@ int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
       case BSML_STREAM_STATE_BLOCKEND: {          // Checking for final LF
         if (sp->checksum == BSML_STREAM_CHECKSUM_STRICT
          || sp->checksum == BSML_STREAM_CHECKSUM_CHECK && sp->checktext[0]) {
-          unsigned char digest[16] ;
-          mhash_deinit(sp->md5, digest) ;
-          char hexdigest[33] ;
+          unsigned char digest[CHECKSUM_LENGTH] ;
+          mhash_deinit(sp->sha1, digest) ;
+          char hexdigest[2*CHECKSUM_LENGTH + 1] ;
           int i ;
-          for (i = 0 ;  i < 16 ;  ++i) sprintf(hexdigest + 2*i, "%02x", digest[i]) ;
+          for (i = 0 ;  i < CHECKSUM_LENGTH ;  ++i) sprintf(hexdigest + 2*i, "%02x", digest[i]) ;
           if (strcmp(sp->checktext, hexdigest) != 0) sp->error = BSML_STREAM_ERROR_INVALID_CHECKSUM ;
           }
         if (sp->error == BSML_STREAM_ERROR_NONE) {
@@ -432,10 +434,10 @@ static void send_data_request(bsml_stream *sd, BSML_STREAM_CHECKSUM check)
 
   if (check == BSML_STREAM_CHECKSUM_NONE) bufp += buflen ;
   else {
-    MHASH md5 = mhash_init(MHASH_MD5) ;
-    mhash(md5, bufp, buflen) ;
+    MHASH sha1 = mhash_init(MHASH_SHA1) ;
+    mhash(sha1, bufp, buflen) ;
     unsigned char digest[16] ;
-    mhash_deinit(md5, digest) ;
+    mhash_deinit(sha1, digest) ;
     bufp += buflen ;
     int i ;
     for (i = 0 ;  i < 16 ;  ++i) sprintf(bufp + 2*i, "%02x", digest[i]) ;

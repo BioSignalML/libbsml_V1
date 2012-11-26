@@ -4,30 +4,23 @@
 
 #include <jansson.h>
 
-#include "print_json.h"
 #include "bsml_stream.h"
 
 #define STREAM_ENDPOINT "/stream/data/"
 
 
-int main(void)
-/*==========*/
+void get_data(const char *recording, double start, double duration)
+/*===============================================================*/
 {
-  const char *recording = "http://devel.biosignalml.org/resource/physiobank/mitdb/102" ;
-  double start = 0.0 ;
-  double duration = 1800.0 ;
-
   int CHUNKSIZE = 10000 ;
 
   int channels = 1 ;
-  json_t *uris = NULL ;
+  json_t *siguris = NULL ;
 
   const char *DATAFORMAT = STREAM_DOUBLE ;
 
   double *data = NULL ;      // Curerently assuming everything is at the same rate....
 
-
-  bsml_stream_initialise() ;
 
   // Setup stream, set options (e.g. block size), add signals, etc,
   // then bsml_stream_start(strm)
@@ -45,18 +38,19 @@ int main(void)
   while ((sb = bsml_stream_read(strm)) != NULL) {
 
     fprintf(stderr, "Block %c: %d\n  ", sb->type, sb->length) ;
-    print_json_line(sb->header, stderr) ;
+    json_dumpf(sb->header, stderr, JSON_ENSURE_ASCII) ;
 
     if      (sb->type == BSML_STREAM_ERROR_BLOCK) {
       fprintf(stderr, "ERROR: %-*s\n", sb->length, sb->content) ;
       }
 
     else if (sb->type == BSML_STREAM_INFO_BLOCK) {
-      if (uris) json_decref(uris) ;
-      uris = json_object_get(sb->header, "uris") ;
-      if (uris && json_is_array(uris)) {
-        size_t n = json_array_size(uris) ;
-        json_incref(uris) ;
+      if (siguris) json_decref(siguris) ;
+      siguris = json_object_get(sb->header, "signals") ;
+      // Also have "channels" field (plus "rates" and "units").
+      if (siguris && json_is_array(siguris)) {
+        size_t n = json_array_size(siguris) ;
+        json_incref(siguris) ;
         if (channels != n) {
           channels = n ;
           if (data) free(data) ;
@@ -70,6 +64,9 @@ int main(void)
       }
 
     else if (sb->type == BSML_STREAM_DATA_BLOCK) {
+      // Need to check rates match...
+      // Or have rates in Info block and check when it's received...
+      // What about signals where the rate changes??
       json_t *info = json_object_get(sb->header, "info") ;
       if (info && json_is_integer(info)) {
         int chan = json_integer_value(info) ;
@@ -112,9 +109,32 @@ int main(void)
 
   fprintf(stderr, "End state: %d\n", strm->state) ;
 
-
   bsml_stream_free(strm) ;
   if (data) free(data) ;
-  if (uris) json_decref(uris) ;
+  if (siguris) json_decref(siguris) ;
+  }
+
+
+
+void send_data(const char *recording, int channels, double rate) // From stdin
+/*============================================================*/
+{
+
+  // Need to first put recording into repository...
+
+  // Info block with recording, (signals), channels, rates, units
+  }
+
+
+int main(void)
+/*==========*/
+{
+  bsml_stream_initialise() ;
+
+
+  get_data("http://devel.biosignalml.org/resource/physiobank/mitdb/102", 0.0, 0.05) ;
+
+
   bsml_stream_finish() ;
   }
+
