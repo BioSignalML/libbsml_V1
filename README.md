@@ -1,10 +1,12 @@
-libbsml
-=======
+[libbsml][]
+===========
 
 BioSignalML C++ library
 
 
-**WARNING**
------------
+WARNING
+-------
 
 This is a work-in-progress with no guarantees whatsoever...
+
+[libbsml]: https://github.com/dbrnz/libbsml
