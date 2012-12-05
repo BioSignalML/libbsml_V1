@@ -20,7 +20,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 #include <utility>
 #include <vector>
 #include <string>
@@ -202,12 +201,12 @@ H5Clock H5Recording::checkTiming(double rate, double period, const std::string &
   }
 
 
-std::string H5Recording::createDataset(const std::string &group, int rank, hsize_t *shape,
-/*======================================================================================*/
+H5DataRef H5Recording::createDataset(const std::string &group, int rank, hsize_t *shape,
+/*===================================================================================*/
  hsize_t *maxshape, void *data, H5DataTypes datatypes, H5Compression compression)
 {
   H5::DataSpace dspace(rank, shape, maxshape) ;
-  H5::DataType dtype = datatypes.second ;
+  H5::DataType dtype = datatypes.dtype ;
   if (dtype.getId() == 0) dtype = BSML_H5_DEFAULT_DATATYPE ;
 
   H5::Group grp ;
@@ -217,7 +216,6 @@ std::string H5Recording::createDataset(const std::string &group, int rank, hsize
   catch (H5::FileIException e) {
     grp = h5.createGroup("/recording/" + group) ;
     }
-
   std::string dsetname = "/recording/" + group + "/" + to_string(grp.getNumObjs()) ;
   try {
     H5::DSetCreatPropList props ;
@@ -236,9 +234,10 @@ std::string H5Recording::createDataset(const std::string &group, int rank, hsize
     if      (compression == BSML_H5_COMPRESS_GZIP) props.setDeflate(4) ;
     else if (compression == BSML_H5_COMPRESS_SZIP) props.setSzip(H5_SZIP_NN_OPTION_MASK, 8) ;
     H5::DataSet dset = h5.createDataSet(dsetname, dtype, dspace, props) ;
-    if (data != NULL) dset.write(data, datatypes.first) ;
-    dset.close() ;
-    return dsetname ;
+    if (data != NULL) dset.write(data, datatypes.mtype) ;
+    hobj_ref_t reference ;
+    h5.reference(&reference, dsetname) ;
+    return H5DataRef(dset, reference) ;
     }
   catch (H5::FileIException e) {
     e.printError() ;
@@ -291,8 +290,8 @@ void H5Recording::setSignalAttributes(H5::DataSet dset, double gain, double offs
   }
 
 
-std::string H5Recording::createSignal(const std::string &uri, const std::string &units,
-/*===================================================================================*/
+H5Signal H5Recording::createSignal(const std::string &uri, const std::string &units,
+/*===============================================================================*/
  void *data=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
  std::vector<hsize_t> datashape=std::vector<hsize_t>(),
  double gain=1.0, double offset=0.0, double rate=0.0, double period=0.0,
@@ -330,13 +329,12 @@ std::string H5Recording::createSignal(const std::string &uri, const std::string 
   shape[0] = npoints ;
 
   H5Clock clocktimes = checkTiming(rate, period, clock, npoints) ;
-  std::string dsetname = createDataset("signal", rank, shape, maxshape, data, datatypes, compression) ;
-  H5::DataSet dset = h5.openDataSet(dsetname) ;
+  H5DataRef sigdata = createDataset("signal", rank, shape, maxshape, data, datatypes, compression) ;
+  H5::DataSet dset = sigdata.first ;
 
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  hobj_ref_t reference ;
-  h5.reference(&reference, dsetname) ;
+  hobj_ref_t reference = sigdata.second ;
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
@@ -348,14 +346,13 @@ std::string H5Recording::createSignal(const std::string &uri, const std::string 
   attr.close() ;
 
   setSignalAttributes(dset, gain, offset, period, rate, timeunits, clocktimes) ;
-
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return dsetname ;
+  return H5Signal(uri, sigdata, 0) ;
   }
 
 
-std::string H5Recording::createSignal(StringList uris, StringList units,
-/*====================================================================*/
+std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
+/*===========================================================================*/
  void *data=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
  double gain=1.0, double offset=0.0, double rate=0.0, double period=0.0,
  const std::string &timeunits="", const std::string &clock="",
@@ -364,12 +361,16 @@ std::string H5Recording::createSignal(StringList uris, StringList units,
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
 #endif
+  std::list<H5Signal> signals ;
+
   if (uris.size() == units.size())
     throw H5Exception("'uri' and 'units' have different sizes") ;
   int nsignals = uris.size() ;
   if (nsignals == 1) {
-    return createSignal(uris.front(), units.front(), data, datasize, datatypes, std::vector<hsize_t>(),
-                        gain, offset, rate, period, timeunits, clock, compression) ;
+    signals.push_back(createSignal(uris.front(), units.front(),
+                                   data, datasize, datatypes, std::vector<hsize_t>(),
+                                   gain, offset, rate, period, timeunits, clock, compression)) ;
+    return signals ;
     }
   H5::Attribute attr ;
   H5::Group urigroup = h5.openGroup("/uris") ;
@@ -386,13 +387,12 @@ std::string H5Recording::createSignal(StringList uris, StringList units,
   hsize_t shape[2]    = { npoints,       nsignals } ;
 
   H5Clock clocktimes = checkTiming(rate, period, clock, npoints) ;
-  std::string dsetname = createDataset("signal", 2, shape, maxshape, data, datatypes, compression) ;
-  H5::DataSet dset = h5.openDataSet(dsetname) ;
+  H5DataRef sigdata = createDataset("signal", 2, shape, maxshape, data, datatypes, compression) ;
+  H5::DataSet dset = sigdata.first ;
 
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  hobj_ref_t reference ;
-  h5.reference(&reference, dsetname) ;
+  hobj_ref_t reference = sigdata.second ;
   StringList::iterator s ;
   std::string values[nsignals] ;
   hsize_t dims[1] ;
@@ -404,6 +404,7 @@ std::string H5Recording::createSignal(StringList uris, StringList units,
     attr = urigroup.createAttribute(*s, H5::PredType::STD_REF_OBJ, scalar) ;
     attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
     attr.close() ;
+    signals.push_back(H5Signal(*s, sigdata, n)) ;
     }
   attr = dset.createAttribute("uri", varstr, attrspace) ;
   attr.write(varstr, values) ;
@@ -415,14 +416,14 @@ std::string H5Recording::createSignal(StringList uris, StringList units,
   attr.close() ;
 
   setSignalAttributes(dset, gain, offset, period, rate, timeunits, clocktimes) ;
-
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return dsetname ;
+
+  return signals ;
   }
 
 
-std::string H5Recording::createClock(const std::string &uri, const std::string &units="",
-/*=====================================================================================*/
+H5Clock H5Recording::createClock(const std::string &uri, const std::string &units="",
+/*=================================================================================*/
  void *times=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
  double rate=0.0, double period=0.0, H5Compression compression=BSML_H5_DEFAULT_COMPRESSION)
 {
@@ -444,12 +445,11 @@ std::string H5Recording::createClock(const std::string &uri, const std::string &
   size_t npoints = 0 ;
   hsize_t maxshape[] = { H5S_UNLIMITED } ;
   hsize_t shape[]    = { datasize } ;
-  std::string dsetname = createDataset("clock", 1, shape, maxshape, times, datatypes, compression) ;
-  H5::DataSet dset = h5.openDataSet(dsetname) ;
+  H5DataRef clkdata = createDataset("clock", 1, shape, maxshape, times, datatypes, compression) ;
+  H5::DataSet dset = clkdata.first ;
 
   H5::DataSpace scalar(H5S_SCALAR) ;
-  hobj_ref_t reference ;
-  h5.reference(&reference, dsetname) ;
+  hobj_ref_t reference = clkdata.second ;
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
@@ -474,102 +474,7 @@ std::string H5Recording::createClock(const std::string &uri, const std::string &
     }
 
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return dsetname ;
-  }
-
-
-void H5Recording::extendSignal(const std::string &uri, void *data, size_t size, H5::DataType dtype)
-/*===============================================================================================*/
-{
-#if !H5_DEBUG
-  H5::Exception::dontPrint() ;
-#endif
-  H5Signal signal = getSignal(uri) ;
-  H5::DataSet dset = signal.getDataset() ;
-
-  int nsignals ;
-  H5::DataSpace uspace = dset.openAttribute("uri").getSpace() ;
-  int udims = uspace.getSimpleExtentNdims() ;
-  if (udims == 0) nsignals = 1 ;  // SCALAR
-  else {
-    if (udims != 1) throw H5Exception("Dataset's 'uri' attribute has wrong shape: " + uri) ;
-    nsignals = uspace.getSimpleExtentNpoints() ;
-    }
-
-  H5::DataSpace dspace = dset.getSpace() ;
-  int ndims = dspace.getSimpleExtentNdims() ;
-  try {
-    hsize_t shape[ndims], newshape[ndims], count[ndims], start[ndims] ;
-    dspace.getSimpleExtentDims(shape) ;
-    if (nsignals > 1) {         // compound dataset
-      if (ndims != 2) throw H5Exception("Compound dataset has wrong shape: " + uri) ;
-      start[1] = 0 ;
-      count[0] = size/nsignals ;
-      newshape[1] = count[1] = shape[1] ;
-      }
-    else {                      // simple dataset
-      count[0] = size ;
-      for (int n = 1 ;  n < ndims ;  ++n) {
-        start[n] = 0 ;
-        count[0] /= shape[n] ;
-        newshape[n] = count[n] = shape[n] ;
-        }
-      }
-    start[0] = shape[0] ;
-    newshape[0] = shape[0] + count[0] ;
-
-    try {
-      H5::Attribute attr = dset.openAttribute("clock") ;
-      hobj_ref_t ref ;
-      attr.read(H5::PredType::STD_REF_OBJ, &ref) ;
-      attr.close() ;
-      H5::DataSet clk = H5::DataSet(h5, &ref) ;
-      H5::DataSpace cspace = clk.getSpace() ;
-      int cdims = cspace.getSimpleExtentNdims() ;
-      hsize_t cshape[cdims] ;
-      cspace.getSimpleExtentDims(cshape) ;
-      if (cshape[0] < newshape[0])
-        throw H5Exception("Clock for '" + uri + "' doesn't have sufficient times") ;
-      }
-    catch (H5::AttributeIException e) { }
-
-    dset.extend(newshape) ;
-    dspace = dset.getSpace() ;
-    dspace.selectHyperslab(H5S_SELECT_SET, count, start) ; // Starting at 'shape' for 'count'
-    H5::DataSpace mspace(ndims, count, count) ;
-    dset.write(data, dtype, mspace, dspace) ;
-    }
-  catch (H5::DataSetIException e) {
-    throw H5Exception("Cannot extend dataset '" + uri + "': " + e.getDetailMsg()) ;
-    }
-  }
-
-
-void H5Recording::extendClock(const std::string &uri, void *times, size_t size, H5::DataType dtype)
-/*===============================================================================================*/
-{
-#if !H5_DEBUG
-  H5::Exception::dontPrint() ;
-#endif
-  H5Clock clock = getClock(uri) ;
-  H5::DataSet dset = clock.getDataset() ;
-  H5::DataSpace dspace = dset.getSpace() ;
-  int ndims = dspace.getSimpleExtentNdims() ;
-  if (ndims != 1) throw H5Exception("Clock not one-dimensional: " + uri) ;
-  try {
-    hsize_t shape[1], newshape[1] ;
-    dspace.getSimpleExtentDims(shape) ;
-    newshape[0] = shape[0] + size ;
-    hsize_t count[] = { size } ;
-    dset.extend(newshape) ;
-    dspace = dset.getSpace() ;
-    dspace.selectHyperslab(H5S_SELECT_SET, count, shape) ;
-    H5::DataSpace mspace(1, count, count) ;
-    dset.write(times, dtype, mspace, dspace) ;
-    }
-  catch (H5::DataSetIException e) {
-    throw H5Exception("Cannot extend dataset '" + uri + "': " + e.getDetailMsg()) ;
-    }
+  return H5Clock(uri, clkdata) ;
   }
 
 
@@ -582,14 +487,14 @@ H5DataRef H5Recording::getDataRef(const std::string &uri, const std::string &pre
     hobj_ref_t ref ;
     attr.read(H5::PredType::STD_REF_OBJ, &ref) ;
     attr.close() ;
-    H5::DataSet dp = H5::DataSet(h5, &ref) ;
-    hid_t id = dp.getId() ;
+    H5::DataSet dset = H5::DataSet(h5, &ref) ;
+    hid_t id = dset.getId() ;
     int len = H5Rget_name(id, H5R_OBJECT, &ref, NULL, 0) ;
     char *buf = (char *)std::malloc(len + 1) ;
     H5Rget_name(id, H5R_OBJECT, &ref, buf, len + 1) ;
     bool matched = (prefix.compare(0, std::string::npos, buf, prefix.size()) == 0) ;
     std::free(buf) ;
-    if (matched) return H5DataRef(dp, ref) ;
+    if (matched) return H5DataRef(dset, ref) ;
     }
   catch (H5::AttributeIException e) { }
   return H5DataRef() ;
@@ -613,14 +518,14 @@ H5Signal H5Recording::getSignal(const std::string &uri)
     if (nsignals == 1) {
       std::string dseturi ;
       attr.read(varstr, dseturi) ;
-      if (uri == dseturi) return H5Signal(dataref, -1) ;
+      if (uri == dseturi) return H5Signal(uri, dataref, -1) ;
       }
     else if (nsignals > 1) {
       std::string uris[nsignals] ;
       attr.read(varstr, uris) ;
       int n = 0 ;
       while (n < nsignals) {
-        if (uri == uris[n]) return H5Signal(dataref, n) ;
+        if (uri == uris[n]) return H5Signal(uri, dataref, n) ;
         ++n ;
         }
       }
@@ -638,7 +543,7 @@ H5Clock H5Recording::getClock(const std::string &uri)
 //:return: A :class:`H5Clock` or None if the URI is unknown or
 //         the dataset is not that for a clock.
   H5DataRef dataref = getDataRef(uri, "/recording/clock/") ;
-  if (dataref.first.getId() != 0) return H5Clock(dataref) ;
+  if (dataref.first.getId() != 0) return H5Clock(uri, dataref) ;
   throw H5Exception("Cannot find clock:" + uri) ;
   }
 
@@ -655,11 +560,18 @@ static herr_t saveSignal(hid_t id, const char *name, void *op_data)
     H5DataRef dataref = H5DataRef(dset, ref) ;
     H5::Attribute attr = dset.openAttribute("uri") ;
     int nsignals = attr.getSpace().getSimpleExtentNpoints() ;
-    if (nsignals == 1) sig.push_back(H5Signal(dataref, -1)) ;
+    H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
+    if (nsignals == 1) {
+      std::string uri ;
+      attr.read(varstr, uri) ;
+      sig.push_back(H5Signal(uri, dataref, -1)) ;
+      }
     else if (nsignals > 1) {
+      std::string uris[nsignals] ;
+      attr.read(varstr, uris) ;
       int n = 0 ;
       while (n < nsignals) {
-        sig.push_back(H5Signal(dataref, n)) ;
+        sig.push_back(H5Signal(uris[n], dataref, n)) ;
         ++n ;
         }
       }
@@ -694,7 +606,11 @@ static herr_t saveClock(hid_t id, const char *name, void *op_data)
     H5::DataSet dset = H5::DataSet(info->h5.openDataSet(name)) ;
     hobj_ref_t ref ;
     info->h5.reference(&ref, name) ;
-    clk.push_back(H5Clock(H5DataRef(dset, ref))) ;
+    H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
+    H5::Attribute attr = dset.openAttribute("uri") ;
+    std::string uri ;
+    attr.read(varstr, uri) ;
+    clk.push_back(H5Clock(uri, H5DataRef(dset, ref))) ;
     }
   catch (H5::FileIException e) { }
   return 0 ;
@@ -738,7 +654,6 @@ void H5Recording::storeMetadata(const std::string &metadata, const std::string &
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::DataSet md = h5.createDataSet("/metadata", varstr, scalar) ;
   md.write(metadata, varstr, scalar) ;
-
   H5::Attribute attr = md.createAttribute("mimetype", varstr, scalar) ;
   attr.write(varstr, mimetype) ;
   md.close() ;
@@ -790,22 +705,24 @@ int main(void)
 
 
 // ??? std::cout << h.createSignal<int>("signal 1", "mV", NULL, NULL, 1.0, 0.0, 1000.0) << std::endl ;
-    std::cout << h.createSignal("signal 2", "mV", tv,  dshape, 1.0, 0.0, 2000.0)   << std::endl ;
+    H5Signal s = h.createSignal("signal 2", "mV", tv,  dshape, 1.0, 0.0, 2000.0) ;
+    std::cout << s.name() << std::endl ;
     tv[0] += 1 ;
-    h.extendSignal("signal 2", tv) ;
+    s.extend(tv) ;
     tv[0] += 1 ;
-    h.extendSignal("signal 2", tv) ;
+    s.extend(tv) ;
     tv[0] += 1 ;
-    h.extendSignal("signal 2", tv) ;
+    s.extend(tv) ;
     tv[0] += 1 ;
-    h.extendSignal("signal 2", tv) ;
+    s.extend(tv) ;
    
 //    h.createSignal<int>("signal 2", "mV") ;
     
 //    h.createSignal<int>("signal 3", "mV", &tv, 360.0) ;
 
-    std::cout << h.createClock("clock1", "s", tv) << std::endl ;
-    h.extendClock("clock1", tv) ;
+    H5Clock c = h.createClock("clock1", "s", tv) ;
+    std::cout << c.name() << std::endl ;
+    c.extend(tv) ;
 
 
     h.storeMetadata("metadata", "format") ;

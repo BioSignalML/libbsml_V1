@@ -21,12 +21,35 @@
 #ifndef _BSML_H5_CLOCK_
 #define _BSML_H5_CLOCK_ 1
 
+#include "h5dataset.h"
+
+
 class BSML::H5Clock : public BSML::H5Dataset
 /*========================================*/
 {
+ private:
+
+  void extend(void *, size_t, H5::DataType) ;
+
+
  public:
-  H5Clock() : H5Dataset() { }
-  H5Clock(const BSML::H5DataRef &ds) : H5Dataset(ds) { }
+
+  H5Clock() : BSML::H5Dataset() { }
+  H5Clock(const std::string &uri, const BSML::H5DataRef &ds) : BSML::H5Dataset(uri, ds) { }
+
+  template <class T> void extend(std::vector<T> times)
+  /*================================================*/
+  {
+//Extend a clock dataset in a HDF5 recording.
+//
+//:param uri: The URI of the clock dataset.
+//:param times: Time points with which to extend the clock.
+//:type times: :class:`numpy.ndarray` or an iterable.
+    T *tp = (T *)&times[0] ;
+    extend((void *)tp, times.size(), BSML::H5DataTypes(tp).mtype) ;
+    }
+
+
   } ;
 
 

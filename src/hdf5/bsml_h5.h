@@ -21,6 +21,7 @@
 #ifndef _BSML_H5_
 #define _BSML_H5_ 1
 
+#include <stdexcept>
 #include <sstream>
 #include <utility>
 #include <string>
@@ -55,38 +56,15 @@ namespace BSML
   class H5Clock ;
   class H5Signal ;
   class H5Exception ;
+  class H5DataTypes ;
+
   typedef std::list<std::string> StringList ;
   typedef std::pair<std::string, std::string> StringPair ;
   typedef std::pair<H5::DataSet, hobj_ref_t> H5DataRef ;
-  typedef std::pair<H5::DataType, H5::DataType> H5DataTypes ;
 
   H5Recording H5open(const std::string &, bool) ;
   H5Recording H5create(const std::string &, const std::string &, bool) ;
-
-  template <class T> H5DataTypes H5dataTypes(T *data) {
-    throw H5Exception("Unsupported data type") ;
-    }
-  H5DataTypes H5dataTypes(short *data) {
-    return H5DataTypes(H5::PredType::NATIVE_SHORT, H5::PredType::STD_I16LE) ;
-    }
-  H5DataTypes H5dataTypes(int *data) {
-    return H5DataTypes(H5::PredType::NATIVE_INT, H5::PredType::STD_I32LE) ;
-    }
-  H5DataTypes H5dataTypes(long *data) {
-    return H5DataTypes(H5::PredType::NATIVE_LONG, H5::PredType::STD_I64LE) ;
-    }
-  H5DataTypes H5dataTypes(float *data) {
-    return H5DataTypes(H5::PredType::NATIVE_FLOAT, H5::PredType::IEEE_F32LE) ;
-    }
-  H5DataTypes H5dataTypes(double *data) {
-    return H5DataTypes(H5::PredType::NATIVE_DOUBLE, H5::PredType::IEEE_F64LE) ;
-    }
-  H5DataTypes H5dataTypes(long null) {  // Default datatype
-    return H5DataTypes(H5::PredType::NATIVE_DOUBLE, BSML_H5_DEFAULT_DATATYPE) ;
-    }
-
   } ;
-
 
 
 class BSML::H5Exception : public std::runtime_error
@@ -95,6 +73,33 @@ class BSML::H5Exception : public std::runtime_error
  public:
   H5Exception(const std::string &msg) : std::runtime_error(msg) { }
   } ;
+
+
+class BSML::H5DataTypes
+/*===================*/
+{
+ public:
+  H5::DataType mtype ;
+  H5::DataType dtype ;
+
+  template <class T> H5DataTypes(T *data) {
+    throw H5Exception("Unsupported data type") ;
+    }
+
+  H5DataTypes(short *data): mtype(H5::PredType::NATIVE_SHORT), dtype(H5::PredType::STD_I16LE) { }
+
+  H5DataTypes(int *data): mtype(H5::PredType::NATIVE_INT), dtype(H5::PredType::STD_I32LE) { }
+
+  H5DataTypes(long *data): mtype(H5::PredType::NATIVE_LONG), dtype(H5::PredType::STD_I64LE) { }
+
+  H5DataTypes(float *data): mtype(H5::PredType::NATIVE_FLOAT), dtype(H5::PredType::IEEE_F32LE) { }
+
+  H5DataTypes(double *data): mtype(H5::PredType::NATIVE_DOUBLE), dtype(H5::PredType::IEEE_F64LE) { }
+
+  H5DataTypes() : mtype(H5::PredType::NATIVE_DOUBLE), dtype(BSML_H5_DEFAULT_DATATYPE) { }
+  H5DataTypes(long null) : mtype(H5::PredType::NATIVE_DOUBLE), dtype(BSML_H5_DEFAULT_DATATYPE) { }
+  } ;
+
 
 
 #include "h5recording.h"

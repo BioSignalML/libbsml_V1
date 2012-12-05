@@ -21,26 +21,49 @@
 #ifndef _BSML_H5_DATASET_
 #define _BSML_H5_DATASET_ 1
 
+#include <string>
+#include <H5Cpp.h>
+
 
 class BSML::H5Dataset
 /*=================*/
 {
+
  private:
-  H5::DataSet dataset ;
   hobj_ref_t reference ;
+
+ protected:
+  std::string uri ;
+  H5::DataSet dataset ;
 
  public:
   H5Dataset() : dataset(H5::DataSet()), reference(0) { }
-  H5Dataset(const BSML::H5DataRef &ds) : dataset(ds.first), reference(ds.second) { }
+  H5Dataset(const std::string &uri, const BSML::H5DataRef &ds):
+    uri(uri), dataset(ds.first), reference(ds.second) { }
+
+  void close(void) { dataset.close() ; }
 
   H5::DataSet getDataset(void) { return dataset ; }
   hobj_ref_t getRef(void) { return reference ; }
 
-  size_t length(void) {           // Needs reworking....
+  size_t length(void)           // Needs reworking....
+  /*===============*/
+  {
     if (dataset.getId() == 0) return 0 ;
     else
      dataset.getSpace().getSimpleExtentNpoints() ; // Only true for 1-D datasets
     }
+
+  std::string name(void)
+  /*==================*/
+  {
+    int n = H5Iget_name(dataset.getId(), NULL, 0) ;
+    if (n == 0) return std::string("") ;
+    char name[n+1] ;
+    H5Iget_name(dataset.getId(), name, n+1) ;
+    return std::string(name) ;
+    }
+
   } ;
 
 
