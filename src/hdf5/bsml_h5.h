@@ -62,8 +62,8 @@ namespace BSML
   typedef std::pair<std::string, std::string> StringPair ;
   typedef std::pair<H5::DataSet, hobj_ref_t> H5DataRef ;
 
-  H5Recording H5open(const std::string &, bool) ;
-  H5Recording H5create(const std::string &, const std::string &, bool) ;
+  H5Recording H5open(const std::string &, bool replace=false) ;
+  H5Recording H5create(const std::string &, const std::string &, bool readonly=false) ;
   } ;
 
 

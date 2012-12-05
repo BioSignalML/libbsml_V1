@@ -44,8 +44,8 @@ typedef struct {
   } SaveInfo ;
 
 
-H5Recording BSML::H5create(const std::string &uri, const std::string &fname, bool replace=false)
-/*============================================================================================*/
+H5Recording BSML::H5create(const std::string &uri, const std::string &fname, bool replace)
+/*======================================================================================*/
 {
 //Create a new HDF5 Recording file.
 //
@@ -92,8 +92,8 @@ H5Recording BSML::H5create(const std::string &uri, const std::string &fname, boo
   }
 
 
-H5Recording BSML::H5open(const std::string &fname, bool readonly=false)
-/*===================================================================*/
+H5Recording BSML::H5open(const std::string &fname, bool readonly)
+/*=============================================================*/
 {
 //Open an existing HDF5 Recording file.
 //
