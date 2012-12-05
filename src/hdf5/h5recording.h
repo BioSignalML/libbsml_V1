@@ -29,31 +29,32 @@ class BSML::H5Recording
 {
  private:
   std::string uri ;
-  H5::H5File *h5 ;
-  BSML::H5Clock *checkTiming(double, double, const std::string &, size_t) ;
+  H5::H5File h5 ;
+
+  BSML::H5Clock checkTiming(double, double, const std::string &, size_t) ;
   BSML::H5DataRef getDataRef(const std::string &, const std::string &) ;
 
   std::string createDataset(const std::string &, int, hsize_t *, hsize_t *, void *,
-    BSML::H5DataTypes *, BSML::H5Compression) ;
+    BSML::H5DataTypes, BSML::H5Compression) ;
   void setSignalAttributes(H5::DataSet, double, double, double, double,
-    const std::string &, H5Clock *) ;
+    const std::string &, H5Clock) ;
 
   std::string createSignal(const std::string &, const std::string &,
-    void *, size_t, BSML::H5DataTypes *, std::vector<hsize_t> *,
+    void *, size_t, BSML::H5DataTypes, std::vector<hsize_t>,
     double, double, double, double,
     const std::string &, const std::string &, BSML::H5Compression) ;
   std::string createSignal(StringList, StringList,
-    void *, size_t, BSML::H5DataTypes *, double, double, double, double,
+    void *, size_t, BSML::H5DataTypes, double, double, double, double,
     const std::string &, const std::string &, BSML::H5Compression) ;
   void extendSignal(const std::string &, void *, size_t, H5::DataType) ;
 
   std::string createClock(const std::string &, const std::string &,
-    void *, size_t, BSML::H5DataTypes *, double, double, BSML::H5Compression) ;
+    void *, size_t, BSML::H5DataTypes, double, double, BSML::H5Compression) ;
   void extendClock(const std::string &, void *, size_t, H5::DataType) ;
 
 
  public:
-  H5Recording(const std::string &, H5::H5File *) ;
+  H5Recording(const std::string &, H5::H5File) ;
   ~H5Recording(void) ;
   void close(void) ;
 
@@ -61,9 +62,10 @@ class BSML::H5Recording
 
   template <class T> std::string createSignal(const std::string &uri, const std::string &units,
   /*=========================================================================================*/
-   std::vector<T> *data=NULL, std::vector<hsize_t> *shape=NULL, double gain=1.0, double offset=0.0,
-   double rate=0.0, double period=0.0, const std::string &timeunits="", const std::string &clock="",
-   BSML::H5Compression compression=H5_DEFAULT_COMPRESSION) {
+   std::vector<T> data=std::vector<T>(), std::vector<hsize_t> shape=std::vector<hsize_t>(),
+   double gain=1.0, double offset=0.0, double rate=0.0, double period=0.0,
+   const std::string &timeunits="", const std::string &clock="",
+   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION) {
 //Create a dataset for a signal or group of signals in a HDF5 recording.
 //
 //:param uri: The URI(s) of the signal(s). If ``uri`` is an iterable then the dataset
@@ -92,10 +94,9 @@ class BSML::H5Recording
 //:rtype: str
 //
 //Only one of ``rate``, ``period``, or ``clock`` can be given.
-    T *dp = (data != NULL) ? (T *)&(*data)[0] : NULL ;
-    return createSignal(uri, units,
-      (void *)dp, (data != NULL) ? data->size() : 0, BSML::H5dataTypes(dp), shape,
-      gain, offset, rate, period, timeunits, clock, compression) ;
+    T *dp = (T *)&data[0] ;
+    return createSignal(uri, units, (void *)dp, data.size(), BSML::H5dataTypes(dp), shape,
+                        gain, offset, rate, period, timeunits, clock, compression) ;
     }
 
 //  template <class T> std::string createSignal(const std::string &uri, const std::string &units,
@@ -106,17 +107,16 @@ class BSML::H5Recording
 
   template <class T> std::string createSignal(BSML::StringList uris, BSML::StringList units,
   /*======================================================================================*/
-   std::vector<T> *data=NULL, double gain=1.0, double offset=0.0,
+   std::vector<T> data=std::vector<T>(), double gain=1.0, double offset=0.0,
    double rate=0.0, double period=0.0, const std::string &timeunits="", const std::string &clock="",
-   BSML::H5Compression compression=H5_DEFAULT_COMPRESSION) {
-    T *dp = (data != NULL) ? (T *)&(*data)[0] : NULL ;
-    return createSignal(uris, units,
-      (void *)dp, (data != NULL) ? data->size() : 0, BSML::H5dataTypes(dp),
-      gain, offset, rate, period, timeunits, clock, compression) ;
+   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION) {
+    T *dp = (T *)&data[0] ;
+    return createSignal(uris, units, (void *)dp, data.size(), BSML::H5dataTypes(dp),
+                        gain, offset, rate, period, timeunits, clock, compression) ;
     }
 
-  template <class T> void extendSignal(const std::string &uri, std::vector<T> *data)
-  /*==============================================================================*/
+  template <class T> void extendSignal(const std::string &uri, std::vector<T> data)
+  /*=============================================================================*/
   {
 //Extend a signal dataset in a HDF5 recording.
 //
@@ -127,15 +127,15 @@ class BSML::H5Recording
 //
 //If the dataset is compound (i.e. contains several signals) then the size of the
 //supplied data must be a multiple of the number of signals.
-    T *dp = (T *)&(*data)[0] ;
-    extendSignal(uri, (void *)dp, data->size(), BSML::H5dataTypes(dp)->first) ;
+    T *dp = (T *)&data[0] ;
+    extendSignal(uri, (void *)dp, data.size(), BSML::H5dataTypes(dp).first) ;
     }
 
 
   template <class T> std::string createClock(const std::string &uri, const std::string &units="",
   /*===========================================================================================*/
-   std::vector<T> *times=NULL, double rate=0.0, double period=0.0,
-   BSML::H5Compression compression=H5_DEFAULT_COMPRESSION) {
+   std::vector<T> times=std::vector<T>(), double rate=0.0, double period=0.0,
+   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION) {
 //Create a clock dataset in a HDF5 recording.
 //
 //:param uri: The URI for the clock.
@@ -151,30 +151,31 @@ class BSML::H5Recording
 //:param period (float): The interval, in time units, between time points. Optional.
 //:return: The name of the clock dataset created.
 //:rtype: str
-    T *tp = (times != NULL) ? (T *)&(*times)[0] : NULL ;
-    return createClock(uri, units, (void *)tp, (times != NULL) ? times->size() : 0,
-      BSML::H5dataTypes(tp), rate, period, compression) ;
+    T *tp = (T *)&times[0] ;
+    return createClock(uri, units, (void *)tp, times.size(), BSML::H5dataTypes(tp),
+                       rate, period, compression) ;
     }
 
-  template <class T> void extendClock(const std::string &uri, std::vector<T> *times)
-  /*==============================================================================*/
+  template <class T> void extendClock(const std::string &uri, std::vector<T> times)
+  /*=============================================================================*/
   {
 //Extend a clock dataset in a HDF5 recording.
 //
 //:param uri: The URI of the clock dataset.
 //:param times: Time points with which to extend the clock.
 //:type times: :class:`numpy.ndarray` or an iterable.
-    T *tp = (T *)&(*times)[0] ;
-    extendClock(uri, (void *)tp, times->size(), BSML::H5dataTypes(tp)->first) ;
+    T *tp = (T *)&times[0] ;
+    extendClock(uri, (void *)tp, times.size(), BSML::H5dataTypes(tp).first) ;
     }
 
-  BSML::H5Signal *getSignal(const std::string &) ;
-  BSML::H5Clock *getClock(const std::string &) ;
-  std::list<BSML::H5Signal *> signals(void) ;
-  std::list<BSML::H5Clock *> clocks(void) ;
+  BSML::H5Signal getSignal(const std::string &) ;
+  std::list<BSML::H5Signal> signals(void) ;
+
+  BSML::H5Clock getClock(const std::string &) ;
+  std::list<BSML::H5Clock> clocks(void) ;
 
   void storeMetadata(const std::string &, const std::string &) ;
-  std::pair<std::string *, std::string *> getMetadata(void) ;
+  std::pair<std::string, std::string> getMetadata(void) ;
   } ;
 
 

@@ -32,17 +32,22 @@
 #define to_string(N) (static_cast<std::ostringstream*>( &(std::ostringstream() << (N)) )->str())
 
 
+#define BSML_H5_DEFAULT_DATATYPE    H5::PredType::IEEE_F64LE
+#define BSML_H5_DEFAULT_COMPRESSION BSML::BSML_H5_COMPRESS_GZIP
+#define BSML_H5_CHUNK_BYTES         (128*1024)
+
+
 namespace BSML
 /*==========*/
 {
-  const std::string H5_MAJOR   = "1" ;
-  const std::string H5_MINOR   = "0" ;
-  const std::string BSML_H5_VERSION = std::string("BSML ") + H5_MAJOR + "." + H5_MINOR ;
+  const std::string BSML_H5_MAJOR   = "1" ;
+  const std::string BSML_H5_MINOR   = "0" ;
+  const std::string BSML_H5_VERSION = std::string("BSML ") + BSML_H5_MAJOR + "." + BSML_H5_MINOR ;
 
   enum H5Compression {
-    H5_COMPRESS_NONE,
-    H5_COMPRESS_GZIP,
-    H5_COMPRESS_SZIP
+    BSML_H5_COMPRESS_NONE,
+    BSML_H5_COMPRESS_GZIP,
+    BSML_H5_COMPRESS_SZIP
     } ;
 
   class H5Recording ;
@@ -51,39 +56,37 @@ namespace BSML
   class H5Signal ;
   class H5Exception ;
   typedef std::list<std::string> StringList ;
-  typedef std::pair<H5::DataSet *, hobj_ref_t> H5DataRef ;
+  typedef std::pair<std::string, std::string> StringPair ;
+  typedef std::pair<H5::DataSet, hobj_ref_t> H5DataRef ;
   typedef std::pair<H5::DataType, H5::DataType> H5DataTypes ;
 
   H5Recording H5open(const std::string &, bool) ;
   H5Recording H5create(const std::string &, const std::string &, bool) ;
 
-  template <class T> H5DataTypes *H5dataTypes(T *data) {
+  template <class T> H5DataTypes H5dataTypes(T *data) {
     throw H5Exception("Unsupported data type") ;
     }
-  H5DataTypes *H5dataTypes(short *data) {
-    return new H5DataTypes(H5::PredType::NATIVE_SHORT, H5::PredType::STD_I16LE) ;
+  H5DataTypes H5dataTypes(short *data) {
+    return H5DataTypes(H5::PredType::NATIVE_SHORT, H5::PredType::STD_I16LE) ;
     }
-  H5DataTypes *H5dataTypes(int *data) {
-    return new H5DataTypes(H5::PredType::NATIVE_INT, H5::PredType::STD_I32LE) ;
+  H5DataTypes H5dataTypes(int *data) {
+    return H5DataTypes(H5::PredType::NATIVE_INT, H5::PredType::STD_I32LE) ;
     }
-  H5DataTypes *H5dataTypes(long *data) {
-    return new H5DataTypes(H5::PredType::NATIVE_LONG, H5::PredType::STD_I64LE) ;
+  H5DataTypes H5dataTypes(long *data) {
+    return H5DataTypes(H5::PredType::NATIVE_LONG, H5::PredType::STD_I64LE) ;
     }
-  H5DataTypes *H5dataTypes(float *data) {
-    return new H5DataTypes(H5::PredType::NATIVE_FLOAT, H5::PredType::IEEE_F32LE) ;
+  H5DataTypes H5dataTypes(float *data) {
+    return H5DataTypes(H5::PredType::NATIVE_FLOAT, H5::PredType::IEEE_F32LE) ;
     }
-  H5DataTypes *H5dataTypes(double *data) {
-    return new H5DataTypes(H5::PredType::NATIVE_DOUBLE, H5::PredType::IEEE_F64LE) ;
+  H5DataTypes H5dataTypes(double *data) {
+    return H5DataTypes(H5::PredType::NATIVE_DOUBLE, H5::PredType::IEEE_F64LE) ;
     }
-  H5DataTypes *H5dataTypes(long null) {  // Default datatype
-    return new H5DataTypes(H5::PredType::NATIVE_DOUBLE, H5::PredType::IEEE_F64LE) ;
+  H5DataTypes H5dataTypes(long null) {  // Default datatype
+    return H5DataTypes(H5::PredType::NATIVE_DOUBLE, BSML_H5_DEFAULT_DATATYPE) ;
     }
 
   } ;
 
-
-#define H5_DEFAULT_COMPRESSION BSML::H5_COMPRESS_GZIP
-#define H5_CHUNK_BYTES         (128*1024)
 
 
 class BSML::H5Exception : public std::runtime_error

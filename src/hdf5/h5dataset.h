@@ -26,17 +26,20 @@ class BSML::H5Dataset
 /*=================*/
 {
  private:
-  H5::DataSet *dataset ;
+  H5::DataSet dataset ;
   hobj_ref_t reference ;
 
  public:
+  H5Dataset() : dataset(H5::DataSet()), reference(0) { }
   H5Dataset(const BSML::H5DataRef &ds) : dataset(ds.first), reference(ds.second) { }
 
-  H5::DataSet getDataset(void) { return *dataset ; }
+  H5::DataSet getDataset(void) { return dataset ; }
   hobj_ref_t getRef(void) { return reference ; }
 
-  size_t length(void) {           // Need reworking....
-    return dataset->getSpace().getSimpleExtentNpoints() ; // Only true for 1-D datasets
+  size_t length(void) {           // Needs reworking....
+    if (dataset.getId() == 0) return 0 ;
+    else
+     dataset.getSpace().getSimpleExtentNpoints() ; // Only true for 1-D datasets
     }
   } ;
 

@@ -25,6 +25,7 @@ class BSML::H5Clock : public BSML::H5Dataset
 /*========================================*/
 {
  public:
+  H5Clock() : H5Dataset() { }
   H5Clock(const BSML::H5DataRef &ds) : H5Dataset(ds) { }
   } ;
 
