@@ -14,6 +14,7 @@
 #ifndef _BSML_STREAM_H
 #define _BSML_STREAM_H
 
+#include <pthread.h>
 #include <libwebsockets.h>
 #include <jansson.h>
 
@@ -66,8 +67,7 @@ typedef enum {
   } BSML_STREAM_CHECKSUM ;
 
 typedef enum {
-  BSML_STREAM_CREATED = -1,
-  BSML_STREAM_STARTING,
+  BSML_STREAM_STARTING = 0,
   BSML_STREAM_OPENED,
   BSML_STREAM_RUNNING,
   BSML_STREAM_ERROR,
@@ -81,14 +81,14 @@ typedef struct {
   json_t *header ;
   int length ;
   char *content ;
-  } bsml_stream_block ;
+  } bsml_streamblock ;
 
 
 typedef struct bsml_Stream_Reader
   bsml_stream_reader ;
 
-typedef struct bsml_stream_block_Queue
-  bsml_stream_block_queue ;
+typedef struct bsml_streamblock_Queue
+  bsml_streamblock_queue ;
 
 typedef struct {
   const char *uri ;
@@ -100,10 +100,11 @@ typedef struct {
   BSML_STREAM_STATE state ;
   BSML_STREAM_ERROR_CODE error ;
   int stopped ;
+  pthread_t thread ;
   bsml_queue *blockQ ;
   bsml_stream_reader *sp ;
   struct libwebsocket *ws ;
-  } bsml_stream ;
+  } bsml_streamdata ;
 
 
 extern const char *bsml_stream_double_type ;  //!< The datatype of a double on this platform
@@ -121,21 +122,15 @@ void bsml_stream_finish(void) ;
   */
 const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code) ;
 
-
-bsml_stream *bsml_stream_create(const char *uri, double start, double duration, const char *dtype) ;
-
-void bsml_stream_set_maxsize(bsml_stream *stream, int size) ;
-
-/**** Replace with single 'endpoint' parameter and parse as URL.... ****/
-void bsml_stream_request(bsml_stream *stream, const char *host, int port, const char *endpoint) ;
+bsml_streamdata *bsml_streamdata_request(const char *uri, double start, double duration,
+                                                          const char *dtype, int maxsize) ;
 
 // Units...
 
-void bsml_stream_free(bsml_stream *stream) ;
+void bsml_streamdata_free(bsml_streamdata *streamdata) ;
 
-bsml_stream_block *bsml_stream_read(bsml_stream *stream) ;
-
-void bsml_stream_block_free(bsml_stream_block *sb) ;
+bsml_streamblock *bsml_streamdata_read(bsml_streamdata *streamdata) ;
+void bsml_streamblock_free(bsml_streamblock *sb) ;
 
 #ifdef __cplusplus
   } ;
