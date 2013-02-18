@@ -9,6 +9,7 @@
  *****************************************************/
 
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "bsml_queue.h"
 #include "bsml_internal.h"
@@ -20,6 +21,7 @@ struct bsml_queue {
   void **tail ;
   void **bufend ;
   void **buffer ;
+  pthread_mutex_t lock ;
   } ;
 
 
@@ -32,6 +34,7 @@ bsml_queue *bsml_queue_alloc(int size)
     q->buffer = calloc(sizeof(void *), size) ;
     q->head = q->tail = q->buffer ;
     q->bufend = q->buffer + size ;
+    pthread_mutex_init(&q->lock, NULL) ;
     }
   return q ;
   }
@@ -40,6 +43,7 @@ void bsml_queue_free(bsml_queue *q)
 /*===============================*/
 {
   if (q) {
+    pthread_mutex_destroy(&q->lock) ;
     free(q->buffer) ;
     free(q) ;
     }
@@ -49,10 +53,12 @@ int bsml_queue_put(bsml_queue *q, void *e)
 /*======================================*/
 {
   if (q->count < q->size) {
+    pthread_mutex_lock(&q->lock) ;
     *q->head = e ;
     ++q->count ;
     ++q->head ;
     if (q->head >= q->bufend) q->head = q->buffer ;
+    pthread_mutex_unlock(&q->lock) ;
     return 1 ;
     }
   return 0 ;
@@ -62,10 +68,12 @@ void *bsml_queue_get(bsml_queue *q)
 /*===============================*/
 {
   if (q->count > 0) {
+    pthread_mutex_lock(&q->lock) ;
     void *e = *q->tail ;
     --q->count ;
     ++q->tail ;
     if (q->tail >= q->bufend) q->tail = q->buffer ;
+    pthread_mutex_unlock(&q->lock) ;
     return e ;
     }
   return NULL ;
