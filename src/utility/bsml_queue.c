@@ -71,6 +71,13 @@ void *bsml_queue_get(bsml_queue *q)
   return NULL ;
   }
 
+
+int bsml_queue_count(bsml_queue *q)
+/*===============================*/
+{
+  return q->count ;
+  }
+
 int bsml_queue_empty(bsml_queue *q)
 /*===============================*/
 {

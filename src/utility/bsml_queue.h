@@ -30,6 +30,8 @@ int bsml_queue_put(bsml_queue *q, void *e) ;
 
 void *bsml_queue_get(bsml_queue *q) ;
 
+int bsml_queue_count(bsml_queue *q) ;
+
 int bsml_queue_empty(bsml_queue *q) ;
 
 int bsml_queue_nearly_full(bsml_queue *q) ;
