@@ -27,6 +27,14 @@ extern "C" {
   */
 const char *bsml_string_copy(const char *s) ;
 
+/** Make a copy of part of a string.
+  * @param s The string to copy.
+  * @param n The number of characters to copy from the string.
+  * @return A copy of the first `n` character of the string, NUL
+            terminated in a newly allocated memory block.
+  */
+const char *bsml_string_copy_len(const char *s, int n) ;
+
 /** Concatenate two strings.
   * @param s The first string to concatenate.
   * @param t The string to concatenate to the end of the first string.

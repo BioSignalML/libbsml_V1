@@ -25,6 +25,18 @@ const char *bsml_string_copy(const char *s)
   else return NULL ;
   }
 
+const char *bsml_string_copy_len(const char *s, int n)
+/*==================================================*/
+{
+  if (s) {
+    char *t = malloc(n+1) ;
+    strncpy(t, s, n) ;
+    t[n] = '\0' ;
+    return t ;
+    }
+  else return NULL ;
+  }
+
 const char *bsml_string_cat(const char *s, const char *t)
 /*=====================================================*/
 {
