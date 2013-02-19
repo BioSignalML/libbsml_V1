@@ -119,6 +119,7 @@ const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code)
        : (code == BSML_STREAM_ERROR_VERSION_MISMATCH)   ? "Block Stream has wring version"
        : (code == BSML_STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
        : (code == BSML_STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
+       : (code == BSML_STREAM_ERROR_NO_CONNECTION)      ? "Cannot connect to server"
        :                                                  "Unknown Error" ;
   }
 
