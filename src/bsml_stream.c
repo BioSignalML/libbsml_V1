@@ -40,7 +40,7 @@ typedef enum {
 
 #define CHECKSUM_LENGTH  20    // SHA1 digest
 
-struct bsml_Stream_Reader {
+struct bsml_StreamReader {
   BSML_STREAM_CHECKSUM checksum ;
   BSML_STREAM_READER_STATE state ;
   BSML_STREAM_ERROR_CODE error ;
@@ -143,9 +143,18 @@ void bsml_streamblock_free(bsml_streamblock *blk)
     }
   }
 
+static void bsml_streamreader_free(bsml_streamreader *sp)
+/*=====================================================*/
+{
+  if (sp) {
+    bsml_streamblock_free(sp->block) ;
+    if (sp->jsonhdr) free(sp->jsonhdr) ;
+    free(sp) ;
+    }
+  }
 
-static int bsml_stream_process_data(bsml_stream_reader *sp, char *data, int len)
-/*============================================================================*/
+static int bsml_stream_process_data(bsml_streamreader *sp, char *data, int len)
+/*===========================================================================*/
 {
   char *pos = data ;
   int size = len ;
@@ -355,11 +364,8 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
   switch (rsn) {
    case LWS_CALLBACK_CLOSED:
    case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-    if (sd->sp) {
-      if (sd->sp->state != BSML_STREAM_STATE_BLOCK && sd->sp->block) bsml_streamblock_free(sd->sp->block) ;
-      if (sd->sp->jsonhdr) free(sd->sp->jsonhdr) ;
-      free(sd->sp) ;
-      }
+    bsml_streamreader_free(sd->sp) ;
+    sd->sp = NULL ;
     if (rsn == LWS_CALLBACK_CLIENT_CONNECTION_ERROR) {
       bsml_log_error("Client connection error\n") ;
       sd->error = BSML_STREAM_ERROR_NO_CONNECTION ;
@@ -368,7 +374,7 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
     break ;
 
    case LWS_CALLBACK_CLIENT_ESTABLISHED:
-    sd->sp = ALLOCATE(bsml_stream_reader) ;
+    sd->sp = ALLOCATE(bsml_streamreader) ;
     if (sd->sp) {
       sd->sp->state = BSML_STREAM_STATE_RESET ;
       sd->sp->checksum = BSML_STREAM_CHECKSUM_CHECK ;  // Set from stream data structure ??

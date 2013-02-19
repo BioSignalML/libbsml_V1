@@ -84,8 +84,8 @@ typedef struct {
   } bsml_streamblock ;
 
 
-typedef struct bsml_Stream_Reader
-  bsml_stream_reader ;
+typedef struct bsml_StreamReader
+  bsml_streamreader ;
 
 typedef struct bsml_streamblock_Queue
   bsml_streamblock_queue ;
@@ -102,7 +102,7 @@ typedef struct {
   int stopped ;
   pthread_t thread ;
   bsml_queue *blockQ ;
-  bsml_stream_reader *sp ;
+  bsml_streamreader *sp ;
   struct libwebsocket *ws ;
   } bsml_streamdata ;
 
