@@ -52,16 +52,16 @@ void bsml_queue_free(bsml_queue *q)
 int bsml_queue_put(bsml_queue *q, void *e)
 /*======================================*/
 {
+  pthread_mutex_lock(&q->lock) ;
   if (q->count < q->size) {
-    pthread_mutex_lock(&q->lock) ;
     *q->head = e ;
     ++q->count ;
     ++q->head ;
     if (q->head >= q->bufend) q->head = q->buffer ;
-    pthread_mutex_unlock(&q->lock) ;
-    return 1 ;
     }
-  return 0 ;
+  int space = q->size - q->count ;
+  pthread_mutex_unlock(&q->lock) ;
+  return space ;
   }
 
 void *bsml_queue_get(bsml_queue *q)
