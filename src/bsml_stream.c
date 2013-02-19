@@ -122,6 +122,7 @@ const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code)
        : (code == BSML_STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
        : (code == BSML_STREAM_ERROR_NO_CONNECTION)      ? "Cannot connect to server"
        : (code == BSML_STREAM_ERROR_MEMORY)             ? "Cannot allocate memory"
+       : (code == BSML_STREAM_ERROR_QUEUE)              ? "Receive queue full"
        :                                                  "Unknown Error" ;
   }
 
@@ -401,11 +402,9 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
       int n = bsml_stream_process_data(sd->sp, data, len) ;
       if (sd->sp->error == BSML_STREAM_ERROR_NONE) {
         if (sd->sp->state == BSML_STREAM_STATE_BLOCK) {
-          if (bsml_queue_put(sd->blockQ, sd->sp->block) == 0) {
+          if (bsml_queue_put(sd->blockQ, sd->sp->block) <= 1) {
             bsml_log_error("Receive queue overflow...\n") ;
-            bsml_log_error("Shutting down.\n") ;
-            // But need to put NULL block to stop listener...
-            sd->state = BSML_STREAM_CLOSED ;
+            sd->error = BSML_STREAM_ERROR_QUEUE ;
             return(-1) ;     // Will close and free session
             }
           sd->sp->block = NULL ;
@@ -437,7 +436,9 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
     return 0 ;
     }
 
-  if (sd != NULL && sd->error == BSML_STREAM_ERROR_MEMORY) return(-1) ;  // Close and free session
+  if (sd != NULL
+   && (sd->error == BSML_STREAM_ERROR_MEMORY
+    || sd->error == BSML_STREAM_ERROR_QUEUE)) return(-1) ;  // Close and free session
   return 0 ;
   }
 
