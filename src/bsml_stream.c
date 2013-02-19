@@ -120,6 +120,7 @@ const char *bsml_stream_error_text(BSML_STREAM_ERROR_CODE code)
        : (code == BSML_STREAM_ERROR_BAD_JSON_HEADER)    ? "Incorrectly formatted JSON header"
        : (code == BSML_STREAM_ERROR_BAD_FORMAT)         ? "Incorrect message format"
        : (code == BSML_STREAM_ERROR_NO_CONNECTION)      ? "Cannot connect to server"
+       : (code == BSML_STREAM_ERROR_MEMORY)             ? "Cannot allocate memory"
        :                                                  "Unknown Error" ;
   }
 
@@ -226,7 +227,8 @@ static int bsml_stream_process_data(bsml_streamreader *sp, char *data, int len)
           }
         if (len > 0) {
           sp->jsonhdr = calloc(sp->expected + 1, 1) ;
-          sp->state = BSML_STREAM_STATE_HEADER ;
+          if (sp->jsonhdr != NULL) sp->state = BSML_STREAM_STATE_HEADER ;
+          else                     sp->error = BSML_STREAM_ERROR_MEMORY ;
           }
         break ;
         }
@@ -265,8 +267,11 @@ static int bsml_stream_process_data(bsml_streamreader *sp, char *data, int len)
           len -= 1 ;
           sp->block->length = sp->expected ;
           sp->block->content = calloc(sp->expected+1, 1) ;
-          sp->storepos = sp->block->content ;
-          sp->state = BSML_STREAM_STATE_CONTENT ;
+          if (sp->block->content != NULL) {
+            sp->storepos = sp->block->content ;
+            sp->state = BSML_STREAM_STATE_CONTENT ;
+            }
+          else sp->error = BSML_STREAM_ERROR_MEMORY ;
           }
         else sp->error = BSML_STREAM_ERROR_MISSING_HEADER_LF ;
         break ;
@@ -352,7 +357,7 @@ static int bsml_stream_process_data(bsml_streamreader *sp, char *data, int len)
       }
     sp->state = BSML_STREAM_STATE_RESET ;
     }
-  return(size - len) ;  // Bytes we've consumed
+  return (size - len) ;  // Bytes we've consumed
   }
 
 
@@ -386,8 +391,7 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
       }
     else {             // Out of memory...
       bsml_log_error("No memory for libwebsockets ????\n") ;
-      sd->state = BSML_STREAM_CLOSED ;
-      return(-1) ;     // Will close and free session
+      sd->error = BSML_STREAM_ERROR_MEMORY ;
       }
     break ;
 
@@ -429,9 +433,10 @@ static int bsml_stream_callback(struct libwebsocket_context *this, struct libweb
     break ;
 
    default:
-    break ;
+    return 0 ;
     }
 
+  if (sd != NULL && sd->error == BSML_STREAM_ERROR_MEMORY) return(-1) ;  // Close and free session
   return 0 ;
   }
 
@@ -511,6 +516,7 @@ bsml_streamdata *bsml_streamdata_request(const char *uri, double start, double d
     sd->dtype = bsml_string_copy(dtype) ;
     sd->maxsize = maxsize ;
     sd->state = BSML_STREAM_STARTING ;
+    sd->error = BSML_STREAM_ERROR_NONE ;
     sd->blockQ = bsml_queue_alloc(BSML_STREAM_BLOCK_QUEUE_SIZE) ;
 
     pthread_attr_t attr ;
