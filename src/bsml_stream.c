@@ -76,6 +76,7 @@ void bsml_stream_initialise(void)
 /*=============================*/
 {
   if (context == NULL) {
+    lws_set_log_level(LLL_ERR | LLL_WARN, NULL) ;
     struct lws_context_creation_info *info = ALLOCATE(struct lws_context_creation_info) ;
     info->protocols = PROTOCOLS ;
     info->uid = -1 ;
