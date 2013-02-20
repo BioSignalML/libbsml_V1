@@ -6,7 +6,6 @@
 
 #include "bsml_stream.h"
 
-#define STREAM_ENDPOINT "/stream/data/"
 
 
 void get_data(const char *recording, double start, double duration)
@@ -14,32 +13,26 @@ void get_data(const char *recording, double start, double duration)
 {
   int CHUNKSIZE = 10000 ;
 
-  int channels = 1 ;
+  double *data = NULL ;
+  int channels = 0 ;
   json_t *siguris = NULL ;
 
   const char *DATAFORMAT = STREAM_DOUBLE ;
 
-  double *data = NULL ;      // Curerently assuming everything is at the same rate....
-
 
   // Setup stream, set options (e.g. block size), add signals, etc,
   // then bsml_stream_start(strm)
+  bsml_streamdata *strm = bsml_streamdata_request(recording, start, duration, DATAFORMAT, CHUNKSIZE) ;
 
-  bsml_stream *strm = bsml_stream_create(recording, start, duration, DATAFORMAT) ;
-  bsml_stream_set_maxsize(strm, CHUNKSIZE) ;
-
-  bsml_stream_request(strm, "devel.biosignalml.org", 80, STREAM_ENDPOINT) ;
-
-  bsml_stream_block *sb ;
-  
-  fprintf(stderr, "Start state: %d\n", strm->state) ;
-
+  bsml_streamblock *sb ;
   int frameno = 0 ;
-  while ((sb = bsml_stream_read(strm)) != NULL) {
 
-    fprintf(stderr, "Block %c: %d\n  ", sb->type, sb->length) ;
+  while ((sb = bsml_streamdata_read(strm)) != NULL) {
+#ifdef LOG_HEADER
+    fprintf(stderr, "%s Block %c: %d\n  ", run_id, sb->type, sb->length) ;
     json_dumpf(sb->header, stderr, JSON_ENSURE_ASCII) ;
-
+    fprintf(stderr, "\n") ;
+#endif
     if      (sb->type == BSML_STREAM_ERROR_BLOCK) {
       fprintf(stderr, "ERROR: %-*s\n", sb->length, sb->content) ;
       }
@@ -87,7 +80,7 @@ void get_data(const char *recording, double start, double duration)
             printf("%d ", frameno) ;
             for (i = 0 ;  i < channels ;  ++i) {
               if (i > 0) printf(" ") ;
-              printf("%f", *dp) ;
+              printf("%8g", *dp) ;
               ++dp ;
               }
             printf("\n") ;
@@ -101,15 +94,14 @@ void get_data(const char *recording, double start, double duration)
 //      dtype *buffer = calloc(sb->length, sizeof(dtype)) ;
 //      memcpy(buffer, (double *)sb->content, sb->length*sizeof(dtype)) ;
       }
-    bsml_stream_block_free(sb) ;
+    bsml_streamblock_free(sb) ;
     }
 
   if (strm->error != BSML_STREAM_ERROR_NONE)  // Always check for errors...
     fprintf(stderr, "ERROR %d: %s\n", strm->error, bsml_stream_error_text(strm->error)) ;
 
-  fprintf(stderr, "End state: %d\n", strm->state) ;
 
-  bsml_stream_free(strm) ;
+  bsml_streamdata_free(strm) ;
   if (data) free(data) ;
   if (siguris) json_decref(siguris) ;
   }
@@ -126,15 +118,17 @@ void send_data(const char *recording, int channels, double rate) // From stdin
   }
 
 
-int main(void)
-/*==========*/
+int main(int argc, char **argv)
+/*===========================*/
 {
+  if (argc < 2) {
+    printf("Usage: %s SIGNAL_URI\n", argv[0]) ;
+    exit(1) ;
+    }
+
+
   bsml_stream_initialise() ;
-
-
-  get_data("http://devel.biosignalml.org/resource/physiobank/mitdb/102", 0.0, 0.05) ;
-
-
+  get_data(argv[1], 0.0, 1806.0) ;
   bsml_stream_finish() ;
   }
 
