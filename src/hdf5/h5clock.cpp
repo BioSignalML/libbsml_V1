@@ -29,22 +29,6 @@ void H5Clock::extend(void *times, size_t size, H5::DataType dtype)
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
 #endif
-  H5::DataSpace dspace = dataset.getSpace() ;
-  int ndims = dspace.getSimpleExtentNdims() ;
-  if (ndims != 1) throw H5Exception("Clock not one-dimensional: " + uri) ;
-  try {
-    hsize_t shape[1], newshape[1] ;
-    dspace.getSimpleExtentDims(shape) ;
-    newshape[0] = shape[0] + size ;
-    hsize_t count[] = { size } ;
-    dataset.extend(newshape) ;
-    dspace = dataset.getSpace() ;
-    dspace.selectHyperslab(H5S_SELECT_SET, count, shape) ;
-    H5::DataSpace mspace(1, count, count) ;
-    dataset.write(times, dtype, mspace, dspace) ;
-    }
-  catch (H5::DataSetIException e) {
-    throw H5Exception("Cannot extend dataset '" + uri + "': " + e.getDetailMsg()) ;
-    }
-  }
 
+  H5Dataset::extend(times, size, dtype, 1, -1) ;
+  }

@@ -2,7 +2,7 @@
  *                                                                            *
  *  BioSignalML Management in C++                                             *
  *                                                                            *
- *  Copyright (c) 2010-2012  David Brooks                                     *
+ *  Copyright (c) 2010-2013  David Brooks                                     *
  *                                                                            *
  *  Licensed under the Apache License, Version 2.0 (the "License");           *
  *  you may not use this file except in compliance with the License.          *
@@ -35,19 +35,29 @@ class BSML::H5Clock : public BSML::H5Dataset
  public:
 
   H5Clock() : BSML::H5Dataset() { }
+  H5Clock(const BSML::H5DataRef &ds) : BSML::H5Dataset(ds) { }
   H5Clock(const std::string &uri, const BSML::H5DataRef &ds) : BSML::H5Dataset(uri, ds) { }
 
-  template <class T> void extend(std::vector<T> times)
-  /*================================================*/
+  /*!
+   * Extend a clock in its first dimension.
+   *
+   * \tparam T the numeric datatype of array elements.
+   * \param data a vector of data elements. The shape of the underlying
+   * dataset is used to find the number of successive elements that make
+   * up a single array cell.
+   */
+  template <class T> void extend(std::vector<T> data)
+  /*===============================================*/
   {
-//Extend a clock dataset in a HDF5 recording.
-//
-//:param uri: The URI of the clock dataset.
-//:param times: Time points with which to extend the clock.
-//:type times: :class:`numpy.ndarray` or an iterable.
-    T *tp = (T *)&times[0] ;
-    extend((void *)tp, times.size(), BSML::H5DataTypes(tp).mtype) ;
+    T *dp = (T *)&data[0] ;
+    extend((void *)dp, data.size(), BSML::H5DataTypes(dp).mtype) ;
     }
+
+// Also get rate/period
+// Constructors (dataset), (dataset, uri, rate, period)
+
+// Store data by calling extend() after creating an empty dataset??
+// Or or H5Dataset class to have a create() method? cf. H5Recording::createDataset()
 
 
   } ;

@@ -31,8 +31,6 @@
 
 using namespace BSML ;
 
-//#define H5_DEBUG 1
-
 extern "C" {
   static herr_t saveSignal(hid_t, const char *, void *) ;
   static herr_t saveClock(hid_t, const char *, void *) ;
@@ -299,7 +297,7 @@ H5Signal H5Recording::createSignal(const std::string &uri, const std::string &un
  H5Compression compression=BSML_H5_DEFAULT_COMPRESSION)
 {
 #if !H5_DEBUG
-//  H5::Exception::dontPrint() ;
+  H5::Exception::dontPrint() ;
 #endif
   H5::Attribute attr ;
   H5::Group urigroup = h5.openGroup("/uris") ;
@@ -309,7 +307,8 @@ H5Signal H5Recording::createSignal(const std::string &uri, const std::string &un
     throw H5Exception("A signal already has URI '" + uri + "'") ;
     }
   catch (H5::AttributeIException e) { }
-  
+
+
   size_t npoints = 0 ;
   int rank = datashape.size() + 1 ;
   hsize_t maxshape[rank], shape[rank] ;
@@ -338,16 +337,18 @@ H5Signal H5Recording::createSignal(const std::string &uri, const std::string &un
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
+
   attr = dset.createAttribute("uri", varstr, scalar) ;
   attr.write(varstr, uri) ;
   attr.close() ;
+
   attr = dset.createAttribute("units", varstr, scalar) ;
   attr.write(varstr, units) ;
   attr.close() ;
 
-  setSignalAttributes(dset, gain, offset, period, rate, timeunits, clocktimes) ;
+  setSignalAttributes(dset, gain, offset, rate, period, timeunits, clocktimes) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return H5Signal(uri, sigdata, 0) ;
+  return H5Signal(uri, sigdata, -1) ;
   }
 
 
@@ -415,7 +416,7 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
   attr.write(varstr, values) ;
   attr.close() ;
 
-  setSignalAttributes(dset, gain, offset, period, rate, timeunits, clocktimes) ;
+  setSignalAttributes(dset, gain, offset, rate, period, timeunits, clocktimes) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
 
   return signals ;
@@ -453,10 +454,10 @@ H5Clock H5Recording::createClock(const std::string &uri, const std::string &unit
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
+
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  attr = dset.createAttribute("uri", varstr, scalar) ;
-  attr.write(varstr, uri) ;
-  attr.close() ;
+
+// This could go into H5Clock's constructor...
   if (units != "") {
     attr = dset.createAttribute("units", varstr, scalar) ;
     attr.write(varstr, units) ;
@@ -473,8 +474,9 @@ H5Clock H5Recording::createClock(const std::string &uri, const std::string &unit
     attr.close() ;
     }
 
+  H5Clock result(uri, clkdata) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return H5Clock(uri, clkdata) ;
+  return result ;
   }
 
 
@@ -487,11 +489,13 @@ H5DataRef H5Recording::getDataRef(const std::string &uri, const std::string &pre
     hobj_ref_t ref ;
     attr.read(H5::PredType::STD_REF_OBJ, &ref) ;
     attr.close() ;
+
     H5::DataSet dset = H5::DataSet(h5, &ref) ;
     hid_t id = dset.getId() ;
     int len = H5Rget_name(id, H5R_OBJECT, &ref, NULL, 0) ;
     char *buf = (char *)std::malloc(len + 1) ;
     H5Rget_name(id, H5R_OBJECT, &ref, buf, len + 1) ;
+
     bool matched = (prefix.compare(0, std::string::npos, buf, prefix.size()) == 0) ;
     std::free(buf) ;
     if (matched) return H5DataRef(dset, ref) ;
@@ -510,41 +514,8 @@ H5Signal H5Recording::getSignal(const std::string &uri)
 //:return: A :class:`H5Signal` containing the signal, or None if
 //         the URI is unknown or the dataset is not that for a signal.
   H5DataRef dataref = getDataRef(uri, "/recording/signal/") ;
-  if (dataref.first.getId() != 0) {
-    H5::DataSet dset = dataref.first ;
-    H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-    H5::Attribute attr = dset.openAttribute("uri") ;
-    int nsignals = attr.getSpace().getSimpleExtentNpoints() ;
-    if (nsignals == 1) {
-      std::string dseturi ;
-      attr.read(varstr, dseturi) ;
-      if (uri == dseturi) return H5Signal(uri, dataref, -1) ;
-      }
-    else if (nsignals > 1) {
-      std::string uris[nsignals] ;
-      attr.read(varstr, uris) ;
-      int n = 0 ;
-      while (n < nsignals) {
-        if (uri == uris[n]) return H5Signal(uri, dataref, n) ;
-        ++n ;
-        }
-      }
-    }
+  if (dataref.first.getId() != 0) return H5Signal(uri, dataref) ;
   throw H5Exception("Cannot find signal:" + uri) ;
-  }
-
-
-H5Clock H5Recording::getClock(const std::string &uri)
-/*=================================================*/
-{
-//Find a clock dataset from its URI.
-//
-//:param uri: The URI of the clock dataset to get.
-//:return: A :class:`H5Clock` or None if the URI is unknown or
-//         the dataset is not that for a clock.
-  H5DataRef dataref = getDataRef(uri, "/recording/clock/") ;
-  if (dataref.first.getId() != 0) return H5Clock(uri, dataref) ;
-  throw H5Exception("Cannot find clock:" + uri) ;
   }
 
 
@@ -555,6 +526,7 @@ static herr_t saveSignal(hid_t id, const char *name, void *op_data)
   std::list<H5Signal> &sig = reinterpret_cast<std::list<H5Signal> &>(info->listp) ;
   try {
     H5::DataSet dset = H5::DataSet(info->h5.openDataSet(name)) ;
+
     hobj_ref_t ref ;
     info->h5.reference(&ref, name) ;
     H5DataRef dataref = H5DataRef(dset, ref) ;
@@ -564,6 +536,7 @@ static herr_t saveSignal(hid_t id, const char *name, void *op_data)
     if (nsignals == 1) {
       std::string uri ;
       attr.read(varstr, uri) ;
+
       sig.push_back(H5Signal(uri, dataref, -1)) ;
       }
     else if (nsignals > 1) {
@@ -597,6 +570,20 @@ std::list<H5Signal> H5Recording::signals(void)
   }
 
 
+H5Clock H5Recording::getClock(const std::string &uri)
+/*=================================================*/
+{
+//Find a clock dataset from its URI.
+//
+//:param uri: The URI of the clock dataset to get.
+//:return: A :class:`H5Clock` or None if the URI is unknown or
+//         the dataset is not that for a clock.
+  H5DataRef dataref = getDataRef(uri, "/recording/clock/") ;
+  if (dataref.first.getId() != 0) return H5Clock(dataref) ;
+  throw H5Exception("Cannot find clock:" + uri) ;
+  }
+
+
 static herr_t saveClock(hid_t id, const char *name, void *op_data)
 /*==============================================================*/
 {
@@ -604,12 +591,16 @@ static herr_t saveClock(hid_t id, const char *name, void *op_data)
   std::list<H5Clock> clk = reinterpret_cast<std::list<H5Clock> &>(info->listp) ;
   try {
     H5::DataSet dset = H5::DataSet(info->h5.openDataSet(name)) ;
+
+
     hobj_ref_t ref ;
     info->h5.reference(&ref, name) ;
     H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
     H5::Attribute attr = dset.openAttribute("uri") ;
     std::string uri ;
     attr.read(varstr, uri) ;
+
+
     clk.push_back(H5Clock(uri, H5DataRef(dset, ref))) ;
     }
   catch (H5::FileIException e) { }
