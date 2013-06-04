@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/errno.h>
+//#include <sys/errno.h>
 
 #include <curl/curl.h>
 
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
   if (argc < 4
    || (strcmp(argv[1], "get") != 0
     && strcmp(argv[1], "put") != 0)) {
-    printf("Usage:\t%s get FILE URI [key]\n\t%s put URI FILE [key]\n", argv[0], argv[0]) ;
+    printf("Usage:\t%s get URI FILE [key]\n\t%s put FILE URI [key]\n", argv[0], argv[0]) ;
     exit(1) ;
     }
 
