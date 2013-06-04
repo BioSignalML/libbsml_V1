@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-//#include <sys/errno.h>
+#include <sys/errno.h>
 
 #include <curl/curl.h>
 
