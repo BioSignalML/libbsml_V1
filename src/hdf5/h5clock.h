@@ -41,8 +41,8 @@ class BSML::H5Clock : public BSML::H5Dataset
   /*!
    * Extend a clock in its first dimension.
    *
-   * \tparam T the numeric datatype of array elements.
-   * \param data a vector of data elements. The shape of the underlying
+   * \tparam T the numeric datatype of time elements.
+   * \param data a vector of time elements. The shape of the underlying
    * dataset is used to find the number of successive elements that make
    * up a single array cell.
    */
