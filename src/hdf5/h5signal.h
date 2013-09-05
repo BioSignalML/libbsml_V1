@@ -67,24 +67,24 @@ class BSML::H5Signal : public BSML::H5Dataset
     H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
     H5::Attribute attr = dataset.openAttribute("uri") ;
     int nsignals = attr.getSpace().getSimpleExtentNpoints() ;
+    index = -1 ;
     if (nsignals == 1) {
       attr.read(varstr, this->uri) ;
-      index = -1 ;
       if (uri != this->uri) throw H5Exception("Corrupt URI reference for: " + uri) ;
       }
     else {
-      std::string uris[nsignals] ;
+      char *uris[nsignals] ;
       attr.read(varstr, uris) ;
       int n = 0 ;
       while (n < nsignals) {
-        if (uri == uris[n]) {
+        if (index == -1 && strcmp(uri.c_str(), uris[n]) == 0) {
           this->uri = uri ;
           index = n ;
-          return ;
           }
+        free(uris[n]) ;
         ++n ;
         }
-      throw H5Exception("Corrupt URI reference for: " + uri) ;
+      if (index == -1) throw H5Exception("Corrupt URI reference for: " + uri) ;
       }
     }
 

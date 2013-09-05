@@ -148,12 +148,12 @@ H5Recording BSML::H5open(const std::string &fname, bool readonly)
     h5.reference(&recref, "/recording") ;
     attr.close() ;
     if (uriref != recref)
-      throw H5Exception("Internal error in BiosignalML HDF5 file: '" + fname + "'") ;
+      throw H5Exception("Internal error in BioSignalML HDF5 file: '" + fname + "'") ;
   
     return H5Recording(std::string(uri), h5) ;
     }
   catch (H5::Exception e) {
-    throw H5Exception("Invalid BiosignalML HDF5 file: '" + fname + "': " + e.getDetailMsg()) ;
+    throw H5Exception("Invalid BioSignalML HDF5 file: '" + fname + "': " + e.getDetailMsg()) ;
     }
   }
 
@@ -182,7 +182,7 @@ H5Clock H5Recording::checkTiming(double rate, double period, const std::string &
 {
   H5Clock clocktimes = H5Clock() ;
   if (rate != 0.0 || period != 0.0) {
-    if (clock != "" || rate != 0.0 && period != 0.0)
+    if (clock != "" || (rate != 0.0 && period != 0.0))
       throw H5Exception("Only one of 'rate', 'period', or 'clock' can be specified") ;
     }
   else if (clock != "") {
@@ -308,7 +308,6 @@ H5Signal H5Recording::createSignal(const std::string &uri, const std::string &un
     }
   catch (H5::AttributeIException e) { }
 
-
   size_t npoints = 0 ;
   int rank = datashape.size() + 1 ;
   hsize_t maxshape[rank], shape[rank] ;
@@ -395,13 +394,14 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
   hobj_ref_t reference = sigdata.second ;
   StringList::iterator s ;
-  std::string values[nsignals] ;
+
+  const char *values[nsignals] ;
   hsize_t dims[1] ;
   dims[0] = nsignals ;
   H5::DataSpace attrspace(1, dims, dims) ;
   int n ;
   for (n = 0, s = uris.begin() ;  s != uris.end() ;  n++, s++) {
-    values[n] = *s ;
+    values[n] = s->c_str() ;
     attr = urigroup.createAttribute(*s, H5::PredType::STD_REF_OBJ, scalar) ;
     attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
     attr.close() ;
@@ -412,7 +412,7 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
   attr.close() ;
   attr = dset.createAttribute("units", varstr, attrspace) ;
   for (n = 0, s = units.begin() ;  s != units.end() ;  n++, s++)
-    values[n] = *s ;
+    values[n] = s->c_str() ;
   attr.write(varstr, values) ;
   attr.close() ;
 
@@ -540,11 +540,12 @@ static herr_t saveSignal(hid_t id, const char *name, void *op_data)
       sig.push_back(H5Signal(uri, dataref, -1)) ;
       }
     else if (nsignals > 1) {
-      std::string uris[nsignals] ;
+      char *uris[nsignals] ;
       attr.read(varstr, uris) ;
       int n = 0 ;
       while (n < nsignals) {
-        sig.push_back(H5Signal(uris[n], dataref, n)) ;
+        sig.push_back(H5Signal(std::string(uris[n]), dataref, n)) ;
+        free(uris[n]) ;
         ++n ;
         }
       }

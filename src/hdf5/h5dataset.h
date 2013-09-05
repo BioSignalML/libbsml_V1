@@ -47,7 +47,7 @@ class BSML::H5Dataset
   std::string uri ;         //!< The URI for the dataset.
   H5::DataSet dataset ;     //!< The DataSet in the underlying HDF5 file.
 
-  void extend(void *, size_t, H5::DataType, int, size_t) ;
+  void extend(void *, size_t, H5::DataType, int, int) ;
 
 
  public:

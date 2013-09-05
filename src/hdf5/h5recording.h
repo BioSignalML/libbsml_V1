@@ -65,15 +65,22 @@ class BSML::H5Recording
 
   template <class T> BSML::H5Signal createSignal(const std::string &uri, const std::string &units,
   /*============================================================================================*/
+
    std::vector<T> data=std::vector<T>(),
    std::vector<hsize_t> shape=std::vector<hsize_t>(),
+
    double gain=1.0,
    double offset=0.0,
+
    double rate=0.0,
    double period=0.0,
-   const std::string &timeunits="",
    const std::string &clock="",
-   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION) {
+
+   const std::string &timeunits="",
+
+   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION
+
+                                                              ) {
     T *dp = (T *)&data[0] ;
     return createSignal(uri, units, (void *)dp, data.size(), BSML::H5DataTypes(dp), shape,
                         gain, offset, rate, period, timeunits, clock, compression) ;
@@ -81,14 +88,21 @@ class BSML::H5Recording
 
   template <class T> std::list<BSML::H5Signal> createSignal(BSML::StringList uris, BSML::StringList units,
   /*====================================================================================================*/
+
    std::vector<T> data=std::vector<T>(),
+
    double gain=1.0,
    double offset=0.0,
+
    double rate=0.0,
    double period=0.0,
-   const std::string &timeunits="",
    const std::string &clock="",
-   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION) {
+
+   const std::string &timeunits="",
+
+   BSML::H5Compression compression=BSML_H5_DEFAULT_COMPRESSION
+
+                                                              ) {
     T *dp = (T *)&data[0] ;
     return createSignal(uris, units, (void *)dp, data.size(), BSML::H5DataTypes(dp),
                         gain, offset, rate, period, timeunits, clock, compression) ;
