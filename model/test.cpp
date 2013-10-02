@@ -8,15 +8,12 @@
 int main(void)
 /*==========*/
 {
-  rdf::Graph g = rdf::Graph("graph/uri") ;
 
-
-  bsml::Signal s = bsml::Signal("sig/uri") ;
-
+  bsml::Signal s("sig/uri") ;
   s.set_label("label...") ;
 
+  rdf::Graph g("graph/uri") ;
   s.to_rdf(g) ;
-
   std::cout << g.serialise() << "\n" ;
 
   }

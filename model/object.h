@@ -20,6 +20,7 @@ namespace bsml {
     const rdf::Resource resource ;
     const rdf::Resource metatype ;
     std::string label_ ;
+    std::string comment_ ;
 
    protected:
     std::list<rdf::Mapping *> rdfmap ;     
@@ -27,10 +28,26 @@ namespace bsml {
    public:
     AbstractObject(const rdf::Resource &type, const std::string &uri)
     /*=============================================================*/
-    : resource(rdf::Resource(uri)), metatype(type), rdfmap(), label_("")
+    : resource(rdf::Resource(uri)), metatype(type), rdfmap()
     {
       rdfmap.push_back(new rdf::ResourceMap(rdf::RDF::type, metatype)) ;
       rdfmap.push_back(new rdf::StringMap(rdf::RDFS::label, label_)) ;
+
+/*
+        attributes = [ 'uri', 'label', 'comment', 'description', 'precededBy', 'creator', 'created' ]
+  '''List of generic attributes all resources have.'''
+
+  mapping = { 'label':       PropertyMap(RDFS.label),
+              'comment':     PropertyMap(RDFS.comment),
+              'description': PropertyMap(DCT.description),
+              'precededBy':  PropertyMap(PRV.precededBy),
+              'creator':     PropertyMap(DCT.creator, to_rdf=PropertyMap.get_uri),
+              'created':     PropertyMap(DCT.created, datatype=XSD.dateTime,
+                                         to_rdf=utils.datetime_to_isoformat,
+                                         from_rdf=utils.isoformat_to_datetime),
+            }
+*/
+
       }
 
     ~AbstractObject(void)
