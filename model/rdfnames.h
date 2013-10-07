@@ -4,9 +4,7 @@
 #include "rdf.h"
 
 
-namespace rdf
-/*=========*/
-{
+namespace rdf {
 
   namespace RDF
   /*==========*/
@@ -36,15 +34,25 @@ namespace rdf
     static rdf::Resource subject(NS + "subject") ;
     } ;
 
+  namespace PRV
+  /*=========*/
+  {
+    static std::string NS("http://purl.org/net/provenance/ns#") ;
+    static rdf::Resource precededBy(NS + "precededBy") ;
+    } ;
+
+  namespace XSD
+  /*=========*/
+  {
+    static std::string NS("http://www.w3.org/2001/XMLSchema#") ;
+    static rdf::Resource dateTime(NS + "dateTime") ;
+    static rdf::Resource dayTimeDuration(NS + "dayTimeDuration") ;
+    } ;
+
 /*
 
-XSD.dayTimeDuration
-XSD.dateTime
-PRV.precededBy
 TL.timeline
 PROV.wasGeneratedBy
-
-  'xsd':  'http://www.w3.org/2001/XMLSchema#'
 
   'owl':  'http://www.w3.org/2002/07/owl#'
   'time': 'http://www.w3.org/2006/time#'
@@ -52,7 +60,6 @@ PROV.wasGeneratedBy
 
   'uome': 'http://www.sbpax.org/uome/list.owl#'
 
-  'prv':  'http://purl.org/net/provenance/ns#'
   'prov': 'http://www.w3.org/ns/prov#'
 
 */
