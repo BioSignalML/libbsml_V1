@@ -23,7 +23,7 @@ namespace bsml {
     std::string comment_ ;
 
    protected:
-    std::list<rdf::Mapping *> rdfmap ;     
+    std::list<rdf::MapBase *> rdfmap ;
 
    public:
     AbstractObject(const rdf::Resource &type, const std::string &uri)
@@ -53,7 +53,7 @@ namespace bsml {
     ~AbstractObject(void)
     /*=================*/
     {
-      for (std::list<rdf::Mapping *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
+      for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
         delete *map ;
       }
 
@@ -66,7 +66,7 @@ namespace bsml {
     void to_rdf(const rdf::Graph &graph)
     /*================================*/
     {
-      for (std::list<rdf::Mapping *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
+      for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
         (*map)->to_rdf(graph, resource) ;
       }
 

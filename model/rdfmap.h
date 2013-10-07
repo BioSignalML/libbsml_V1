@@ -11,14 +11,14 @@ namespace rdf
 /*=========*/
 {
 
-  class Mapping
+  class MapBase
   /*=========*/
   {
    protected:
     rdf::Resource property ;
 
    public:
-    Mapping(const rdf::Resource &property)
+    MapBase(const rdf::Resource &property)
     /*----------------------------------*/
     : property(property) { }
 
@@ -26,45 +26,27 @@ namespace rdf
     } ;
 
 
-  class StringMap : public Mapping
-  /*============================*/
+  template<typename T>
+  class Mapping : public MapBase
+  /*==========================*/
   {
    private:
-    const std::string &str_ref ;
+    const T *reference ;
 
    public:
-    StringMap(rdf::Resource &property, const std::string &string_ref)
-    /*---------------------------------------------------------*/
-    : Mapping(property), str_ref(string_ref) { }
+    Mapping(rdf::Resource &property, const T *reference)
+    /*------------------------------------------------*/
+    : MapBase(property), reference(reference) { }
 
     void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject)
     /*--------------------------------------------------------------*/
     {
-      if (str_ref != "")
-        graph.append(rdf::Statement(subject, property, rdf::Literal(str_ref))) ;
+      if (*reference != T())
+        graph.append(rdf::Statement(subject, property, *reference)) ;
       }
 
     } ;
 
-
-  class ResourceMap : public Mapping
-  /*==============================*/
-  {
-   private:
-    const rdf::Resource &resource ;
-
-   public:
-    ResourceMap(const rdf::Resource &property, const rdf::Resource &resource)
-    /*---------------------------------------------------------------------*/
-    : Mapping(property), resource(resource) { }
-
-    void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject)
-    /*--------------------------------------------------------------*/
-    {
-      graph.append(rdf::Statement(subject, property, resource)) ;
-      }
-
-    } ;
 
   } ;
 
