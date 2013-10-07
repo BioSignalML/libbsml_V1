@@ -15,6 +15,7 @@ namespace bsml {
   {
    public:
     Event(const std::string &uri)
+    /*-------------------------*/
     : bsml::AbstractObject(bsml::BSML::Event, uri)
     {
 //      rdfmap.push_back(rdf::Mapping()) ;

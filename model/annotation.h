@@ -15,6 +15,7 @@ namespace bsml {
   {
    public:
     Annotation(const std::string &uri)
+    /*------------------------------*/
     : bsml::AbstractObject(bsml::BSML::Annotation, uri)
     {
 //      rdfmap.push_back(rdf::Mapping()) ;

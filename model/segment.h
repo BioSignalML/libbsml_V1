@@ -15,6 +15,7 @@ namespace bsml {
   {
    public:
     Segment(const std::string &uri)
+    /*---------------------------*/
     : bsml::AbstractObject(bsml::BSML::Segment, uri)
     {
 //      rdfmap.push_back(rdf::Mapping()) ;

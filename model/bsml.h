@@ -9,7 +9,9 @@
 
 namespace bsml {
 
-  namespace BSML {
+  namespace BSML
+  /*==========*/
+  {
     static std::string NS("http://www.biosignalml.org/ontologies/2011/04/biosignalml#") ;
     static rdf::Resource Recording(NS + "Recording") ;
     static rdf::Resource Signal(NS + "Signal") ;
