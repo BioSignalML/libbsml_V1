@@ -27,7 +27,7 @@ namespace bsml {
 
    public:
     AbstractObject(const rdf::Resource &type, const std::string &uri)
-    /*=============================================================*/
+    /*-------------------------------------------------------------*/
     : resource(rdf::Resource(uri)), metatype(type), rdfmap()
     {
       rdfmap.push_back(new rdf::ResourceMap(rdf::RDF::type, metatype)) ;
@@ -51,20 +51,20 @@ namespace bsml {
       }
 
     ~AbstractObject(void)
-    /*=================*/
+    /*-----------------*/
     {
       for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
         delete *map ;
       }
 
     void set_label(const std::string label)
-    /*-----------------------------------*/
+    /*------------------------------------*/
     {
       label_ = label ;
       }
 
     void to_rdf(const rdf::Graph &graph)
-    /*================================*/
+    /*--------------------------------*/
     {
       for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
         (*map)->to_rdf(graph, resource) ;
