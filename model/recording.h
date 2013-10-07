@@ -1,25 +1,41 @@
 #ifndef _BSML_RECORDING_H
 #define _BSML_RECORDING_H
 
+#include <string>
+#include <map>
 
 #include "bsml.h"
 
 #include "object.h"
+
 #include "rdfmap.h"
 
 
 namespace bsml {
 
+  class Signal ;
+
   class Recording : public bsml::AbstractObject
   /*======================================*/
   {
+   private:
+    std::map<std::string, Signal *> signals ;
+
    public:
+    Recording(void)
+    /*-----------*/
+    { }
+
     Recording(const std::string &uri)
+    /*-----------------------------*/
     : bsml::AbstractObject(bsml::BSML::Recording, uri)
     {
 //      rdfmap.push_back(rdf::Mapping()) ;
-
       }
+
+    void add_signal(Signal *signal) ;
+    /*-----------------------------*/
+
     } ;
 
   } ;
