@@ -42,6 +42,9 @@ namespace rdf {
     librdf_uri *uri ;
 
    public:
+    Uri(void)
+    /*-----*/
+    : uri(NULL) { }
 
     Uri(const std::string &uri)
     /*-----------------------*/
@@ -58,13 +61,13 @@ namespace rdf {
     ~Uri(void)
     /*------*/
     {
-      librdf_free_uri(uri) ;
+      if (uri != NULL) librdf_free_uri(uri) ;
       }
 
     std::string as_string(void) const
     /*-----------------------------*/
     {
-      return std::string((char *)librdf_uri_as_string(uri)) ;
+      return (uri == NULL) ? "" : std::string((char *)librdf_uri_as_string(uri)) ;
       }
 
     librdf_uri *get_librdf_uri(void) const
@@ -75,6 +78,7 @@ namespace rdf {
 
     } ;
 
+  class Resource ;        // Declare forward
 
   class Node
   /*======*/
@@ -108,6 +112,9 @@ namespace rdf {
                language.c_str(),
                0)) { }
 
+    Node(const std::string &value, const Resource &datatype) ;
+    /*------------------------------------------------------*/
+
     Node(const Node &other)
     /*-------------------*/
       : node(librdf_new_node_from_node(other.node)) { }
@@ -118,10 +125,28 @@ namespace rdf {
       librdf_free_node(node) ;
       }
 
+    bool operator==(const Node& other) const
+    /*------------------------------------*/
+    {
+      return librdf_node_equals(node, other.node) ;
+      }
+
+    bool operator!=(const Node& other) const
+    /*------------------------------------*/
+    {
+      return !operator==(other) ;
+      }
+
     librdf_node *get_librdf_node(void) const
     /*------------------------------------*/
     {
       return node ;
+      }
+
+    librdf_uri *get_librdf_uri(void) const
+    /*------------------------------------*/
+    {
+      return librdf_node_get_uri(node) ;
       }
 
     } ;
@@ -131,6 +156,9 @@ namespace rdf {
   /*========================*/
   {
    public:
+    Resource(void)
+    /*----------*/
+    : Node() { }
 
     Resource(const std::string &uri)
     /*----------------------------*/
@@ -174,6 +202,10 @@ namespace rdf {
     /*-------------------------------------------------------------*/
      : Node(value, language) { }
 
+    Literal(const std::string &value, const Resource &datatype)
+    /*-------------------------------------------------------*/
+     : Node(value, datatype) { }
+
     } ;
 
 
@@ -191,6 +223,15 @@ namespace rdf {
                    librdf_new_node_from_node(subject.get_librdf_node()),
                    librdf_new_node_from_node(predicate.get_librdf_node()),
                    librdf_new_node_from_node(object.get_librdf_node())
+                ) ) { }
+
+    Statement(const Resource &subject, const Resource &predicate, const std::string &literal)
+    /*-------------------------------------------------------------------------------------*/
+     : statement(librdf_new_statement_from_nodes(
+                   world,
+                   librdf_new_node_from_node(subject.get_librdf_node()),
+                   librdf_new_node_from_node(predicate.get_librdf_node()),
+                   librdf_new_node_from_node(Literal(literal).get_librdf_node())
                 ) ) { }
 
 //    Statement(const BlankNode &subject, const Resource &predicate, const Node &object)
