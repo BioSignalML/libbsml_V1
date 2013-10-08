@@ -10,6 +10,7 @@ namespace rdf {
   /*==========*/
   {
     static std::string NS("http://www.w3.org/1999/02/22-rdf-syntax-ns#") ;
+    static rdf::Uri uri(NS) ;
     static rdf::Resource type(NS + "type") ;
     } ;
 
@@ -17,6 +18,7 @@ namespace rdf {
   /*==========*/
   {
     static std::string NS("http://www.w3.org/2000/01/rdf-schema#") ;
+    static rdf::Uri uri(NS) ;
     static rdf::Resource comment(NS + "comment") ;
     static rdf::Resource label(NS + "label") ;
     } ;
@@ -25,6 +27,7 @@ namespace rdf {
   /*=========*/
   {
     static std::string NS("http://purl.org/dc/terms/") ;
+    static rdf::Uri uri(NS) ;
     static rdf::Resource created(NS + "created") ;
     static rdf::Resource creator(NS + "creator") ;
     static rdf::Resource description(NS + "description") ;
@@ -38,6 +41,7 @@ namespace rdf {
   /*=========*/
   {
     static std::string NS("http://purl.org/net/provenance/ns#") ;
+    static rdf::Uri uri(NS) ;
     static rdf::Resource precededBy(NS + "precededBy") ;
     } ;
 
@@ -45,6 +49,7 @@ namespace rdf {
   /*=========*/
   {
     static std::string NS("http://www.w3.org/2001/XMLSchema#") ;
+    static rdf::Uri uri(NS) ;
     static rdf::Resource dateTime(NS + "dateTime") ;
     static rdf::Resource dayTimeDuration(NS + "dayTimeDuration") ;
     } ;
