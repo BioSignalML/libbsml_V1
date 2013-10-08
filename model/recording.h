@@ -33,6 +33,10 @@ namespace bsml {
     void add_signal(Signal *signal) ;
     /*-----------------------------*/
 
+    void to_rdf(const rdf::Graph &graph) ;
+    /*----------------------------------*/
+
+
     } ;
 
   } ;

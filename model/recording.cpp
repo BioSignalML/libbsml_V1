@@ -15,3 +15,13 @@ void bsml::Recording::add_signal(bsml::Signal *signal)
   }
 
 
+void bsml::Recording::to_rdf(const rdf::Graph &graph)
+/*-------------------------------------------------*/
+{
+  std::map<std::string, Signal *>::iterator s ;
+  AbstractObject::to_rdf(graph) ;
+  for (s = signals.begin() ;  s != signals.end() ;  ++s) {
+    s->second->to_rdf(graph) ;
+    }
+  }
+
