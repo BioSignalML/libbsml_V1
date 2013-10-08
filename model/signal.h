@@ -17,6 +17,13 @@ namespace bsml {
   {
    private:
     Recording *recording_ ;
+//    bsml:Units &units ;
+//    double rate_ ;
+//    double period_ ;
+//    bsml:Clock &clock ;
+//    bsml:Duration &offset_ ;
+//    bsml:Duration &duration_ ;
+
    public:
     Signal(void)
     /*--------*/
