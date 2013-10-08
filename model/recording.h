@@ -15,8 +15,8 @@ namespace bsml {
 
   class Signal ;
 
-  class Recording : public bsml::AbstractObject
-  /*======================================*/
+  class Recording : public AbstractObject
+  /*===================================*/
   {
    private:
     std::map<std::string, Signal *> signals ;
@@ -28,10 +28,7 @@ namespace bsml {
 
     Recording(const std::string &uri)
     /*-----------------------------*/
-    : bsml::AbstractObject(bsml::BSML::Recording, uri)
-    {
-//      rdfmap.push_back(rdf::Mapping()) ;
-      }
+    : AbstractObject(BSML::Recording, uri) { }
 
     void add_signal(Signal *signal) ;
     /*-----------------------------*/

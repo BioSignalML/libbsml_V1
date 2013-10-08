@@ -12,11 +12,11 @@ namespace bsml {
 
   class Recording ;
 
-  class Signal : public bsml::AbstractObject
-  /*======================================*/
+  class Signal : public AbstractObject
+  /*================================*/
   {
    private:
-    bsml::Recording *recording_ ;
+    Recording *recording_ ;
    public:
     Signal(void)
     /*--------*/
@@ -24,14 +24,12 @@ namespace bsml {
 
     Signal(const std::string &uri)
     /*--------------------------*/
-    : bsml::AbstractObject(bsml::BSML::Signal, uri), recording_(NULL)
+    : AbstractObject(BSML::Signal, uri), recording_(NULL)
     {
-//      rdfmap.push_back(rdf::Mapping()) ;
-
       }
 
-    void set_recording(bsml::Recording *recording) ;
-    /*--------------------------------------------*/
+    void set_recording(Recording *recording) ;
+    /*--------------------------------------*/
 
 
     } ;

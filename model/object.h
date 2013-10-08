@@ -26,7 +26,7 @@ namespace bsml {
     std::string description_ ;
     rdf::Resource precededby_ ;
     rdf::Node creator_ ;       // Literal or Resource
-    bsml::Datetime created_ ;
+    Datetime created_ ;
 
    protected:
     std::list<rdf::MapBase *> rdfmap ;
@@ -48,7 +48,7 @@ namespace bsml {
 
       rdfmap.push_back(new rdf::Mapping<rdf::Resource>(rdf::PRV::precededBy, &precededby_)) ;
       rdfmap.push_back(new rdf::Mapping<rdf::Node>(rdf::DCT::creator, &creator_)) ;
-      rdfmap.push_back(new rdf::Mapping<bsml::Datetime>(rdf::DCT::created, &created_)) ;
+      rdfmap.push_back(new rdf::Mapping<Datetime>(rdf::DCT::created, &created_)) ;
 
 /*
         attributes = [ 'uri', 'precededBy', 'creator', 'created' ]
