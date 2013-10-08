@@ -24,4 +24,5 @@ int main(void)
   r.to_rdf(g) ;
   std::cout << g.serialise(prefixes) << "\n" ;
 
+  rdf::end_world() ;
   }
