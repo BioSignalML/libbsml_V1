@@ -10,6 +10,8 @@ int main(void)
 /*==========*/
 {
 
+  std::list<rdf::Prefix> prefixes(1, rdf::Prefix("bsml", bsml::BSML::uri)) ;
+
   bsml::Recording r("recording/uri") ;
   r.set_description("Something describing the recording.") ;
 
@@ -19,7 +21,7 @@ int main(void)
   r.add_signal(&s) ;
 
   rdf::Graph g("graph/uri") ;
-  std::cout << g.serialise() << "\n" ;
   r.to_rdf(g) ;
+  std::cout << g.serialise(prefixes) << "\n" ;
 
   }
