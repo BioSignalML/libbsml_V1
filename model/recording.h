@@ -5,9 +5,7 @@
 #include <map>
 
 #include "bsml.h"
-
 #include "object.h"
-
 #include "rdfmap.h"
 
 
@@ -22,21 +20,10 @@ namespace bsml {
     std::map<std::string, Signal *> signals ;
 
    public:
-    Recording(void)
-    /*-----------*/
-    { }
-
-    Recording(const std::string &uri)
-    /*-----------------------------*/
-    : AbstractObject(BSML::Recording, uri) { }
-
+    Recording(void) ;
+    Recording(const std::string &uri) ;
     void add_signal(Signal *signal) ;
-    /*-----------------------------*/
-
     void to_rdf(const rdf::Graph &graph) ;
-    /*----------------------------------*/
-
-
     } ;
 
   } ;

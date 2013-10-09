@@ -2,10 +2,9 @@
 #define _BSML_SIGNAL_H
 
 
-#include "bsml.h"
+#include <string>
 
 #include "object.h"
-#include "rdfmap.h"
 
 
 namespace bsml {
@@ -25,20 +24,9 @@ namespace bsml {
 //    bsml:Duration &duration_ ;
 
    public:
-    Signal(void)
-    /*--------*/
-    { }
-
-    Signal(const std::string &uri)
-    /*--------------------------*/
-    : AbstractObject(BSML::Signal, uri), recording_(NULL)
-    {
-      }
-
+    Signal(void) ;
+    Signal(const std::string &uri) ;
     void set_recording(Recording *recording) ;
-    /*--------------------------------------*/
-
-
     } ;
 
   } ;
