@@ -28,24 +28,12 @@ AbstractObject::AbstractObject(const rdf::Resource &type, const std::string &uri
   rdfmap.push_back(new rdf::Mapping<Datetime>(rdf::DCT::created, &created_)) ;
 
 /*
-        attributes = [ 'uri', 'precededBy', 'creator', 'created' ]
-  '''List of generic attributes all resources have.'''
-
-
-              'precededBy':  PropertyMap(PRV.precededBy),
-
-
-              'creator':     PropertyMap(DCT.creator, to_rdf=PropertyMap.get_uri),
-                  return v.uri if hasattr(v, 'uri') else Uri(v)
+              set_predecessor(const rdf::Resource &predecessor)
 
               set_creator(const rdf::Resource &creator)
               set_creator(const std::string &creator)
 
-
-              'created':     PropertyMap(DCT.created, datatype=XSD.dateTime,
-                                         to_rdf=utils.datetime_to_isoformat,
-                                         from_rdf=utils.isoformat_to_datetime),
-            }
+              set_created(const Datetime &created)
 */
 
   }

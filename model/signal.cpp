@@ -3,6 +3,8 @@
 #include "rdf.h"
 #include "recording.h"
 #include "signal.h"
+#include "units.h"
+
 
 using namespace bsml ;
 
@@ -11,15 +13,25 @@ Signal::Signal(void)
 /*----------------*/
 { }
 
-Signal::Signal(const std::string &uri)
-/*----------------------------------*/
-: AbstractObject(BSML::Signal, uri), recording_(NULL)
+Signal::Signal(const std::string &uri, const Unit &unit)
+/*----------------------------------------------------*/
+: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit)
 {
+  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(BSML::units, &unit_)) ;
+  }
+
+Signal::Signal(const std::string &uri, const std::string &unit)
+/*-----------------------------------------------------------*/
+: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(get_units(unit))
+//: Signal(uri, Unit(unit))  // C++11
+{
+  rdfmap.push_back(new rdf::Mapping<Unit>(BSML::units, &unit_)) ;
   }
 
 void Signal::set_recording(bsml::Recording *recording)
 /*--------------------------------------------------*/
 {
+  // Error if signal already attached to a recording 
   recording_ = recording ;
   rdfmap.push_back(new rdf::Mapping<rdf::Resource>(BSML::recording, recording->get_resource())) ;
   }

@@ -5,7 +5,10 @@
 #include <map>
 
 #include "bsml.h"
+#include "core.h"
 #include "object.h"
+#include "datetime.h"
+#include "units.h"
 #include "rdfmap.h"
 
 
@@ -19,10 +22,30 @@ namespace bsml {
    private:
     std::map<std::string, Signal *> signals ;
 
+    Format format_ ;
+
+//String ??         'format'
+//Node              'dataset'
+//Node              'source'          multiple
+//Node              'investigation'
+//Node              'investigator'
+    Datetime starttime_ ;
+    Duration duration_ ;
+//Resource      'timeline'            subelement
+//Resource      'generatedBy'         subelement
+
    public:
     Recording(void) ;
     Recording(const std::string &uri) ;
+
     void add_signal(Signal *signal) ;
+    Signal new_signal(const std::string &uri, const Unit &unit) ;
+    Signal new_signal(const std::string &uri, const std::string &unit) ;
+
+    void set_format(const Datetime &format) ;
+    void set_starttime(const Datetime &starttime) ;
+    void set_duration(const Duration &duration) ;
+
     void to_rdf(const rdf::Graph &graph) ;
     } ;
 
@@ -30,31 +53,9 @@ namespace bsml {
 
 /*
 
-  metaclass = BSML.Recording  #: :attr:`.BSML.Recording`
+  "subelement == True" means to recursively generate RDF for property value(s).
 
-  attributes = [ 'dataset', 'source', 'format', 'comment', 'investigation',
-                 'starttime', 'duration', 'timeline', 'generatedBy'
-               ]
-  '''Generic attributes of a Recording.'''
-
-  mapping = { 'format':        PropertyMap(DCT.format),
-              'dataset':       PropertyMap(BSML.dataset),
-              'source':        PropertyMap(DCT.source, functional=False),
-              'investigation': PropertyMap(DCT.subject),
-              'investigator':  PropertyMap(DCT.creator),
-              'starttime':     PropertyMap(DCT.created, XSD.dateTime,
-                                           utils.datetime_to_isoformat,
-                                           utils.isoformat_to_datetime),
-              'duration':      PropertyMap(DCT.extent, XSD.dayTimeDuration,
-                                           utils.seconds_to_isoduration,
-                                           utils.isoduration_to_seconds),
-##            'digest':        PropertyMap(BSML.digest),
-              'timeline':      PropertyMap(TL.timeline,
-                                           to_rdf=PropertyMap.get_uri,
-                                           from_rdf=_get_timeline, subelement=True),
-              'generatedBy':   PropertyMap(PROV.wasGeneratedBy, to_rdf=PropertyMap.get_uri,
-                                           subelement=True),
-            }
+  "functional == False" means can have multiple values ==> keep as a list...
 
   SignalClass = Signal       #: The class of Signals in the Recording
   EventClass  = Event        #: The class of Events in the Recording

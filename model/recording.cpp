@@ -5,7 +5,6 @@
 #include "signal.h"
 
 
-
 using namespace bsml ;
 
 
@@ -15,7 +14,9 @@ Recording::Recording(void)
 
 Recording::Recording(const std::string &uri)
 /*----------------------------------------*/
-: AbstractObject(BSML::Recording, uri) { }
+: AbstractObject(BSML::Recording, uri)
+{
+  }
 
 
 void Recording::add_signal(bsml::Signal *signal)
@@ -26,6 +27,21 @@ void Recording::add_signal(bsml::Signal *signal)
     signals.insert(std::pair<std::string, Signal *>(uri, signal)) ;
     signal->set_recording(this) ;
     }
+  // Error if signal already attached to a recording 
+  }
+
+Signal Recording::new_signal(const std::string &uri, const Unit &unit)
+/*------------------------------------------------------------------*/
+{
+  Signal signal = Signal(uri, unit) ;
+  this->add_signal(&signal) ;
+  return signal ;
+  }
+
+Signal Recording::new_signal(const std::string &uri, const std::string &unit)
+/*-------------------------------------------------------------------------*/
+{
+  return new_signal(uri, Unit(unit)) ;
   }
 
 

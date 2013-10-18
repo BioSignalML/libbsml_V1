@@ -5,27 +5,31 @@
 #include <string>
 
 #include "object.h"
+#include "recording.h"
+#include "datetime.h"
+//#include "clock.h"
+#include "units.h"
 
 
 namespace bsml {
 
-  class Recording ;
 
   class Signal : public AbstractObject
   /*================================*/
   {
    private:
     Recording *recording_ ;
-//    bsml:Units &units ;
+//    Clock *clock_ ;   subelement
+    Unit unit_ ;
 //    double rate_ ;
 //    double period_ ;
-//    bsml:Clock &clock ;
-//    bsml:Duration &offset_ ;
-//    bsml:Duration &duration_ ;
+//    Duration offset_ ;
+//    Duration duration_ ;
 
    public:
     Signal(void) ;
-    Signal(const std::string &uri) ;
+    Signal(const std::string &uri, const Unit &unit) ;
+    Signal(const std::string &uri, const std::string &unit) ;
     void set_recording(Recording *recording) ;
     } ;
 
@@ -46,13 +50,17 @@ namespace bsml {
               'filter':       PropertyMap(BSML.preFilter),
               '_rate':        PropertyMap(BSML.rate, XSD.double),
               '_period':      PropertyMap(BSML.period, XSD.double),
+
               'clock':        PropertyMap(BSML.clock, to_rdf=PropertyMap.get_uri, subelement=True),
+
               'minFrequency': PropertyMap(BSML.minFrequency, XSD.double),
               'maxFrequency': PropertyMap(BSML.maxFrequency, XSD.double),
               'minValue':     PropertyMap(BSML.minValue, XSD.double),
               'maxValue':     PropertyMap(BSML.maxValue, XSD.double),
               'dataBits':     PropertyMap(BSML.dataBits, XSD.integer),
               'signaltype':   PropertyMap(BSML.signalType),
+
+
               'offset':       PropertyMap(BSML.offset, XSD.dayTimeDuration,
                                           utils.seconds_to_isoduration,
                                           utils.isoduration_to_seconds),

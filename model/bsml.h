@@ -16,6 +16,7 @@ namespace bsml {
     static rdf::Uri uri(NS) ;
     static rdf::Resource Recording(NS + "Recording") ;
     static rdf::Resource Signal(NS + "Signal") ;
+    static rdf::Resource SampleClock(NS + "SampleClock") ;
     static rdf::Resource Segment(NS + "Segment") ;
     static rdf::Resource Annotation(NS + "Annotation") ;
     static rdf::Resource Event(NS + "Event") ;
