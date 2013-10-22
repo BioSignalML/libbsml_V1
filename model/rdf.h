@@ -7,23 +7,27 @@
 #include <list>
 #include <map>
 
-#include <redland.h>
-
 
 namespace rdf {
 
-  librdf_world *get_world(void) ;
-  /*---------------------------*/
+  typedef void *RDFObject ;
+
+  RDFObject get_world(void) ;
+  /*-----------------------*/
 
   void end_world(void) ;
   /*------------------*/
 
+  class Node ;             // Declare forward
+  class Graph ;
+  class Resource ;
+  class Statement ;
 
   class Uri
   /*=====*/
   {
    private:
-    librdf_uri *uri ;
+    RDFObject uri ;
 
    public:
     Uri(void) ;
@@ -31,16 +35,18 @@ namespace rdf {
     Uri(const Uri &other) ;
     ~Uri(void) ;
     std::string as_string(void) const ;
-    librdf_uri *get_librdf_uri(void) const ;
+
+    friend class Node ;
+    friend class Graph ;
     } ;
 
-  class Resource ;        // Declare forward
 
   class Node
   /*======*/
   {
    protected:
-    librdf_node *node ;
+    RDFObject node ;
+    RDFObject get_rdf_uri(void) const ;
 
    public:
     Node(void) ;
@@ -52,8 +58,8 @@ namespace rdf {
     ~Node(void) ;
     bool operator==(const Node& other) const ;
     bool operator!=(const Node& other) const ;
-    librdf_node *get_librdf_node(void) const ;
-    librdf_uri *get_librdf_uri(void) const ;
+
+    friend class Statement ;
     } ;
 
 
@@ -90,7 +96,7 @@ namespace rdf {
   /*===========*/
   {
    private:
-    librdf_statement *statement ;
+    RDFObject statement ;
 
    public:
     Statement(const Resource &subject, const Resource &predicate, const Node &object) ;
@@ -99,7 +105,8 @@ namespace rdf {
 //    Statement(const Uri &subject, const Uri &predicate, const Node &object)
     Statement(const Statement &other) ;
     ~Statement(void) ;
-    librdf_statement *get_librdf_statement(void) const ;
+
+    friend class Graph ;
     } ;
 
 
@@ -110,8 +117,8 @@ namespace rdf {
   /*=======*/
   {
    private:
-    librdf_storage *storage ;
-    librdf_model *model ;
+    RDFObject storage ;
+    RDFObject model ;
     const Uri uri ;
 
    public:
