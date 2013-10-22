@@ -1,11 +1,11 @@
 #include <string>
 #include <list>
 
-#include "bsml.h"
-#include "rdfnames.h"
-
-#include "object.h"
+#include "model/bsml.h"
+#include "model/object.h"
+#include "rdf/rdfnames.h"
               
+
 using namespace bsml ;
 
 

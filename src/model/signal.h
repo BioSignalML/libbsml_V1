@@ -4,11 +4,11 @@
 
 #include <string>
 
-#include "object.h"
-#include "recording.h"
-#include "datetime.h"
-//#include "clock.h"
-#include "units.h"
+#include "model/object.h"
+#include "model/recording.h"
+#include "model/datetime.h"
+#include "model/clock.h"
+#include "model/units.h"
 
 
 namespace bsml {

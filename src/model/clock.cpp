@@ -2,8 +2,8 @@
 #include <vector>
 #include <cmath>
 
-#include "clock.h"
-#include "bsml.h"
+#include "model/clock.h"
+#include "model/bsml.h"
 
 
 using namespace bsml ;

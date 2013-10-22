@@ -4,7 +4,7 @@
 #include <string>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
-#include "rdf.h"
+#include "rdd/rdf.h"
 
 
 namespace bsml {

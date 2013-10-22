@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "object.h"
-#include "units.h"
+#include "model/object.h"
+#include "model/units.h"
 
 
 namespace bsml {

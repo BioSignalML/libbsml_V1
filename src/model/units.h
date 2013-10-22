@@ -1,8 +1,8 @@
 #ifndef _BSML_UNITS_H
 #define _BSML_UNITS_H
 
-#include "rdf.h"
-#include "utility.h"
+#include "rdf/rdf.h"
+#include "utility/utility.h"
 
 
 namespace bsml {

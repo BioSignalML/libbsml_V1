@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "rdf.h"
+#include "rdf/rdf.h"
 #include "biosignalml.h"
 
 using namespace bsml ;

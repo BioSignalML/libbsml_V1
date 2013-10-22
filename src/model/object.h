@@ -4,9 +4,9 @@
 #include <string>
 #include <list>
 
-#include "rdf.h"
-#include "rdfmap.h"
-#include "datetime.h"
+#include "rdf/rdf.h"
+#include "rdf/rdfmap.h"
+#include "model/datetime.h"
 
 
 namespace bsml {

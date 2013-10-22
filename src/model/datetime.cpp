@@ -5,8 +5,8 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 
-#include "datetime.h"
-#include "rdfnames.h"
+#include "model/datetime.h"
+#include "rdf/rdfnames.h"
 
 using namespace boost::posix_time ;
 

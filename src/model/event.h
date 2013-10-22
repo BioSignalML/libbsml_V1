@@ -2,10 +2,9 @@
 #define _BSML_EVENT_H
 
 
-#include "bsml.h"
-
-#include "object.h"
-#include "rdfmap.h"
+#include "model/bsml.h"
+#include "model/object.h"
+#include "rdf/rdfmap.h"
 
 
 namespace bsml {

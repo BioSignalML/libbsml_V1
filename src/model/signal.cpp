@@ -1,9 +1,9 @@
 #include <string>
 
-#include "rdf.h"
-#include "recording.h"
-#include "signal.h"
-#include "units.h"
+#include "rdf/rdf.h"
+#include "model/recording.h"
+#include "model/signal.h"
+#include "model/units.h"
 
 
 using namespace bsml ;

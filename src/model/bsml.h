@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "rdf.h"
+#include "rdf/rdf.h"
 
 // This should be generated from the BSML Ontology...
 

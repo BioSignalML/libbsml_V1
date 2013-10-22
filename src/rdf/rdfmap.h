@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "rdf.h"
+#include "rdf/rdf.h"
 
 
 namespace rdf

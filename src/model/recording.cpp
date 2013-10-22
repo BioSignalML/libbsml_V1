@@ -1,8 +1,8 @@
 #include <string>
 #include <map>
 
-#include "recording.h"
-#include "signal.h"
+#include "model/recording.h"
+#include "model/signal.h"
 
 
 using namespace bsml ;

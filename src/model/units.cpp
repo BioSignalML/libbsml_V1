@@ -3,11 +3,10 @@
 #include <boost/algorithm/string.hpp>
 #include <ctype.h>
 
-#include "utility.h"
+#include "utility/utility.h"
+#include "model/units.h"
 
-#include "units.h"
-//
-//
+
 using namespace bsml ;
 
 Unit::Unit(void)

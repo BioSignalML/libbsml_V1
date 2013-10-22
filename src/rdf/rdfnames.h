@@ -1,7 +1,7 @@
 #ifndef _BSML_RDFNAMES_H
 #define _BSML_RDFNAMES_H
 
-#include "rdf.h"
+#include "rdf/rdf.h"
 
 
 namespace rdf {

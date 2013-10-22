@@ -2,10 +2,10 @@
 #define _BSML_ANNOTATION_H
 
 
-#include "bsml.h"
+#include "model/bsml.h"
+#include "model/object.h"
 
-#include "object.h"
-#include "rdfmap.h"
+#include "rdf/rdfmap.h"
 
 
 namespace bsml {

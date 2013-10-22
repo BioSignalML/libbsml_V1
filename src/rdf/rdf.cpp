@@ -1,7 +1,7 @@
 #include <string>
 #include <redland.h>
 
-#include "rdf.h"
+#include "rdf/rdf.h"
 
 using namespace rdf ;
 

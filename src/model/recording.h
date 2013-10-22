@@ -4,12 +4,11 @@
 #include <string>
 #include <map>
 
-#include "bsml.h"
-#include "core.h"
-#include "object.h"
-#include "datetime.h"
-#include "units.h"
-#include "rdfmap.h"
+#include "model/bsml.h"
+#include "model/object.h"
+#include "model/datetime.h"
+#include "model/units.h"
+#include "rdf/rdfmap.h"
 
 
 namespace bsml {
