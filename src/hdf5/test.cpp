@@ -23,7 +23,7 @@
 
 #include "bsml_h5.h"
 
-using namespace BSML ;
+using namespace bsml ;
 
 
 int main(void)
