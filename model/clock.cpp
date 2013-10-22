@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include "clock.h"
 #include "bsml.h"
