@@ -21,7 +21,7 @@
 #ifndef _BSML_H5_CLOCK_
 #define _BSML_H5_CLOCK_ 1
 
-#include "h5dataset.h"
+#include "hdf5/h5dataset.h"
 
 namespace bsml {
 

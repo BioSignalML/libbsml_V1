@@ -1,4 +1,4 @@
-#include "h5common.h"
+#include "hdf5/h5common.h"
 
 using namespace bsml ;
 

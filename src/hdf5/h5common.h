@@ -9,7 +9,6 @@
 
 namespace bsml {
 
-#define to_string(N) (static_cast<std::ostringstream*>( &(std::ostringstream() << (N)) )->str())
 
 #define BSML_H5_DEFAULT_DATATYPE    H5::PredType::IEEE_F64LE
 #define BSML_H5_DEFAULT_COMPRESSION BSML_H5_COMPRESS_GZIP

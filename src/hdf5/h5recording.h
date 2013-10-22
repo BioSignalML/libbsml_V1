@@ -22,10 +22,12 @@
 #define _BSML_H5_RECORDING_ 1
 
 #include <vector>
+#include <utility>
 
-#include "h5common.h"
-#include "h5signal.h"
-#include "h5clock.h"
+#include "hdf5/h5common.h"
+#include "hdf5/h5signal.h"
+#include "hdf5/h5clock.h"
+#include "utility/utility.h"
 
 
 namespace bsml {
@@ -50,7 +52,7 @@ namespace bsml {
       double, double, double, double,
       const std::string &, const std::string &, H5Compression) ;
 
-    std::list<H5Signal> createSignal(StringList, StringList,
+    std::list<H5Signal> createSignal(strlist, strlist,
       void *, size_t, H5DataTypes, double, double, double, double,
       const std::string &, const std::string &, H5Compression) ;
 
@@ -82,8 +84,8 @@ namespace bsml {
                           gain, offset, rate, period, timeunits, clock, compression) ;
       }
 
-    template <class T> std::list<H5Signal> createSignal(StringList uris, StringList units,
-    /*==================================================================================*/
+    template <class T> std::list<H5Signal> createSignal(strlist uris, strlist units,
+    /*============================================================================*/
      std::vector<T> data=std::vector<T>(),
      double gain = 1.0,
      double offset = 0.0,

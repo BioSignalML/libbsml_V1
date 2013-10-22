@@ -27,7 +27,7 @@
 
 #include <H5Cpp.h>
 
-#include "bsml_h5.h"
+#include "hdf5/bsml_h5.h"
 
 
 using namespace bsml ;
@@ -216,7 +216,7 @@ H5DataRef H5Recording::createDataset(const std::string &group, int rank, hsize_t
   catch (H5::FileIException e) {
     grp = h5.createGroup("/recording/" + group) ;
     }
-  std::string dsetname = "/recording/" + group + "/" + to_string(grp.getNumObjs()) ;
+  std::string dsetname = "/recording/" + group + "/" + std::to_string(grp.getNumObjs()) ;
   try {
     H5::DSetCreatPropList props ;
     hsize_t chunks[rank] ;
@@ -353,8 +353,8 @@ H5Signal H5Recording::createSignal(const std::string &uri, const std::string &un
   }
 
 
-std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
-/*===========================================================================*/
+std::list<H5Signal> H5Recording::createSignal(strlist uris, strlist units,
+/*======================================================================*/
  void *data=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
  double gain=1.0, double offset=0.0, double rate=0.0, double period=0.0,
  const std::string &timeunits="", const std::string &clock="",
@@ -376,7 +376,7 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
     }
   H5::Attribute attr ;
   H5::Group urigroup = h5.openGroup("/uris") ;
-  for (StringList::iterator s = uris.begin() ;  s != uris.end() ;  s++) {
+  for (strlist::iterator s = uris.begin() ;  s != uris.end() ;  s++) {
     try {
       attr = urigroup.openAttribute(*s) ;
       attr.close() ;
@@ -385,8 +385,8 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
     catch (H5::AttributeIException e) { }
     }
   size_t npoints = (data != NULL) ? datasize/nsignals : 0 ;
-  hsize_t maxshape[2] = { H5S_UNLIMITED, nsignals } ;
-  hsize_t shape[2]    = { npoints,       nsignals } ;
+  hsize_t maxshape[2] = { H5S_UNLIMITED, (hsize_t)nsignals } ;
+  hsize_t shape[2]    = { npoints,       (hsize_t)nsignals } ;
 
   H5Clock clocktimes = checkTiming(rate, period, clock, npoints) ;
   H5DataRef sigdata = createDataset("signal", 2, shape, maxshape, data, datatypes, compression) ;
@@ -395,7 +395,7 @@ std::list<H5Signal> H5Recording::createSignal(StringList uris, StringList units,
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
   hobj_ref_t reference = sigdata.second ;
-  StringList::iterator s ;
+  strlist::iterator s ;
 
   const char *values[nsignals] ;
   hsize_t dims[1] ;
@@ -655,8 +655,8 @@ void H5Recording::storeMetadata(const std::string &metadata, const std::string &
   }
 
 
-StringPair H5Recording::getMetadata(void)
-/*=====================================*/
+std::pair<std::string, std::string> H5Recording::getMetadata(void)
+/*==============================================================*/
 {
 //:return: A 2-tuple of retrieved metadata and mimetype, or
 //         (None, None) if the recording has no '/metadata' dataset.
@@ -675,5 +675,5 @@ StringPair H5Recording::getMetadata(void)
     return std::make_pair(std::string(metadata), std::string(mimetype)) ;
     }
   catch (H5::FileIException e) { }
-  return StringPair() ;
+  return std::make_pair("", "") ;
   }

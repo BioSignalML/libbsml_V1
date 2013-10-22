@@ -21,8 +21,8 @@
 #ifndef _BSML_H5_SIGNAL
 #define _BSML_H5_SIGNAL
 
-#include "h5clock.h"
-#include "h5dataset.h"
+#include "hdf5/h5clock.h"
+#include "hdf5/h5dataset.h"
 
 
 namespace bsml {

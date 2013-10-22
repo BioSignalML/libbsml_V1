@@ -21,9 +21,7 @@
 #ifndef _BSML_H5_
 #define _BSML_H5_ 1
 
-//#include <utility>
 #include <string>
-#include <list>
 
 
 namespace bsml
@@ -46,17 +44,14 @@ namespace bsml
   class H5Exception ;
   class H5DataTypes ;
 
-  typedef std::list<std::string> StringList ;
-  typedef std::pair<std::string, std::string> StringPair ;
-
   H5Recording H5open(const std::string &, bool replace=false) ;
   H5Recording H5create(const std::string &, const std::string &, bool readonly=false) ;
   } ;
 
-#include "h5common.h"
-#include "h5recording.h"
-#include "h5dataset.h"
-#include "h5clock.h"
-#include "h5signal.h"
+#include "hdf5/h5common.h"
+#include "hdf5/h5recording.h"
+#include "hdf5/h5dataset.h"
+#include "hdf5/h5clock.h"
+#include "hdf5/h5signal.h"
 
 #endif
