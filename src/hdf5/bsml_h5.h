@@ -21,24 +21,12 @@
 #ifndef _BSML_H5_
 #define _BSML_H5_ 1
 
-#include <stdexcept>
-#include <sstream>
-#include <utility>
+//#include <utility>
 #include <string>
 #include <list>
 
-#include <H5Cpp.h>
 
-
-#define to_string(N) (static_cast<std::ostringstream*>( &(std::ostringstream() << (N)) )->str())
-
-
-#define BSML_H5_DEFAULT_DATATYPE    H5::PredType::IEEE_F64LE
-#define BSML_H5_DEFAULT_COMPRESSION BSML::BSML_H5_COMPRESS_GZIP
-#define BSML_H5_CHUNK_BYTES         (128*1024)
-
-
-namespace BSML
+namespace bsml
 /*==========*/
 {
   const std::string BSML_H5_MAJOR   = "1" ;
@@ -60,48 +48,12 @@ namespace BSML
 
   typedef std::list<std::string> StringList ;
   typedef std::pair<std::string, std::string> StringPair ;
-  typedef std::pair<H5::DataSet, hobj_ref_t> H5DataRef ;
 
   H5Recording H5open(const std::string &, bool replace=false) ;
   H5Recording H5create(const std::string &, const std::string &, bool readonly=false) ;
   } ;
 
-
-class BSML::H5Exception : public std::runtime_error
-/*===============================================*/
-{
- public:
-  H5Exception(const std::string &msg) : std::runtime_error(msg) { }
-  } ;
-
-
-class BSML::H5DataTypes
-/*===================*/
-{
- public:
-  H5::DataType mtype ;
-  H5::DataType dtype ;
-
-  template <class T> H5DataTypes(T *data) {
-    throw H5Exception("Unsupported data type") ;
-    }
-
-  H5DataTypes(short *data): mtype(H5::PredType::NATIVE_SHORT), dtype(H5::PredType::STD_I16LE) { }
-
-  H5DataTypes(int *data): mtype(H5::PredType::NATIVE_INT), dtype(H5::PredType::STD_I32LE) { }
-
-  H5DataTypes(long *data): mtype(H5::PredType::NATIVE_LONG), dtype(H5::PredType::STD_I64LE) { }
-
-  H5DataTypes(float *data): mtype(H5::PredType::NATIVE_FLOAT), dtype(H5::PredType::IEEE_F32LE) { }
-
-  H5DataTypes(double *data): mtype(H5::PredType::NATIVE_DOUBLE), dtype(H5::PredType::IEEE_F64LE) { }
-
-  H5DataTypes() : mtype(H5::PredType::NATIVE_DOUBLE), dtype(BSML_H5_DEFAULT_DATATYPE) { }
-  H5DataTypes(long null) : mtype(H5::PredType::NATIVE_DOUBLE), dtype(BSML_H5_DEFAULT_DATATYPE) { }
-  } ;
-
-
-
+#include "h5common.h"
 #include "h5recording.h"
 #include "h5dataset.h"
 #include "h5clock.h"

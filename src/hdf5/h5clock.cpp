@@ -20,8 +20,27 @@
 
 #include "bsml_h5.h"
 
-using namespace BSML ;
 
+using namespace bsml ;
+
+
+H5Clock::H5Clock()
+/*==============*/
+: H5Dataset()
+{
+  }
+
+H5Clock::H5Clock(const H5DataRef &ds)
+/*=================================*/
+: H5Dataset(ds)
+{
+  }
+
+H5Clock::H5Clock(const std::string &uri, const H5DataRef &ds)
+/*=========================================================*/
+: H5Dataset(uri, ds)
+{
+  }
 
 void H5Clock::extend(void *times, size_t size, H5::DataType dtype)
 /*==============================================================*/

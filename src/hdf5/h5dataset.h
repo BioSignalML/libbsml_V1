@@ -24,139 +24,85 @@
 #include <string>
 #include <H5Cpp.h>
 
-/*!
- * An extensible array stored in a HDF5 dataset.
- *
- * The first dimension of an array is able to grow in size.
- */
-class BSML::H5Dataset
-/*=================*/
-{
-
- private:
-  hobj_ref_t reference ;
-
-  int rank ;
-  hsize_t *shape ;    // rowshape[rank]
-  int rowsize ;       // Product(shape[n] | n > 0)
-  hsize_t size ;      // shape[0]
-
-
- protected:
-
-  std::string uri ;         //!< The URI for the dataset.
-  H5::DataSet dataset ;     //!< The DataSet in the underlying HDF5 file.
-
-  void extend(void *, size_t, H5::DataType, int, int) ;
-
-
- public:
+namespace bsml {
 
   /*!
-   * Default constructor.
-   */
-  H5Dataset():
-  /*========*/
-  dataset(H5::DataSet()), reference(0)
-  {
-    }
-
-  /*!
-   * Create a H5Dataset object from an existing dataset in a HDF5 file.
+   * An extensible array stored in a HDF5 dataset.
    *
-   * \param ds a BSML::DataRef to the dataset.
+   * The first dimension of an array is able to grow in size.
    */
-  H5Dataset(const BSML::H5DataRef &ds):
-  /*=================================*/
-  dataset(ds.first), reference(ds.second)
+  class H5Dataset
+  /*===========*/
   {
-    H5::Attribute attr = dataset.openAttribute("uri") ;
-    if (attr.getSpace().getSimpleExtentNpoints() == 1) {
-      H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-      attr.read(varstr, uri) ;
-      }
-    }
 
-  /*!
-   * Create a H5Dataset object and initialise an existing dataset in a HDF5 file.
-   *
-   * \param uri the URI for the dataset.
-   * \param ds a BSML::DataRef to the dataset.
-   */
-  H5Dataset(const std::string &uri, const BSML::H5DataRef &ds):
-  /*=========================================================*/
-  uri(uri), dataset(ds.first), reference(ds.second)
-  {
-    H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-    H5::Attribute attr = dataset.createAttribute("uri", varstr, H5::DataSpace(H5S_SCALAR)) ;
-    attr.write(varstr, uri) ;
-    }
+   private:
+    hobj_ref_t reference ;
 
-  /*!
-   * Ensure the underlying dataset is closed.
-   */
-  ~H5Dataset()
-  /*========*/
-  {
-    close() ;
-    }
+    int rank ;
+    hsize_t *shape ;    // rowshape[rank]
+    int rowsize ;       // Product(shape[n] | n > 0)
+    hsize_t size ;      // shape[0]
 
-  /*!
-   * Close the underlying dataset.
-   */
-  void close(void)
-  /*============*/
-  {
-    dataset.close() ;
-    }
+   protected:
+    std::string uri ;         //!< The URI for the dataset.
+    H5::DataSet dataset ;     //!< The DataSet in the underlying HDF5 file.
 
-  /*!
-   * Get the DataSet object in the underlying HDF5 file.
-   */
-  H5::DataSet getDataset(void)
-  /*========================*/
-  {
-    return dataset ;
-    }
+    void extend(void *, size_t, H5::DataType, int, int) ;
 
-  /*!
-   * Get a HDF5 reference to the DataSet object in the underlying HDF5 file.
-   */
-  hobj_ref_t getRef(void)
-  /*===================*/
-  {
-    return reference ;
-    }
+   public:
 
-  /*!
-   * Get the number of elements in the first dimension of the dataset.
-   */
-  size_t length(void)
-  /*===============*/
-  {
-    if (dataset.getId() == 0) return 0 ;
-    else {
-      H5::DataSpace dspace = dataset.getSpace() ;
-      hsize_t shape[dspace.getSimpleExtentNdims()] ;
-      dspace.getSimpleExtentDims(shape) ;
-      return shape[0] ;
-      }
-    }
+    /*!
+     * Default constructor.
+     */
+    H5Dataset() ;
 
-  /*!
-   * Get the name of the DataSet object in the underlying HDF5 file.
-   */
-  std::string name(void)
-  /*==================*/
-  {
-    int n = H5Iget_name(dataset.getId(), NULL, 0) ;
-    if (n == 0) return std::string("") ;
-    char name[n+1] ;
-    H5Iget_name(dataset.getId(), name, n+1) ;
-    return std::string(name) ;
-    }
+    /*!
+     * Create a H5Dataset object from an existing dataset in a HDF5 file.
+     *
+     * \param ds a bsml::DataRef to the dataset.
+     */
+    H5Dataset(const H5DataRef &ds) ;
+
+    /*!
+     * Create a H5Dataset object and initialise an existing dataset in a HDF5 file.
+     *
+     * \param uri the URI for the dataset.
+     * \param ds a bsml::DataRef to the dataset.
+     */
+    H5Dataset(const std::string &uri, const H5DataRef &ds) ;
+
+    /*!
+     * Ensure the underlying dataset is closed.
+     */
+    ~H5Dataset() ;
+
+    /*!
+     * Close the underlying dataset.
+     */
+    void close(void) ;
+
+    /*!
+     * Get the DataSet object in the underlying HDF5 file.
+     */
+    H5::DataSet getDataset(void) ;
+
+    /*!
+     * Get a HDF5 reference to the DataSet object in the underlying HDF5 file.
+     */
+    hobj_ref_t getRef(void) ;
+
+    /*!
+     * Get the number of elements in the first dimension of the dataset.
+     */
+    size_t length(void) ;
+
+    /*!
+     * Get the name of the DataSet object in the underlying HDF5 file.
+     */
+    std::string name(void) ;
+
+    } ;
 
   } ;
-
 
 #endif

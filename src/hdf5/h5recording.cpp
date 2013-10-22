@@ -29,7 +29,8 @@
 
 #include "bsml_h5.h"
 
-using namespace BSML ;
+
+using namespace bsml ;
 
 extern "C" {
   static herr_t saveSignal(hid_t, const char *, void *) ;
@@ -42,8 +43,8 @@ typedef struct {
   } SaveInfo ;
 
 
-H5Recording BSML::H5create(const std::string &uri, const std::string &fname, bool replace)
-/*======================================================================================*/
+H5Recording H5create(const std::string &uri, const std::string &fname, bool replace)
+/*================================================================================*/
 {
 //Create a new HDF5 Recording file.
 //
@@ -85,13 +86,14 @@ H5Recording BSML::H5create(const std::string &uri, const std::string &fname, boo
     return H5Recording(uri, h5) ;
     }
   catch (H5::FileIException e) {
+  // Need to remove any file... (only if replace ??)
     throw H5Exception("Cannot create '" + fname + "': " + e.getDetailMsg()) ;
     }
   }
 
 
-H5Recording BSML::H5open(const std::string &fname, bool readonly)
-/*=============================================================*/
+H5Recording H5open(const std::string &fname, bool readonly)
+/*=======================================================*/
 {
 //Open an existing HDF5 Recording file.
 //

@@ -23,35 +23,33 @@
 
 #include "h5dataset.h"
 
+namespace bsml {
 
-class BSML::H5Clock : public BSML::H5Dataset
-/*========================================*/
-{
- private:
-
-  void extend(void *, size_t, H5::DataType) ;
-
-
- public:
-
-  H5Clock() : BSML::H5Dataset() { }
-  H5Clock(const BSML::H5DataRef &ds) : BSML::H5Dataset(ds) { }
-  H5Clock(const std::string &uri, const BSML::H5DataRef &ds) : BSML::H5Dataset(uri, ds) { }
-
-  /*!
-   * Extend a clock in its first dimension.
-   *
-   * \tparam T the numeric datatype of time elements.
-   * \param data a vector of time elements. The shape of the underlying
-   * dataset is used to find the number of successive elements that make
-   * up a single array cell.
-   */
-  template <class T> void extend(std::vector<T> data)
-  /*===============================================*/
+  class H5Clock : public H5Dataset
+  /*============================*/
   {
-    T *dp = (T *)&data[0] ;
-    extend((void *)dp, data.size(), BSML::H5DataTypes(dp).mtype) ;
-    }
+   private:
+    void extend(void *, size_t, H5::DataType) ;
+
+   public:
+    H5Clock() ;
+    H5Clock(const H5DataRef &ds) ;
+    H5Clock(const std::string &uri, const H5DataRef &ds) ;
+
+    /*!
+     * Extend a clock in its first dimension.
+     *
+     * \tparam T the numeric datatype of time elements.
+     * \param data a vector of time elements. The shape of the underlying
+     * dataset is used to find the number of successive elements that make
+     * up a single array cell.
+     */
+    template <class T> void extend(std::vector<T> data)
+    /*===============================================*/
+    {
+      T *dp = (T *)&data[0] ;
+      extend((void *)dp, data.size(), H5DataTypes(dp).mtype) ;
+      }
 
 // Also get rate/period
 // Constructors (dataset), (dataset, uri, rate, period)
@@ -59,8 +57,8 @@ class BSML::H5Clock : public BSML::H5Dataset
 // Store data by calling extend() after creating an empty dataset??
 // Or or H5Dataset class to have a create() method? cf. H5Recording::createDataset()
 
+    } ;
 
   } ;
-
 
 #endif
