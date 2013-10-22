@@ -20,7 +20,7 @@ namespace bsml {
   /*===================================*/
   {
    private:
-    std::map<std::string, Signal *> signals ;
+    std::map<std::string, Signal *> signals_ ;
 
     Format format_ ;
 
