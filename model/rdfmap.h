@@ -22,7 +22,11 @@ namespace rdf
     /*----------------------------------*/
     : property(property) { }
 
-    virtual void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject) { } ;
+    virtual ~MapBase(void)
+    /*-------------------*/
+    { }
+
+    virtual void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject) = 0 ;
     } ;
 
 
