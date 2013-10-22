@@ -26,7 +26,7 @@ namespace bsml {
     } ;
 
 
-  Unit get_units(const std::string &unit) ;
+  Unit get_unit(const std::string &unit) ;
 
   } ;
 

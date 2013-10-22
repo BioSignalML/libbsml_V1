@@ -121,8 +121,8 @@ static std::string mult(const std::string &u)
   }
 
 
-Unit bsml::get_units(const std::string &u)
-/*======================================*/
+Unit bsml::get_unit(const std::string &u)
+/*=====================================*/
 {
   /**
    * Convert an abbreviated unit-of-measure into a URI from
@@ -144,7 +144,7 @@ Unit bsml::get_units(const std::string &u)
           unit = titlecase(u) ;
         }
       }
-    if (bsml::unit::list.contains(unit)) return Unit(unit) ;
+    if (bsml::unit::list.contains(unit)) return Unit(bsml::unit::NS + unit) ;
     }
 //   raise ValueError("Unknown units abbreviation, %s" % s)
   return Unit() ;

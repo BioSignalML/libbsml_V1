@@ -17,12 +17,12 @@ Signal::Signal(const std::string &uri, const Unit &unit)
 /*----------------------------------------------------*/
 : AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit)
 {
-  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(BSML::units, &unit_)) ;
+  rdfmap.push_back(new rdf::Mapping<Unit>(BSML::units, &unit_)) ;
   }
 
 Signal::Signal(const std::string &uri, const std::string &unit)
 /*-----------------------------------------------------------*/
-: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(get_units(unit))
+: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(get_unit(unit))
 //: Signal(uri, Unit(unit))  // C++11
 {
   rdfmap.push_back(new rdf::Mapping<Unit>(BSML::units, &unit_)) ;
