@@ -1,10 +1,7 @@
 #include <iostream>
 
 #include "rdf.h"
-
-#include "recording.h"   // But we want just a single "biosignalml.h"
-#include "signal.h"
-#include "units.h"
+#include "biosignalml.h"
 
 using namespace bsml ;
 
