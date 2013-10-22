@@ -9,6 +9,13 @@
 
 namespace bsml {
 
+  class Format : public rdf::Node
+  /*===========================*/
+  {
+
+    } ;
+
+
   namespace BSML
   /*==========*/
   {
