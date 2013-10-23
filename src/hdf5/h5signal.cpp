@@ -18,6 +18,8 @@
  *                                                                            *
  ******************************************************************************/
 
+#include <cstring>
+
 #include "hdf5/bsml_h5.h"
 
 using namespace bsml ;

@@ -24,6 +24,7 @@
 #include <vector>
 #include <string>
 #include <list>
+#include <stdlib.h>
 
 #include <H5Cpp.h>
 
@@ -495,11 +496,11 @@ H5DataRef H5Recording::getDataRef(const std::string &uri, const std::string &pre
     H5::DataSet dset = H5::DataSet(h5, &ref) ;
     hid_t id = dset.getId() ;
     int len = H5Rget_name(id, H5R_OBJECT, &ref, NULL, 0) ;
-    char *buf = (char *)std::malloc(len + 1) ;
+    char *buf = (char *)malloc(len + 1) ;
     H5Rget_name(id, H5R_OBJECT, &ref, buf, len + 1) ;
 
     bool matched = (prefix.compare(0, std::string::npos, buf, prefix.size()) == 0) ;
-    std::free(buf) ;
+    free(buf) ;
     if (matched) return H5DataRef(dset, ref) ;
     }
   catch (H5::AttributeIException e) { }
