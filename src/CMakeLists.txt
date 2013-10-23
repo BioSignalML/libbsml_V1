@@ -1,12 +1,27 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.4)
 
-project(BioSignalML)
-
-if (APPLE)
-  add_definitions(--std=c++11 --stdlib=libc++)
-endif (APPLE)
+project(BioSignalML CXX)
 
 include_directories(.)
+
+add_definitions(--std=c++11)
+
+
+#FIND_PACKAGE (HDF5 NAMES hdf5)
+#INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
+
+
+if (APPLE)
+  add_definitions(--stdlib=libc++)
+endif()
+
+if (MSYS)
+  include_directories(
+    ${CMAKE_FIND_ROOT_PATH}/include/rasqal
+    ${CMAKE_FIND_ROOT_PATH}/include/raptor2
+    )
+endif()
+
 
 set (SOURCES
   model/object.cpp
@@ -31,21 +46,59 @@ set (SOURCES ${SOURCES}
   )
 
 
+if (APPLE)
+  set (RDF_LIBRARIES
+    rdf
+    )
+  set (HDF5_LIBRARIES
+    sz
+    hdf5
+    hdf5_cpp
+    )
+  set (CPP_LIBRARIES
+    c++
+    )
+  set (BOOST_LIBRARIES
+    boost_date_time
+    )
+elseif (MSYS)       ## Static linking...
+  set (RDF_LIBRARIES
+    rdf
+    rasqal
+    raptor2
+    xml2
+    gmp
+    pcre
+    pthread
+    curl
+    idn
+    iconv
+    lzma
+    gnutls
+    nettle
+    ssh2
+    ws2_32
+    )
+  set (HDF5_LIBRARIES
+    sz.a
+    hdf5.a
+    hdf5_cpp.a
+    hdf5_hl_cpp.a
+    )
+  set (BOOST_LIBRARIES
+    boost_date_time-mt.a
+    )
+endif()
+
+
 add_library(biosignalml SHARED ${SOURCES})
 
 target_link_libraries(biosignalml
-  c++
-  rdf
-  boost_date_time
+  ${CPP_LIBRARIES}
+  ${RDF_LIBRARIES}
+  ${BOOST_LIBRARIES}
+  ${HDF5_LIBRARIES}
   z
-#  sz
-#  hdf5
-#  hdf5_cpp
-#  hdf5_hl_cpp
-  /usr/local/lib/libsz.a
-  /usr/local/lib/libhdf5.a
-  /usr/local/lib/libhdf5_cpp.a
-  /usr/local/lib/libhdf5_hl_cpp.a
   )
 
 
