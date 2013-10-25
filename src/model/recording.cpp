@@ -63,18 +63,33 @@ void Recording::set_format(const rdf::Literal &format)
   // Error if signal already attached to a recording 
   }
 
-Signal Recording::new_signal(const std::string &uri, const Unit &unit)
-/*------------------------------------------------------------------*/
+Signal *Recording::new_signal(const std::string &uri, const Unit &unit, double rate)
+/*--------------------------------------------------------------------------------*/
 {
-  Signal signal = Signal(uri, unit) ;
-  this->add_signal(&signal) ;
+  Signal *signal = new Signal(uri, unit, rate) ;
+  this->add_signal(signal) ;
   return signal ;
   }
 
-Signal Recording::new_signal(const std::string &uri, const std::string &unit)
-/*-------------------------------------------------------------------------*/
+Signal *Recording::new_signal(const std::string &uri, const Unit &unit, Clock *clock)
+/*---------------------------------------------------------------------------------*/
 {
-  return new_signal(uri, Unit(unit)) ;
+  Signal *signal = new Signal(uri, unit, clock) ;
+  this->add_signal(signal) ;
+  return signal ;
+  }
+
+
+Clock *Recording::new_clock(const std::string &uri, const Unit &units, double rate)
+/*-------------------------------------------------------------------------------*/
+{
+  return new Clock(uri, units) ;
+  }
+
+Clock *Recording::new_clock(const std::string &uri, const Unit &units, std::vector<double> times)
+/*----------------------------------------------------------------------------------------------*/
+{
+  return new Clock(uri, units) ;
   }
 
 

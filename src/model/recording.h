@@ -2,6 +2,7 @@
 #define _BSML_RECORDING_H
 
 #include <string>
+#include <vector>
 #include <map>
 
 #include "model/bsml.h"
@@ -16,6 +17,7 @@
 namespace bsml {
 
   class Signal ;
+  class Clock ;
 
   class Recording : public AbstractObject
   /*===================================*/
@@ -44,8 +46,11 @@ namespace bsml {
                                     const rdf::Literal &format, const std::string &dataset) ;
 
     void add_signal(Signal *signal) ;
-    Signal new_signal(const std::string &uri, const Unit &unit) ;
-    Signal new_signal(const std::string &uri, const std::string &unit) ;
+    virtual Signal *new_signal(const std::string &uri, const Unit &unit, double rate) ;
+    virtual Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock) ;
+
+    virtual Clock *new_clock(const std::string &uri, const Unit &units, double rate) ;
+    virtual Clock *new_clock(const std::string &uri, const Unit &units, std::vector<double> times) ;
 
     void set_format(const rdf::Literal &format) ;
     void set_starttime(const Datetime &starttime) ;
