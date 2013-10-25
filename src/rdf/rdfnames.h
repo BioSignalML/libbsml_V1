@@ -50,8 +50,10 @@ namespace rdf {
   {
     static std::string NS("http://www.w3.org/2001/XMLSchema#") ;
     static rdf::Uri uri(NS) ;
-    static rdf::Resource dateTime(NS + "dateTime") ;
-    static rdf::Resource dayTimeDuration(NS + "dayTimeDuration") ;
+    static rdf::Resource XSD_integer(NS + "integer") ;
+    static rdf::Resource XSD_double(NS + "double") ;
+    static rdf::Resource XSD_dateTime(NS + "dateTime") ;
+    static rdf::Resource XSD_dayTimeDuration(NS + "dayTimeDuration") ;
     } ;
 
 /*

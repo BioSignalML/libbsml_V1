@@ -15,7 +15,7 @@ using namespace bsml ;
 
 Datetime::Datetime(void)
 /*--------------------*/
-: rdf::Literal("", rdf::XSD::dateTime),
+: rdf::Literal("", rdf::XSD::XSD_dateTime),
   datetime(microsec_clock::universal_time())
 {
   }
@@ -31,7 +31,7 @@ std::string Datetime::as_iso_string(void)
 
 Duration::Duration(void)
 /*--------------------*/
-: rdf::Literal("", rdf::XSD::dayTimeDuration),
+: rdf::Literal("", rdf::XSD::XSD_dayTimeDuration),
   duration(0, 0, 0, 0)
 {
   }
