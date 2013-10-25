@@ -18,6 +18,16 @@ Recording::Recording(const std::string &uri)
 {
   }
 
+Recording::~Recording(void)
+/*-----------------------*/
+{
+  typename std::map<std::string, Signal *>::iterator sp ;
+  for (sp = signals_.begin() ;  sp != signals_.end() ;  ++sp) {
+    delete (*sp).second ;
+    }
+  }
+
+
 
 void Recording::add_signal(bsml::Signal *signal)
 /*--------------------------------------------*/

@@ -36,6 +36,7 @@ namespace bsml {
    public:
     Recording(void) ;
     Recording(const std::string &uri) ;
+    virtual ~Recording() ;
 
     void add_signal(Signal *signal) ;
     Signal new_signal(const std::string &uri, const Unit &unit) ;
