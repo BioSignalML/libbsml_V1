@@ -8,6 +8,8 @@
 #include "model/object.h"
 #include "model/datetime.h"
 #include "model/units.h"
+
+#include "rdf/rdf.h"
 #include "rdf/rdfmap.h"
 
 
@@ -37,6 +39,9 @@ namespace bsml {
     Recording(void) ;
     Recording(const std::string &uri) ;
     virtual ~Recording() ;
+
+    static Recording *new_recording(const std::string &uri,
+                                    const rdf::Literal &format, const std::string &dataset) ;
 
     void add_signal(Signal *signal) ;
     Signal new_signal(const std::string &uri, const Unit &unit) ;

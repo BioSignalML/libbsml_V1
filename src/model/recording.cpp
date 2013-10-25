@@ -3,7 +3,10 @@
 
 #include "model/recording.h"
 #include "model/signal.h"
+#include "rdf/rdf.h"
+#include "rdf/rdfnames.h"
 
+#include "hdf5/bsml_h5.h"
 
 using namespace bsml ;
 
@@ -27,6 +30,18 @@ Recording::~Recording(void)
     }
   }
 
+
+Recording *Recording::new_recording(const std::string &uri,
+                                    const rdf::Literal &format, const std::string &dataset)
+/*----------------------------------------------------------------------------------*/
+{
+  Recording *recording = NULL ;
+  if (format == Format::HDF5) {
+    recording = bsml::H5create(uri, dataset, true) ;
+    }
+  if (recording) recording->set_format(format) ;
+  return recording ;
+  }
 
 
 void Recording::add_signal(bsml::Signal *signal)
