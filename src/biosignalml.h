@@ -15,4 +15,6 @@
 #include "model/units.h"
 #include "model/bsml.h"
 
+#include "hdf5/bsml_h5.h"
+
 #endif
