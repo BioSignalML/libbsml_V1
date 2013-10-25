@@ -30,7 +30,7 @@ namespace bsml {
    public:
     AbstractObject(void) ;
     AbstractObject(const rdf::Resource &type, const std::string &uri) ;
-    ~AbstractObject(void) ;
+    virtual ~AbstractObject(void) ;
 
     void set_label(const std::string &label) ;
     void set_comment(const std::string &comment) ;
