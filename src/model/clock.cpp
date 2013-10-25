@@ -11,12 +11,15 @@ using namespace bsml ;
 
 Clock::Clock(void)
 /*--------------*/
-: rate_(0.0), period_(0.0)
-{ }
+: AbstractObject(), rate_(0.0), times_(std::vector<double>())
+{
+  }
 
-Clock::Clock(const std::string &uri, const Unit &unit, double *times, size_t size)
-/*---------------------------------------------------------------------------------*/
-: AbstractObject(BSML::SampleClock, uri), unit_(unit), rate_(0.0), period_(0.0), times_(times, times+size)
+
+Clock::Clock(const std::string &uri, const Unit &unit)
+/*--------------------------------------------------*/
+: AbstractObject(BSML::SampleClock, uri), unit_(unit),
+  rate_(0.0), times_(std::vector<double>())
 {
   }
 
@@ -29,8 +32,7 @@ size_t Clock::size(void)
 double Clock::time(size_t pos)
 /*--------------------------*/
 {
-  if (period_ != 0.0) return (double)pos*period_ ;
-  else if (rate_ != 0.0) return (double)pos/rate_ ;
+  if (rate_ != 0.0) return (double)pos/rate_ ;
   else return times_.at(pos) ;
   }
 
@@ -46,8 +48,7 @@ double Clock::time(size_t pos)
 size_t Clock::index(double time)
 /*----------------------------*/
 {
-  if (period_ != 0.0) return (size_t)floor(time/period_) ;
-  else if (rate_ != 0.0) return (size_t)floor(time*rate_) ;
+  if (rate_ != 0.0) return (size_t)floor(time*rate_) ;
   else {
     size_t i = 0 ;
     size_t j = times_.size() ;

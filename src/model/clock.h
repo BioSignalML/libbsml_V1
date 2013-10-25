@@ -13,20 +13,18 @@ namespace bsml {
   class Clock : public AbstractObject
   /*================================*/
   {
-   private:
+   protected:
     Unit unit_ ;
-    const double rate_ ;
-    const double period_ ;
     std::vector<double> times_ ;
+    double rate_ ;
 
    public:
     Clock(void) ;
-    Clock(const std::string &uri, const Unit &unit, const double &period) ;
-    Clock(const std::string &uri, const Unit &unit, double *times, size_t size) ;
+    Clock(const std::string &uri, const Unit &unit) ;
 
-    size_t size(void) ;
-    double time(size_t pos) ;
-    size_t index(double time) ;
+    virtual size_t size(void) ;
+    virtual double time(size_t pos) ;
+    virtual size_t index(double time) ;
     } ;
 
   } ;
