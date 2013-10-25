@@ -21,6 +21,14 @@ Recording::Recording(const std::string &uri)
 
 void Recording::add_signal(bsml::Signal *signal)
 /*--------------------------------------------*/
+void Recording::set_format(const rdf::Literal &format)
+/*--------------------------------------------------*/
+{
+  format_ = format ;
+  rdfmap.push_back(new rdf::Mapping<rdf::Node>(rdf::DCT::format, &format_)) ;
+  }
+
+
 {
   const std::string uri = signal->get_uri_as_string() ;
   if (signals_.count(uri) == 0) {

@@ -9,10 +9,10 @@
 
 namespace bsml {
 
-  class Format : public rdf::Node
-  /*===========================*/
+  namespace Format
+  /*============*/
   {
-
+    static rdf::Literal HDF5("application/x-bsml+hdf5") ;
     } ;
 
 

@@ -21,7 +21,7 @@ namespace bsml {
    private:
     std::map<std::string, Signal *> signals_ ;
 
-    Format format_ ;
+    rdf::Literal format_ ;
 
 //String ??         'format'
 //Node              'dataset'
@@ -41,7 +41,7 @@ namespace bsml {
     Signal new_signal(const std::string &uri, const Unit &unit) ;
     Signal new_signal(const std::string &uri, const std::string &unit) ;
 
-    void set_format(const Datetime &format) ;
+    void set_format(const rdf::Literal &format) ;
     void set_starttime(const Datetime &starttime) ;
     void set_duration(const Duration &duration) ;
 
