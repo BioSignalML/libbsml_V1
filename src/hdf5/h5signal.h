@@ -23,12 +23,13 @@
 
 #include "hdf5/h5clock.h"
 #include "hdf5/h5dataset.h"
+#include "model/signal.h"
 
 
 namespace bsml {
 
-  class H5Signal : public H5Dataset
-  /*==============================*/
+  class H5Signal : public Signal, public H5Dataset
+  /*============================================*/
   {
 
    private:
@@ -54,7 +55,7 @@ namespace bsml {
 
 
     /*!
-     * Extend a clock in its first dimension.
+     * Extend a signal in its first dimension.
      *
      * \tparam T the numeric datatype of array elements.
      * \param data a vector of data elements. The shape of the underlying

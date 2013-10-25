@@ -19,6 +19,8 @@
  ******************************************************************************/
 
 #include "hdf5/bsml_h5.h"
+#include "model/clock.h"
+#include "model/units.h"
 
 
 using namespace bsml ;
@@ -26,21 +28,25 @@ using namespace bsml ;
 
 H5Clock::H5Clock()
 /*==============*/
-: H5Dataset()
+: Clock(), H5Dataset()
 {
   }
 
-H5Clock::H5Clock(const H5DataRef &ds)
-/*=================================*/
-: H5Dataset(ds)
+H5Clock::H5Clock(const std::string &uri, const Unit &units, const H5DataRef &ds)
+/*===========================================================================*/
+: Clock(uri, units), H5Dataset(ds)
 {
   }
 
-H5Clock::H5Clock(const std::string &uri, const H5DataRef &ds)
-/*=========================================================*/
-: H5Dataset(uri, ds)
+
+H5Clock &H5Clock::operator=(const H5Clock &other)
+/*======================================*/
 {
+  Clock::operator=(other) ;
+  H5Dataset::operator=(other) ;
+  return *this ;
   }
+
 
 void H5Clock::extend(void *times, size_t size, H5::DataType dtype)
 /*==============================================================*/

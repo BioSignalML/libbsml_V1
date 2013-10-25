@@ -22,19 +22,23 @@
 #define _BSML_H5_CLOCK_ 1
 
 #include "hdf5/h5dataset.h"
+#include "model/clock.h"
+#include "model/units.h"
+
 
 namespace bsml {
 
-  class H5Clock : public H5Dataset
-  /*============================*/
+  class H5Clock : public Clock, public H5Dataset
+  /*==========================================*/
   {
    private:
     void extend(void *, size_t, H5::DataType) ;
 
    public:
     H5Clock() ;
-    H5Clock(const H5DataRef &ds) ;
-    H5Clock(const std::string &uri, const H5DataRef &ds) ;
+    H5Clock(const std::string &uri, const Unit &units, const H5DataRef &ds) ;
+    H5Clock &operator=(const H5Clock &other) ;
+
 
     /*!
      * Extend a clock in its first dimension.

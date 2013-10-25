@@ -29,11 +29,12 @@
 #include "hdf5/h5clock.h"
 #include "utility/utility.h"
 
+#include "model/recording.h"
 
 namespace bsml {
 
-  class H5Recording
-  /*=============*/
+  class H5Recording : public Recording
+  /*================================*/
   {
    private:
 
