@@ -33,7 +33,6 @@ namespace bsml {
     void set_recording(Recording *recording) ;
     } ;
 
-  } ;
 
 /*
   metaclass = BSML.Signal     #: :attr:`.BSML.Signal`
@@ -70,5 +69,40 @@ namespace bsml {
             }
 
 */
+  template <class SIGNAL>
+  class SignalGroup : public std::vector<SIGNAL *>
+  /*============================================*/
+  {
+   private:
+    std::map<std::string, SIGNAL *> urimap ;
+
+   public:
+    SignalGroup(size_t size)
+    /*--------------------*/
+    : std::vector<SIGNAL *>(size) { }
+
+    void add_signal(SIGNAL *signal)
+    /*---------------------------*/
+    {
+      urimap.insert(std::pair<std::string, SIGNAL *>(signal->get_uri_as_string(), signal)) ;
+      this->push_back(signal) ;
+      }
+
+    SIGNAL *get_signal(const std::string uri)
+    /*-------------------------------------*/
+    {
+      return urimap.at(uri) ;
+      }
+
+    SIGNAL *get_signal(size_t index)
+    /*----------------------------*/
+    {
+      return this->at(index) ;
+      }
+
+    } ;
+
+
+  } ;
 
 #endif
