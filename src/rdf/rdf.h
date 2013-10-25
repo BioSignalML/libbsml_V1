@@ -87,6 +87,9 @@ namespace rdf {
   /*=======================*/
   {
    public:
+    Literal() ;
+    Literal(int i) ;
+    Literal(double d) ;
     Literal(const std::string &value, const std::string &language="") ;
     Literal(const std::string &value, const Resource &datatype) ;
     } ;

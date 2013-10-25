@@ -2,6 +2,7 @@
 #include <redland.h>
 
 #include "rdf/rdf.h"
+#include "rdf/rdfnames.h"
 
 using namespace rdf ;
 
@@ -147,6 +148,18 @@ BlankNode::BlankNode(const std::string &identifier)
 : Node(identifier) { }
 
 
+
+Literal::Literal()
+/*--------------*/
+: Node(NULL) { }
+
+Literal::Literal(int i)
+/*-------------------*/
+: Node(std::to_string(i), XSD::XSD_integer) { }
+
+Literal::Literal(double d)
+/*----------------------*/
+: Node(std::to_string(d), XSD::XSD_double) { }
 
 Literal::Literal(const std::string &value, const std::string &language)
 /*-------------------------------------------------------------------*/
