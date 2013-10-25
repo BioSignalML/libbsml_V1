@@ -44,8 +44,6 @@ Recording *Recording::new_recording(const std::string &uri,
   }
 
 
-void Recording::add_signal(bsml::Signal *signal)
-/*--------------------------------------------*/
 void Recording::set_format(const rdf::Literal &format)
 /*--------------------------------------------------*/
 {
@@ -54,6 +52,8 @@ void Recording::set_format(const rdf::Literal &format)
   }
 
 
+void Recording::add_signal(Signal *signal)
+/*--------------------------------------*/
 {
   const std::string uri = signal->get_uri_as_string() ;
   if (signals_.count(uri) == 0) {
