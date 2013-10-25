@@ -69,8 +69,8 @@ const rdf::Resource *AbstractObject::get_resource(void)
   return &resource ;
   }
 
-const std::string AbstractObject::get_uri_as_string(void)
-/*-----------------------------------------------------*/
+const std::string AbstractObject::get_uri_as_string(void) const
+/*-----------------------------------------------------------*/
 {
   return resource.as_string() ;
   }
