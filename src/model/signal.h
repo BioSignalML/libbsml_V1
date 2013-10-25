@@ -10,6 +10,7 @@
 #include "model/datetime.h"
 #include "model/clock.h"
 #include "model/units.h"
+#include "rdf/rdf.h"
 
 
 namespace bsml {
@@ -20,17 +21,17 @@ namespace bsml {
   {
    private:
     Recording *recording_ ;
-//    Clock *clock_ ;   subelement
+    Clock *clock_ ;                       //  subelement
     Unit unit_ ;
-//    double rate_ ;
-//    double period_ ;
+    double rate_ ;
+    rdf::Literal literal_rate ;
 //    Duration offset_ ;
 //    Duration duration_ ;
 
    public:
     Signal(void) ;
-    Signal(const std::string &uri, const Unit &unit) ;
-    Signal(const std::string &uri, const std::string &unit) ;
+    Signal(const std::string &uri, const Unit &unit, double rate) ;
+    Signal(const std::string &uri, const Unit &unit, Clock *clock) ;
     void set_recording(Recording *recording) ;
     } ;
 
