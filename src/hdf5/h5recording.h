@@ -63,6 +63,10 @@ namespace bsml {
    public:
     H5Recording(const std::string &, H5::H5File) ;
     ~H5Recording(void) ;
+
+    static H5Recording *H5open(const std::string &, bool readonly=false) ;
+    static H5Recording *H5create(const std::string &, const std::string &, bool replace=false) ;
+
     void close(void) ;
 
     std::string getUri(void) const { return uri ; } ;

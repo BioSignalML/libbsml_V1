@@ -43,9 +43,6 @@ namespace bsml
   class H5Signal ;
   class H5Exception ;
   class H5DataTypes ;
-
-  H5Recording H5open(const std::string &, bool replace=false) ;
-  H5Recording H5create(const std::string &, const std::string &, bool readonly=false) ;
   } ;
 
 #include "hdf5/h5common.h"

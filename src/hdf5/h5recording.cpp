@@ -44,8 +44,8 @@ typedef struct {
   } SaveInfo ;
 
 
-H5Recording H5create(const std::string &uri, const std::string &fname, bool replace)
-/*================================================================================*/
+H5Recording *H5Recording::H5create(const std::string &uri, const std::string &fname, bool replace)
+/*==============================================================================================*/
 {
 //Create a new HDF5 Recording file.
 //
@@ -84,7 +84,7 @@ H5Recording H5create(const std::string &uri, const std::string &fname, bool repl
     attr.close() ;
 
     h5.flush(H5F_SCOPE_GLOBAL) ;
-    return H5Recording(uri, h5) ;
+    return new H5Recording(uri, h5) ;
     }
   catch (H5::FileIException e) {
   // Need to remove any file... (only if replace ??)
@@ -93,8 +93,8 @@ H5Recording H5create(const std::string &uri, const std::string &fname, bool repl
   }
 
 
-H5Recording H5open(const std::string &fname, bool readonly)
-/*=======================================================*/
+H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
+/*=====================================================================*/
 {
 //Open an existing HDF5 Recording file.
 //
@@ -153,7 +153,7 @@ H5Recording H5open(const std::string &fname, bool readonly)
     if (uriref != recref)
       throw H5Exception("Internal error in BioSignalML HDF5 file: '" + fname + "'") ;
   
-    return H5Recording(std::string(uri), h5) ;
+    return new H5Recording(std::string(uri), h5) ;
     }
   catch (H5::Exception e) {
     throw H5Exception("Invalid BioSignalML HDF5 file: '" + fname + "': " + e.getDetailMsg()) ;
