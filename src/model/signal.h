@@ -1,8 +1,9 @@
 #ifndef _BSML_SIGNAL_H
 #define _BSML_SIGNAL_H
 
-
 #include <string>
+#include <vector>
+#include <map>
 
 #include "model/object.h"
 #include "model/recording.h"
