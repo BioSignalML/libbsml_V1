@@ -31,7 +31,7 @@ namespace bsml {
     H5::DataType mtype ;
     H5::DataType dtype ;
 
-    template <class T> H5DataTypes(T *data) {
+    template <class T> H5DataTypes(T *data __attribute__((__unused__))) {
       throw H5Exception("Unsupported data type") ;
       }
 
