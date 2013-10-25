@@ -15,8 +15,8 @@ namespace bsml {
   /*================*/
   {
    private:
-    const rdf::Resource resource ;
-    const rdf::Resource metatype ;
+    rdf::Resource resource ;
+    rdf::Resource metatype ;
     std::string label_ ;
     std::string comment_ ;
     std::string description_ ;
