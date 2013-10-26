@@ -121,10 +121,8 @@ H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
     H5::Group root = h5.openGroup("/") ;
     attr = root.openAttribute("version") ;
     attr.read(varstr, version) ;
-
     if (version.compare(0, 5, BSML_H5_VERSION, 0, 5))
       throw H5Exception("Invalid BiosignalML x HDF5 file: '" + fname + "'") ;
-
     int dot = version.find('.', 5) ;
     int h5major, major, minor ;
     if (!(dot != std::string::npos
@@ -468,7 +466,7 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
 
 
 H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &prefix)
-/*================================================================================*/
+/*---------------------------------------------------------------------------------*/
 {
   try {
     H5::Group uris = h5.openGroup("/uris") ;
@@ -493,7 +491,7 @@ H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &pr
 
 
 H5Signal H5Recording::get_signal(const std::string &uri)
-/*===================================================*/
+/*--------------------------------------------------=*/
 {
 //Find a signal from its URI.
 //
@@ -507,7 +505,7 @@ H5Signal H5Recording::get_signal(const std::string &uri)
 
 
 static herr_t save_signal(hid_t id, const char *name, void *op_data)
-/*===============================================================*/
+/*--------------------------------------------------------------=*/
 {
   SaveInfo *info = (SaveInfo *)op_data ;
   std::list<H5Signal> &sig = reinterpret_cast<std::list<H5Signal> &>(info->listp) ;
@@ -523,7 +521,6 @@ static herr_t save_signal(hid_t id, const char *name, void *op_data)
     if (nsignals == 1) {
       std::string uri ;
       attr.read(varstr, uri) ;
-
       sig.push_back(H5Signal(uri, dataref, -1)) ;
       }
     else if (nsignals > 1) {
@@ -543,7 +540,7 @@ static herr_t save_signal(hid_t id, const char *name, void *op_data)
 
 
 std::list<H5Signal> H5Recording::get_signals(void)
-/*==============================================*/
+/*----------------------------------------------*/
 {
 //Return all signals in the recording.
 //
@@ -559,7 +556,7 @@ std::list<H5Signal> H5Recording::get_signals(void)
 
 
 H5Clock H5Recording::get_clock(const std::string &uri)
-/*==================================================*/
+/*--------------------------------------------------*/
 {
 //Find a clock dataset from its URI.
 //
@@ -573,7 +570,7 @@ H5Clock H5Recording::get_clock(const std::string &uri)
 
 
 static herr_t save_clock(hid_t id, const char *name, void *op_data)
-/*==============================================================*/
+/*--------------------------------------------------------------*/
 {
   SaveInfo *info = (SaveInfo *)op_data ;
   std::list<H5Clock> clk = reinterpret_cast<std::list<H5Clock> &>(info->listp) ;
@@ -594,7 +591,7 @@ static herr_t save_clock(hid_t id, const char *name, void *op_data)
 
 
 std::list<H5Clock> H5Recording::get_clocks(void)
-/*============================================*/
+/*--------------------------------------------*/
 {
 //Return all clocks in the recording.
 //
@@ -610,7 +607,7 @@ std::list<H5Clock> H5Recording::get_clocks(void)
 
 
 void H5Recording::store_metadata(const std::string &metadata, const std::string &mimetype)
-/*=====================================================================================*/
+/*------------------------------------------------------------------------------------=*/
 {
 //Store metadata in the HDF5 recording.
 //
@@ -638,7 +635,7 @@ void H5Recording::store_metadata(const std::string &metadata, const std::string 
 
 
 std::pair<std::string, std::string> H5Recording::get_metadata(void)
-/*==============================================================*/
+/*--------------------------------------------------------------*/
 {
 //:return: A 2-tuple of retrieved metadata and mimetype, or
 //         (None, None) if the recording has no '/metadata' dataset.

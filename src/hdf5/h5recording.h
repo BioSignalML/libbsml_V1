@@ -91,7 +91,7 @@ namespace bsml {
       }
 
     template <class T> std::list<H5Signal> create_signal(strlist uris, strlist units,
-    /*============================================================================*/
+    /*-----------------------------------------------------------------------------*/
      std::vector<T> data=std::vector<T>(),
      double gain = 1.0,
      double offset = 0.0,
