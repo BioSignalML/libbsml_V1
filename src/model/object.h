@@ -37,7 +37,7 @@ namespace bsml {
     void set_description(const std::string &description) ;
     const rdf::Resource *get_resource(void) ;
     const std::string get_uri_as_string(void) const ;
-    void to_rdf(const rdf::Graph &graph) ;
+    virtual void to_rdf(const rdf::Graph &graph) ;
     } ;
 
   } ;

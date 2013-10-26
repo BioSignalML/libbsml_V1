@@ -21,7 +21,7 @@ namespace bsml {
   {
    private:
     Recording *recording_ ;
-    Clock *clock_ ;                       //  subelement
+    Clock *clock_ ;
     Unit unit_ ;
     double rate_ ;
     rdf::Literal literal_rate ;
@@ -66,6 +66,12 @@ namespace bsml {
     {
       return this->at(index) ;
       }
+
+    virtual void extend(std::vector<double> data __attribute__((__unused__)))
+    /*---------------------------------------------------------------------*/
+    {
+      }
+
 
     } ;
 

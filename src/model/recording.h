@@ -41,6 +41,8 @@ namespace bsml {
     Recording(const std::string &uri) ;
     virtual ~Recording() ;
 
+    virtual void close(void) { }
+
     static Recording *new_recording(const std::string &uri,
                                     const rdf::Literal &format, const std::string &dataset) ;
 
