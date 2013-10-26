@@ -7,6 +7,7 @@
 
 #include "model/bsml.h"
 #include "model/object.h"
+#include "model/signal.h"
 #include "model/clock.h"
 #include "model/datetime.h"
 #include "model/units.h"
@@ -16,8 +17,6 @@
 
 
 namespace bsml {
-
-  class Signal ;
 
   class Recording : public AbstractObject
   /*===================================*/
