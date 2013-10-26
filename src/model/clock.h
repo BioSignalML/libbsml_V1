@@ -20,7 +20,8 @@ namespace bsml {
 
    public:
     Clock(void) ;
-    Clock(const std::string &uri, const Unit &unit) ;
+    Clock(const std::string &uri, const Unit &unit, double rate) ;
+    Clock(const std::string &uri, const Unit &unit, const std::vector<double> &times) ;
 
     virtual size_t size(void) ;
     virtual double time(size_t pos) ;

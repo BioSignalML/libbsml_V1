@@ -15,13 +15,20 @@ Clock::Clock(void)
 {
   }
 
-
-Clock::Clock(const std::string &uri, const Unit &unit)
-/*--------------------------------------------------*/
+Clock::Clock(const std::string &uri, const Unit &unit, double rate)
+/*---------------------------------------------------------------*/
 : AbstractObject(BSML::SampleClock, uri), unit_(unit),
-  rate_(0.0), times_(std::vector<double>())
+  rate_(rate), times_(std::vector<double>())
 {
   }
+
+Clock::Clock(const std::string &uri, const Unit &unit, const std::vector<double> &times)
+/*------------------------------------------------------------------------------------*/
+: AbstractObject(BSML::SampleClock, uri), unit_(unit),
+  rate_(0.0), times_(times)
+{
+  }
+
 
 size_t Clock::size(void)
 /*--------------------*/

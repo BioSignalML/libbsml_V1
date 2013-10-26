@@ -419,8 +419,8 @@ std::list<H5Signal> H5Recording::create_signal(strlist uris, strlist units,
 
 
 H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
-/*========================================================================*/
- double *times=NULL, size_t datasize=0, double rate=0.0)
+/*------------------------------------------------------------------------*/
+                          const std::vector<double> &times, double rate=0.0)
 {
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
@@ -434,13 +434,13 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
     }
   catch (H5::AttributeIException e) { }
 
-  if (times != NULL && rate != 0.0)
+  if (times.size() > 0 && rate != 0.0)
     throw H5Exception("A Clock cannot have both 'times' and a 'rate'") ;
   
   size_t npoints = 0 ;
   hsize_t maxshape[] = { H5S_UNLIMITED } ;
-  hsize_t shape[]    = { datasize } ;
-  H5DataRef clkdata = create_dataset("clock", 1, shape, maxshape, times, H5DataTypes(&rate)) ;
+  hsize_t shape[]    = { times.size() } ;
+  H5DataRef clkdata = create_dataset("clock", 1, shape, maxshape, (void *)&times[0], H5DataTypes(&rate)) ;
   H5::DataSet dset = clkdata.first ;
 
   H5::DataSpace scalar(H5S_SCALAR) ;
@@ -462,7 +462,8 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
     }
 
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return new H5Clock(uri, units, clkdata) ;
+  return (rate != 0.0) ? new H5Clock(uri, units, rate, clkdata)
+                       : new H5Clock(uri, units, times, clkdata) ;
   }
 
 
@@ -488,17 +489,6 @@ H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &pr
     }
   catch (H5::AttributeIException e) { }
   return H5DataRef() ;
-  }
-
-
-H5Clock H5Recording::retrieve_clock(const std::string &uri, const H5DataRef &dataref)
-/*=================================================================================*/
-{
-  H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  H5::Attribute attr = dataref.first.openAttribute("units") ;
-  std::string units ;
-  attr.read(varstr, units) ;
-  return H5Clock(uri, Unit(units), dataref) ;
   }
 
 
@@ -577,7 +567,7 @@ H5Clock H5Recording::get_clock(const std::string &uri)
 //:return: A :class:`H5Clock` or None if the URI is unknown or
 //         the dataset is not that for a clock.
   H5DataRef dataref = get_dataref(uri, "/recording/clock/") ;
-  if (dataref.first.getId() != 0) return retrieve_clock(uri, dataref) ;
+  if (dataref.first.getId() != 0) return H5Clock::get_clock(uri, dataref) ;
   throw H5Exception("Cannot find clock:" + uri) ;
   }
 
@@ -596,7 +586,7 @@ static herr_t save_clock(hid_t id, const char *name, void *op_data)
     H5::Attribute attr = dset.openAttribute("uri") ;
     std::string uri ;
     attr.read(varstr, uri) ;
-    clk.push_back(H5Recording::retrieve_clock(uri, H5DataRef(dset, ref))) ;
+    clk.push_back(H5Clock::get_clock(uri, H5DataRef(dset, ref))) ;
     }
   catch (H5::FileIException e) { }
   return 0 ;

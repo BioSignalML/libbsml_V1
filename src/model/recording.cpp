@@ -79,17 +79,9 @@ Signal *Recording::new_signal(const std::string &uri, const Unit &unit, Clock *c
   return signal ;
   }
 
-
-Clock *Recording::new_clock(const std::string &uri, const Unit &units, double rate)
-/*-------------------------------------------------------------------------------*/
-{
-  return new Clock(uri, units) ;
   }
 
-Clock *Recording::new_clock(const std::string &uri, const Unit &units, std::vector<double> times)
-/*----------------------------------------------------------------------------------------------*/
 {
-  return new Clock(uri, units) ;
   }
 
 

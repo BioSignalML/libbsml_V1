@@ -60,7 +60,7 @@ namespace bsml {
       void *, size_t, H5DataTypes, double, double, double,
       const std::string &, const std::string &) ;
 
-    H5Clock *create_clock(const std::string &, const Unit &, double *, size_t, double) ;
+    H5Clock *create_clock(const std::string &, const Unit &, const std::vector<double> &, double) ;
 
 
    public:
@@ -107,23 +107,9 @@ namespace bsml {
       }
 
 
-    Clock *new_clock(const std::string &uri, const Unit &units, double rate)
-    /*====================================================================*/
-    {
-      return create_clock(uri, units, NULL, 0, rate) ;
-      }
-
-    Clock *new_clock(const std::string &uri, const Unit &units,
-    /*=======================================================*/
-                              std::vector<double> times=std::vector<double>())
-    {
-      return create_clock(uri, units, &times[0], times.size(), 0.0) ;
-      }
-
     H5Signal get_signal(const std::string &) ;
     std::list<H5Signal> get_signals(void) ;
 
-    static H5Clock retrieve_clock(const std::string &uri, const H5DataRef &dataref) ;
     H5Clock get_clock(const std::string &) ;
     std::list<H5Clock> get_clocks(void) ;
 

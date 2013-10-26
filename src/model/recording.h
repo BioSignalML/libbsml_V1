@@ -7,6 +7,7 @@
 
 #include "model/bsml.h"
 #include "model/object.h"
+#include "model/clock.h"
 #include "model/datetime.h"
 #include "model/units.h"
 
@@ -17,7 +18,6 @@
 namespace bsml {
 
   class Signal ;
-  class Clock ;
 
   class Recording : public AbstractObject
   /*===================================*/
@@ -49,8 +49,22 @@ namespace bsml {
     virtual Signal *new_signal(const std::string &uri, const Unit &unit, double rate) ;
     virtual Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock) ;
 
-    virtual Clock *new_clock(const std::string &uri, const Unit &units, double rate) ;
-    virtual Clock *new_clock(const std::string &uri, const Unit &units, std::vector<double> times) ;
+
+    Clock *new_clock(const std::string &uri, const Unit &units, double rate)
+    /*--------------------------------------------------------------------*/
+    {
+      Clock *clock = new Clock(uri, units, rate) ;
+      this->add_resource(clock) ;
+      return clock ;
+      }
+
+    Clock *new_clock(const std::string &uri, const Unit &units, const std::vector<double> &times)
+    /*----------------------------------------------------------------------------------*/
+    {
+      Clock *clock = new Clock(uri, units, times) ;
+      this->add_resource(clock) ;
+      return clock ;
+      }
 
     void set_format(const rdf::Literal &format) ;
     void set_starttime(const Datetime &starttime) ;
