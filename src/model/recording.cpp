@@ -24,9 +24,9 @@ Recording::Recording(const std::string &uri)
 Recording::~Recording(void)
 /*-----------------------*/
 {
-  typename std::map<std::string, Signal *>::iterator sp ;
-  for (sp = signals_.begin() ;  sp != signals_.end() ;  ++sp) {
-    delete (*sp).second ;
+  typename std::map<std::string, AbstractObject *>::iterator rp ;
+  for (rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
+    delete (*rp).second ;
     }
   }
 
@@ -52,23 +52,27 @@ void Recording::set_format(const rdf::Literal &format)
   }
 
 
-void Recording::add_signal(Signal *signal)
-/*--------------------------------------*/
+bool Recording::add_resource(AbstractObject *resource)
+/*--------------------------------------------------*/
 {
-  const std::string uri = signal->get_uri_as_string() ;
-  if (signals_.count(uri) == 0) {
-    signals_.insert(std::pair<std::string, Signal *>(uri, signal)) ;
-    signal->set_recording(this) ;
+  const std::string uri = resource->get_uri_as_string() ;
+  if (resources_.count(uri) == 0) {
+    resources_.insert(std::pair<std::string, AbstractObject *>(uri, resource)) ;
+    return true ;
     }
-  // Error if signal already attached to a recording 
+  return false ;
   }
 
 Signal *Recording::new_signal(const std::string &uri, const Unit &unit, double rate)
 /*--------------------------------------------------------------------------------*/
+void Recording::add_signal(Signal *signal)
+/*--------------------------------------*/
 {
   Signal *signal = new Signal(uri, unit, rate) ;
   this->add_signal(signal) ;
   return signal ;
+  if (this->add_resource(signal)) signal->set_recording(this) ;
+  // Error if signal already attached to a recording
   }
 
 Signal *Recording::new_signal(const std::string &uri, const Unit &unit, Clock *clock)
@@ -88,10 +92,10 @@ Signal *Recording::new_signal(const std::string &uri, const Unit &unit, Clock *c
 void Recording::to_rdf(const rdf::Graph &graph)
 /*-------------------------------------------*/
 {
-  std::map<std::string, Signal *>::iterator s ;
+  std::map<std::string, AbstractObject *>::iterator rp ;
   AbstractObject::to_rdf(graph) ;
-  for (s = signals_.begin() ;  s != signals_.end() ;  ++s) {
-    s->second->to_rdf(graph) ;
+  for (rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
+    rp->second->to_rdf(graph) ;
     }
   }
 

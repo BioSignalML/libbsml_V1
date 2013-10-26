@@ -23,7 +23,7 @@ namespace bsml {
   /*===================================*/
   {
    private:
-    std::map<std::string, Signal *> signals_ ;
+    std::map<std::string, AbstractObject *> resources_ ;
 
     rdf::Literal format_ ;
 
@@ -45,6 +45,7 @@ namespace bsml {
     static Recording *new_recording(const std::string &uri,
                                     const rdf::Literal &format, const std::string &dataset) ;
 
+    bool add_resource(AbstractObject *resource) ;
     void add_signal(Signal *signal) ;
     virtual Signal *new_signal(const std::string &uri, const Unit &unit, double rate) ;
     virtual Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock) ;
