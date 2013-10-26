@@ -1,6 +1,7 @@
 #ifndef _BSML_RECORDING_H
 #define _BSML_RECORDING_H
 
+#include <assert.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -48,9 +49,52 @@ namespace bsml {
 
     bool add_resource(AbstractObject *resource) ;
     void add_signal(Signal *signal) ;
-    virtual Signal *new_signal(const std::string &uri, const Unit &unit, double rate) ;
-    virtual Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock) ;
 
+    template <class SIGNAL_T>
+    SIGNAL_T *new_signal(const std::string &uri, const Unit &unit, double rate)
+    /*---------------------------------------------------------------------*/
+    {
+      SIGNAL_T *signal = new SIGNAL_T(uri, unit, rate) ;
+      this->add_signal(signal) ;
+      return signal ;
+      }
+
+    template <class SIGNAL_T>
+    SIGNAL_T *new_signal(const std::string &uri, const Unit &unit, Clock *clock)
+    /*---------------------------------------------------------------------*/
+    {
+      SIGNAL_T *signal = new SIGNAL_T(uri, unit, clock) ;
+      this->add_signal(signal) ;
+      return signal ;
+      }
+
+    template <class SIGNAL_T>
+    SignalGroup<SIGNAL_T> signalgroup(const std::vector<std::string> &uris,
+    /*-----------------------------------------------------------------*/
+                            const std::vector<Unit> &units, double rate)
+    {
+      assert(uris.size() == units.size()) ;
+      SignalGroup<SIGNAL_T> signalgroup(uris.size()) ;
+      for (size_t i = 0 ;  i < uris.size() ;  ++i) {
+        SIGNAL_T *signal = this->new_signal<SIGNAL_T>(uris[i], units[i], rate) ;
+        signalgroup.add_signal(signal) ;
+        }
+      return signalgroup ;
+      }
+
+    template <class SIGNAL_T>
+    SignalGroup<SIGNAL_T> signalgroup(const std::vector<std::string> &uris,
+    /*-----------------------------------------------------------------*/
+                            const std::vector<Unit> &units, Clock *clock)
+    {
+      assert(uris.size() == units.size()) ;
+      SignalGroup<SIGNAL_T> signalgroup(uris.size()) ;
+      for (size_t i = 0 ;  i < uris.size() ;  ++i) {
+        SIGNAL_T *signal = this->new_signal<SIGNAL_T>(uris[i], units[i], clock) ;
+        signalgroup.add_signal(signal) ;
+        }
+      return signalgroup ;
+      }
 
     Clock *new_clock(const std::string &uri, const Unit &units, double rate)
     /*--------------------------------------------------------------------*/

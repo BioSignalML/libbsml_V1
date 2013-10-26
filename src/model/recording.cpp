@@ -63,31 +63,12 @@ bool Recording::add_resource(AbstractObject *resource)
   return false ;
   }
 
-Signal *Recording::new_signal(const std::string &uri, const Unit &unit, double rate)
-/*--------------------------------------------------------------------------------*/
 void Recording::add_signal(Signal *signal)
 /*--------------------------------------*/
 {
-  Signal *signal = new Signal(uri, unit, rate) ;
-  this->add_signal(signal) ;
-  return signal ;
   if (this->add_resource(signal)) signal->set_recording(this) ;
   // Error if signal already attached to a recording
   }
-
-Signal *Recording::new_signal(const std::string &uri, const Unit &unit, Clock *clock)
-/*---------------------------------------------------------------------------------*/
-{
-  Signal *signal = new Signal(uri, unit, clock) ;
-  this->add_signal(signal) ;
-  return signal ;
-  }
-
-  }
-
-{
-  }
-
 
 void Recording::to_rdf(const rdf::Graph &graph)
 /*-------------------------------------------*/
