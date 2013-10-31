@@ -33,8 +33,8 @@ namespace bsml {
   {
 
    private:
-    double gain ;
-    double offset ;
+//    double gain ;
+//    double offset ;
     int signal_count(void) ;
 
     void extend(void *, size_t, H5::DataType) ;
