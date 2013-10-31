@@ -25,7 +25,7 @@ namespace bsml {
     Datetime created_ ;
 
    protected:
-    std::list<rdf::MapBase *> rdfmap ;
+    rdf::RdfMap rdfmap ;
 
    public:
     AbstractObject(void) ;

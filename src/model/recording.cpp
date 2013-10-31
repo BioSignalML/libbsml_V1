@@ -48,7 +48,7 @@ void Recording::set_format(const rdf::Literal &format)
 /*--------------------------------------------------*/
 {
   format_ = format ;
-  rdfmap.push_back(new rdf::Mapping<rdf::Node>(rdf::DCT::format, &format_)) ;
+  rdfmap.append(rdf::DCT::format, &format_) ;
   }
 
 

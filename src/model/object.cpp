@@ -17,15 +17,15 @@ AbstractObject::AbstractObject(const rdf::Resource &type, const std::string &uri
 /*-----------------------------------------------------------------------------*/
 : resource(rdf::Resource(uri)), metatype(type), rdfmap()
 {
-  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(rdf::RDF::type, &metatype)) ;
+  rdfmap.append(rdf::RDF::type, &metatype) ;
 
-  rdfmap.push_back(new rdf::Mapping<std::string>(rdf::RDFS::label, &label_)) ;
-  rdfmap.push_back(new rdf::Mapping<std::string>(rdf::RDFS::comment, &comment_)) ;
-  rdfmap.push_back(new rdf::Mapping<std::string>(rdf::DCT::description, &description_)) ;
+  rdfmap.append(rdf::RDFS::label, &label_) ;
+  rdfmap.append(rdf::RDFS::comment, &comment_) ;
+  rdfmap.append(rdf::DCT::description, &description_) ;
 
-  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(rdf::PRV::precededBy, &precededby_)) ;
-  rdfmap.push_back(new rdf::Mapping<rdf::Node>(rdf::DCT::creator, &creator_)) ;
-  rdfmap.push_back(new rdf::Mapping<Datetime>(rdf::DCT::created, &created_)) ;
+  rdfmap.append(rdf::PRV::precededBy, &precededby_) ;
+  rdfmap.append(rdf::DCT::creator, &creator_) ;
+  rdfmap.append(rdf::DCT::created, &created_) ;
 
 /*
               set_predecessor(const rdf::Resource &predecessor)
@@ -41,8 +41,6 @@ AbstractObject::AbstractObject(const rdf::Resource &type, const std::string &uri
 AbstractObject::~AbstractObject(void)
 /*---------------------------------*/
 {
-  for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
-    delete *map ;
   }
 
 void AbstractObject::set_label(const std::string &label)
@@ -78,6 +76,5 @@ const std::string AbstractObject::get_uri_as_string(void) const
 void AbstractObject::to_rdf(const rdf::Graph &graph)
 /*------------------------------------------------*/
 {
-  for (std::list<rdf::MapBase *>::iterator map = rdfmap.begin() ; map != rdfmap.end(); ++map)
-    (*map)->to_rdf(graph, resource) ;
+  rdfmap.to_rdf(graph, resource) ;
   }

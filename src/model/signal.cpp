@@ -17,9 +17,9 @@ Signal::Signal(const std::string &uri, const Unit &unit, double rate)
 /*-----------------------------------------------------------------*/
 : AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit), rate_(rate), clock_(NULL)
 {
-  rdfmap.push_back(new rdf::Mapping<Unit>(BSML::units, &unit_)) ;
+  rdfmap.append(BSML::units, &unit_) ;
   literal_rate = rdf::Literal(rate_) ;
-  rdfmap.push_back(new rdf::Mapping<rdf::Literal>(BSML::rate, &literal_rate)) ;
+  rdfmap.append(BSML::rate, &literal_rate) ;
   }
 
 Signal::Signal(const std::string &uri, const Unit &unit, Clock *clock)
@@ -27,8 +27,8 @@ Signal::Signal(const std::string &uri, const Unit &unit, Clock *clock)
 : AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit), rate_(0.0), clock_(clock)
 //: Signal(uri, Unit(unit))  // C++11
 {
-  rdfmap.push_back(new rdf::Mapping<Unit>(BSML::units, &unit_)) ;
-  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(BSML::clock, clock->get_resource())) ;
+  rdfmap.append(BSML::units, &unit_) ;
+  rdfmap.append(BSML::clock, clock->get_resource()) ;
   }
 
 void Signal::set_recording(bsml::Recording *recording)
@@ -36,7 +36,7 @@ void Signal::set_recording(bsml::Recording *recording)
 {
   // Error if signal already attached to a recording 
   recording_ = recording ;
-  rdfmap.push_back(new rdf::Mapping<rdf::Resource>(BSML::recording, recording->get_resource())) ;
+  rdfmap.append(BSML::recording, recording->get_resource()) ;
   }
 
 
