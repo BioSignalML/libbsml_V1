@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(BioSignalML CXX)
 
+include_directories(/usr/local/include)
 include_directories(.)
+link_directories(/usr/local/lib)
 
 add_definitions(--std=c++11)
 
