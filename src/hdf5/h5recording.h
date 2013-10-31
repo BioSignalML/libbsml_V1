@@ -104,6 +104,36 @@ namespace bsml {
       T *dp = (T *)&data[0] ;
       return create_signal(uris, units, (void *)dp, data.size(), H5DataTypes(dp),
                           gain, offset, rate, period, timeunits, clock, compression) ;
+    SignalGroup *signalgroup(const std::vector<std::string> &uris,
+    /*----------------------------------------------------------*/
+                             const std::vector<Unit> &units, double rate)
+    {
+      double *dp = nullptr ;
+      std::vector<H5Signal *> sigs = create_signal(uris, units, nullptr, 0, H5DataTypes(dp),
+                                                   1.0, 0.0, rate, nullptr) ;
+      SignalGroup *signalgroup = new H5SignalGroup(uris.size()) ;
+      for (size_t i = 0 ;  i < uris.size() ;  ++i) {
+        this->add_signal(sigs[i]) ;
+        signalgroup->set_signal(i, sigs[i]) ;
+        }
+      return signalgroup ;
+      }
+
+    SignalGroup *signalgroup(const std::vector<std::string> &uris,
+    /*----------------------------------------------------------*/
+                             const std::vector<Unit> &units, Clock *clock)
+    {
+      double *dp = nullptr ;
+      std::vector<H5Signal *> sigs = create_signal(uris, units, nullptr, 0, H5DataTypes(dp),
+                                                   1.0, 0.0, 0.0, dynamic_cast<H5Clock *>(clock)) ;
+      SignalGroup *signalgroup = new H5SignalGroup(uris.size()) ;
+      for (size_t i = 0 ;  i < uris.size() ;  ++i) {
+        this->add_signal(sigs[i]) ;
+        signalgroup->set_signal(i, sigs[i]) ;
+        }
+      return signalgroup ;
+      }
+
       }
 
 

@@ -74,6 +74,32 @@ namespace bsml {
 
     } ;
 
+
+  class H5SignalGroup : public SignalGroup
+  /*====================================*/
+  {
+
+   public:
+
+    H5SignalGroup(size_t size)
+    /*----------------------*/
+    : SignalGroup(size)
+    {
+      }
+
+    void extend(double *data, size_t size)
+    /*----------------------------------*/
+    {
+      if (size > 0) {
+        H5Signal *s0 = dynamic_cast<H5Signal *>((*this)[0]) ;
+        dynamic_cast<H5Dataset *>(s0)->extend((void *)data, size, H5DataTypes(data).mtype,
+                                              this->size(), s0->clock_size()) ;
+        }
+      }
+
+    } ;
+
+
   } ;
 
 #endif
