@@ -11,21 +11,21 @@ using namespace bsml ;
 
 Clock::Clock(void)
 /*--------------*/
-: AbstractObject(), rate_(0.0), times_(std::vector<double>())
+: AbstractObject(), times_(std::vector<double>()), rate_(0.0)
 {
   }
 
 Clock::Clock(const std::string &uri, const Unit &unit, double rate)
 /*---------------------------------------------------------------*/
 : AbstractObject(BSML::SampleClock, uri), unit_(unit),
-  rate_(rate), times_(std::vector<double>())
+  times_(std::vector<double>()), rate_(rate)
 {
   }
 
 Clock::Clock(const std::string &uri, const Unit &unit, const std::vector<double> &times)
 /*------------------------------------------------------------------------------------*/
 : AbstractObject(BSML::SampleClock, uri), unit_(unit),
-  rate_(0.0), times_(times)
+  times_(times), rate_(0.0)
 {
   }
 
