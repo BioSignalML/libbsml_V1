@@ -50,20 +50,18 @@ namespace bsml {
     bool add_resource(AbstractObject *resource) ;
     void add_signal(Signal *signal) ;
 
-    template <class SIGNAL_T>
-    SIGNAL_T *new_signal(const std::string &uri, const Unit &unit, double rate)
+    virtual Signal *new_signal(const std::string &uri, const Unit &unit, double rate)
     /*---------------------------------------------------------------------*/
     {
-      SIGNAL_T *signal = new SIGNAL_T(uri, unit, rate) ;
+      Signal *signal = new Signal(uri, unit, rate) ;
       this->add_signal(signal) ;
       return signal ;
       }
 
-    template <class SIGNAL_T>
-    SIGNAL_T *new_signal(const std::string &uri, const Unit &unit, Clock *clock)
+    virtual Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock)
     /*---------------------------------------------------------------------*/
     {
-      SIGNAL_T *signal = new SIGNAL_T(uri, unit, clock) ;
+      Signal *signal = new Signal(uri, unit, clock) ;
       this->add_signal(signal) ;
       return signal ;
       }
