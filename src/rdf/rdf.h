@@ -10,13 +10,11 @@
 
 namespace rdf {
 
+
   typedef void *RDFObject ;
 
-  RDFObject get_world(void) ;
-  /*-----------------------*/
-
-  void end_world(void) ;
-  /*------------------*/
+  void finalise(void) ;
+  /*-----------------*/
 
   class Node ;             // Declare forward
   class Graph ;
@@ -32,9 +30,9 @@ namespace rdf {
    public:
     Uri(void) ;
     Uri(const std::string &uri) ;
-    Uri(const Uri &other) ;
     ~Uri(void) ;
     std::string as_string(void) const ;
+    Uri(const Uri &other) ;                      // Copy constructor
 
     friend class Node ;
     friend class Graph ;
@@ -54,10 +52,10 @@ namespace rdf {
     Node(const Uri &uri) ;
     Node(const std::string &value, const std::string &language) ;
     Node(const std::string &value, const Resource &datatype) ;
-    Node(const Node &other) ;
     ~Node(void) ;
     bool operator==(const Node& other) const ;
     bool operator!=(const Node& other) const ;
+    Node(const Node &other) ;                    // Copy constructor
 
     friend class Statement ;
     } ;
