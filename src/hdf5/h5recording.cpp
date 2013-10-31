@@ -358,7 +358,7 @@ std::vector<H5Signal *> H5Recording::create_signal(const std::vector<std::string
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
 #endif
-  if (uris.size() == units.size())
+  if (uris.size() != units.size())
     throw H5Exception("'uri' and 'units' have different sizes") ;
   int nsignals = uris.size() ;
   std::vector<H5Signal *> signals(nsignals) ;
