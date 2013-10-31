@@ -39,10 +39,10 @@ namespace bsml {
     hobj_ref_t reference ;
     int index_ ;
 
-    int rank ;
-    hsize_t *shape ;    // rowshape[rank]
-    int rowsize ;       // Product(shape[n] | n > 0)
-    hsize_t size ;      // shape[0]
+//    int rank ;
+//    hsize_t *shape ;    // rowshape[rank]
+//    int rowsize ;       // Product(shape[n] | n > 0)
+//    hsize_t size ;      // shape[0]
 
    protected:
     std::string uri ;         //!< The URI for the dataset.
