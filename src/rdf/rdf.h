@@ -41,6 +41,9 @@ namespace rdf {
     ~Uri(void) ;
     std::string as_string(void) const ;
     Uri(const Uri &other) ;                      // Copy constructor
+    Uri(Uri &&other) ;                           // Move constructor
+    virtual Uri &operator=(const Uri &other) ;   // Copy assignment
+    virtual Uri &operator=(Uri &&other) ;        // Move assignment
 
     friend class Node ;
     friend class Graph ;
@@ -64,6 +67,9 @@ namespace rdf {
     bool operator==(const Node& other) const ;
     bool operator!=(const Node& other) const ;
     Node(const Node &other) ;                    // Copy constructor
+    Node(Node &&other) ;                         // Move constructor
+    virtual Node &operator=(const Node &other);  // Copy assignment
+    virtual Node &operator=(Node &&other) ;      // Move assignment
 
     friend class Statement ;
     } ;

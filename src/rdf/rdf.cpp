@@ -58,6 +58,35 @@ Uri::Uri(const Uri &other)                     // Copy constructor
 : uri((RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)))
 {
   }
+
+Uri::Uri(Uri &&other)                          // Move constructor
+/*-----------------*/
+: uri(other.uri)
+{
+  other.uri = nullptr ;
+  }
+
+Uri &Uri::operator=(const Uri &other)          // Copy assignment
+/*---------------------------------*/
+{
+  if (this != &other) {
+    if (uri) librdf_free_uri((librdf_uri *)uri) ;
+    uri = (RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)) ;
+    }
+  return *this ;
+  }
+
+Uri &Uri::operator=(Uri &&other)               // Move assignment
+/*----------------------------*/
+{
+  if (this != &other) {
+    if (uri) librdf_free_uri((librdf_uri *)uri) ;
+    uri = (RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)) ;
+//    uri = other.uri ;
+    }
+  return *this ;
+  }
+
 std::string Uri::as_string(void) const
 /*----------------------------------*/
 {
@@ -116,6 +145,36 @@ Node::Node(const Node &other)                     // Copy constructor
 : node((RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)))
 {
   }
+
+Node::Node(Node &&other)                          // Move constructor
+/*--------------------*/
+: node(other.node)
+{
+  other.node = nullptr ;
+  }
+
+Node &Node::operator=(const Node &other)          // Copy assignment
+/*------------------------------------*/
+{
+  if (this != &other) {
+    if (node) librdf_free_node((librdf_node *)node) ;
+    node = (RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)) ;
+    }
+  return *this ;
+  }
+
+Node &Node::operator=(Node &&other)               // Move assignment
+/*-------------------------------*/
+{
+  if (this != &other) {
+    if (node) librdf_free_node((librdf_node *)node) ;
+    node = (RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)) ;
+//    node = other.node ;
+    }
+  return *this ;
+  }
+
+
 bool Node::operator==(const Node& other) const
 /*------------------------------------*/
 {
