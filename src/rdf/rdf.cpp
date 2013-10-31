@@ -210,6 +210,18 @@ RDFObject Node::get_rdf_uri(void) const
   return node ? (RDFObject)librdf_node_get_uri((librdf_node *)node) : nullptr ;
   }
 
+std::string Node::as_string(void) const
+/*-----------------------------------*/
+{
+  std::string result = "NULL" ;
+  if (node != nullptr) {
+    char *s = (char *)librdf_node_to_string((librdf_node *)node) ;
+    result = std::string(s) ;
+    free(s) ;
+    }
+  return result ;
+  }
+
 
 /*================================================================================*/
 

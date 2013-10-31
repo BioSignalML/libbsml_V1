@@ -72,6 +72,7 @@ namespace rdf {
     virtual Node &operator=(const Node &other);  // Copy assignment
     virtual Node &operator=(Node &&other) ;      // Move assignment
     virtual explicit operator bool() const ;
+    virtual std::string as_string(void) const ;
 
     friend class Statement ;
     } ;
