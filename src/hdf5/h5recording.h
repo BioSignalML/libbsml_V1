@@ -41,6 +41,7 @@ namespace bsml {
   {
    private:
     H5::H5File h5 ;
+    bool closed ;
 
 
     H5DataRef get_dataref(const std::string &, const std::string &) ;

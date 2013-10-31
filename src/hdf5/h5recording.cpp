@@ -161,19 +161,20 @@ H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
 
 H5Recording::H5Recording(const std::string &uri, H5::H5File h5)
 /*===========================================================*/
-: Recording(uri), h5(h5) { }
+: Recording(uri), h5(h5), closed(false) { }
 
 
 H5Recording::~H5Recording(void)
 /*===========================*/
 {
-  close() ;
+  if (!closed) close() ;
   }
 
 void H5Recording::close(void)
 /*=========================*/
 {
   h5.close() ;
+  closed = true ;
   }
 
 
