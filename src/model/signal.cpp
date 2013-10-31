@@ -15,7 +15,7 @@ Signal::Signal(void)
 
 Signal::Signal(const std::string &uri, const Unit &unit, double rate)
 /*-----------------------------------------------------------------*/
-: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit), rate_(rate), clock_(NULL)
+: AbstractObject(BSML::Signal, uri), recording_(NULL), clock_(NULL), unit_(unit), rate_(rate)
 {
   rdfmap.append(BSML::units, &unit_) ;
   literal_rate = rdf::Literal(rate_) ;
@@ -24,7 +24,7 @@ Signal::Signal(const std::string &uri, const Unit &unit, double rate)
 
 Signal::Signal(const std::string &uri, const Unit &unit, Clock *clock)
 /*------------------------------------------------------------------*/
-: AbstractObject(BSML::Signal, uri), recording_(NULL), unit_(unit), rate_(0.0), clock_(clock)
+: AbstractObject(BSML::Signal, uri), recording_(NULL), clock_(clock), unit_(unit), rate_(0.0)
 //: Signal(uri, Unit(unit))  // C++11
 {
   rdfmap.append(BSML::units, &unit_) ;
