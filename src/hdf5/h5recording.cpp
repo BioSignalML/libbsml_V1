@@ -588,8 +588,8 @@ H5Clock *H5Recording::get_clock(const std::string &uri)
 //:return: A :class:`H5Clock` or None if the URI is unknown or
 //         the dataset is not that for a clock.
   H5DataRef dataref = get_dataref(uri, "/recording/clock/") ;
-  if (dataref.first.getId() != 0) return H5Clock::get_clock(uri, dataref) ;
-  throw H5Exception("Cannot find clock:" + uri) ;
+  if (dataref.first.getId() == 0) throw H5Exception("Cannot find clock:" + uri) ;
+  return H5Clock::get_clock(uri, dataref) ;
   }
 
 
