@@ -24,8 +24,7 @@ Recording::Recording(const std::string &uri)
 Recording::~Recording(void)
 /*-----------------------*/
 {
-  typename std::map<std::string, AbstractObject *>::iterator rp ;
-  for (rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
+  for (auto rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
     delete (*rp).second ;
     }
   }
@@ -91,9 +90,8 @@ Clock *Recording::new_clock(const std::string &uri, const Unit &units, const std
 void Recording::to_rdf(const rdf::Graph &graph)
 /*-------------------------------------------*/
 {
-  std::map<std::string, AbstractObject *>::iterator rp ;
   AbstractObject::to_rdf(graph) ;
-  for (rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
+  for (auto rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {
     rp->second->to_rdf(graph) ;
     }
   }
