@@ -231,7 +231,9 @@ Resource::Resource(void)
 
 Resource::Resource(const std::string &uri)
 /*--------------------------------------*/
-: Node(Uri(uri)) { }
+{
+  node = (RDFObject)librdf_new_node_from_uri_string(world(), (const unsigned char *)uri.c_str()) ;
+  }
 
 Resource::Resource(const Uri &uri)
 /*------------------------------*/
