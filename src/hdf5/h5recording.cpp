@@ -133,7 +133,7 @@ H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
       throw H5Exception("File '" + fname + "' not compatible with version " + BSML_H5_VERSION) ;
 
     H5::Group rec, uris ;
-    char *uri = NULL ;
+    char *uri = nullptr ;
 
     uris = h5.openGroup("/uris") ;
     rec = h5.openGroup("/recording") ;
@@ -235,7 +235,7 @@ H5DataRef H5Recording::create_dataset(const std::string &group, int rank, hsize_
     if      (compression == BSML_H5_COMPRESS_GZIP) props.setDeflate(4) ;
     else if (compression == BSML_H5_COMPRESS_SZIP) props.setSzip(H5_SZIP_NN_OPTION_MASK, 8) ;
     H5::DataSet dset = h5.createDataSet(dsetname, dtype, dspace, props) ;
-    if (data != NULL) dset.write(data, datatypes.mtype) ;
+    if (data != nullptr) dset.write(data, datatypes.mtype) ;
     hobj_ref_t reference ;
     h5.reference(&reference, dsetname) ;
     return H5DataRef(dset, reference) ;
@@ -288,9 +288,9 @@ void H5Recording::set_signal_attributes(const H5::DataSet &dset, double gain, do
 
 H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
 /*--------------------------------------------------------------------------*/
- void *data=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
+ void *data=nullptr, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
  std::vector<hsize_t> datashape=std::vector<hsize_t>(),
- double gain=1.0, double offset=0.0, double rate=0.0, H5Clock *clock=NULL)
+ double gain=1.0, double offset=0.0, double rate=0.0, H5Clock *clock=nullptr)
 {
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
@@ -315,9 +315,9 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
       maxshape[n + 1] = shape[n + 1] = count ;
       elsize *= count ;
       }
-    npoints = (data != NULL) ? datasize/elsize : 0 ;
+    npoints = (data != nullptr) ? datasize/elsize : 0 ;
     }
-  else if (data != NULL) {  // simple dataset, data determines shape
+  else if (data != nullptr) {  // simple dataset, data determines shape
     npoints = datasize ;
     }
   shape[0] = npoints ;
@@ -350,8 +350,8 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
 std::vector<H5Signal *> H5Recording::create_signal(const std::vector<std::string> &uris,
 /*----------------------------------------------------------------------------------*/
  const std::vector<Unit> &units,
- void *data=NULL, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
- double gain=1.0, double offset=0.0, double rate=0.0, H5Clock *clock=NULL)
+ void *data=nullptr, size_t datasize=0, H5DataTypes datatypes=H5DataTypes(),
+ double gain=1.0, double offset=0.0, double rate=0.0, H5Clock *clock=nullptr)
 {
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
@@ -379,7 +379,7 @@ std::vector<H5Signal *> H5Recording::create_signal(const std::vector<std::string
       }
     catch (H5::AttributeIException e) { }
     }
-  size_t npoints = (data != NULL) ? datasize/nsignals : 0 ;
+  size_t npoints = (data != nullptr) ? datasize/nsignals : 0 ;
   hsize_t maxshape[2] = { H5S_UNLIMITED, (hsize_t)nsignals } ;
   hsize_t shape[2]    = { npoints,       (hsize_t)nsignals } ;
 
@@ -553,7 +553,7 @@ std::list<H5Signal> H5Recording::get_signals(void)
 #endif
   std::list<H5Signal> signals ;
   const std::string name = "/recording/signal" ;
-  h5.iterateElems(name, NULL, save_signal, (void *)&signals) ;
+  h5.iterateElems(name, nullptr, save_signal, (void *)&signals) ;
   return signals ;
   }
 
@@ -604,7 +604,7 @@ std::list<H5Clock *> H5Recording::get_clocks(void)
 #endif
   std::list<H5Clock *> clocks ;
   const std::string name = "/recording/clock" ;
-  h5.iterateElems(name, NULL, save_clock, (void *)&clocks) ;
+  h5.iterateElems(name, nullptr, save_clock, (void *)&clocks) ;
   return clocks ;
   }
 
