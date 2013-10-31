@@ -42,23 +42,22 @@ namespace bsml {
    private:
     H5::H5File h5 ;
 
-    H5Clock check_timing(double, const std::string &, size_t) ;
 
     H5DataRef get_dataref(const std::string &, const std::string &) ;
+    H5Clock *check_timing(double, const std::string &, size_t) ;
 
     H5DataRef create_dataset(const std::string &, int, hsize_t *, hsize_t *, void *, H5DataTypes) ;
 
-    void set_signal_attributes(H5::DataSet, double, double, double,
-      const std::string &, H5Clock) ;
+    void set_signal_attributes(const H5::DataSet &, double, double, double,
+      const std::string &, const H5Clock *) ;
 
-    H5Signal create_signal(const std::string &, const std::string &,
+    H5Signal *create_signal(const std::string &, const Unit &,
       void *, size_t, H5DataTypes, std::vector<hsize_t>,
-      double, double, double,
-      const std::string &, const std::string &) ;
+      double, double, double, H5Clock *) ;
 
-    std::list<H5Signal> create_signal(strlist, strlist,
-      void *, size_t, H5DataTypes, double, double, double,
-      const std::string &, const std::string &) ;
+    std::vector<H5Signal *> create_signal(const std::vector<std::string> &, const std::vector<Unit> &,
+      void *, size_t, H5DataTypes,
+      double, double, double, H5Clock *) ;
 
     H5Clock *create_clock(const std::string &, const Unit &, const std::vector<double> &, double) ;
 
@@ -73,37 +72,57 @@ namespace bsml {
     void close(void) ;
 
 
-    template <class T> H5Signal create_signal(const std::string &uri, const std::string &units,
+    template <class T> H5Signal *create_signal(const std::string &uri, const std::string &units,
     /*======================================================================================*/
      std::vector<T> data=std::vector<T>(),
      std::vector<hsize_t> shape=std::vector<hsize_t>(),
      double gain = 1.0,
      double offset = 0.0,
      double rate = 0.0,
-     double period = 0.0,
-     const std::string &clock = "",
-     const std::string &timeunits = "",
-     H5Compression compression = BSML_H5_DEFAULT_COMPRESSION)
+     H5Clock *clock = nullptr)
     {
       T *dp = (T *)&data[0] ;
       return create_signal(uri, units, (void *)dp, data.size(), H5DataTypes(dp), shape,
-                          gain, offset, rate, period, timeunits, clock, compression) ;
+                          gain, offset, rate, clock) ;
       }
 
-    template <class T> std::list<H5Signal> create_signal(strlist uris, strlist units,
+    template <class T> std::list<H5Signal *> create_signal(const std::vector<std::string> &uris,
     /*-----------------------------------------------------------------------------*/
+     const std::vector<Unit> &units,
      std::vector<T> data=std::vector<T>(),
      double gain = 1.0,
      double offset = 0.0,
      double rate = 0.0,
-     double period = 0.0,
-     const std::string &clock = "",
-     const std::string &timeunits = "",
-     H5Compression compression = BSML_H5_DEFAULT_COMPRESSION)
+     H5Clock *clock = nullptr)
     {
       T *dp = (T *)&data[0] ;
       return create_signal(uris, units, (void *)dp, data.size(), H5DataTypes(dp),
-                          gain, offset, rate, period, timeunits, clock, compression) ;
+                          gain, offset, rate, clock) ;
+      }
+
+
+
+    H5Signal *new_signal(const std::string &uri, const Unit &unit, double rate)
+    /*---------------------------------------------------------------------*/
+    {
+      double *dp = nullptr ;
+      H5Signal *signal = create_signal(uri, unit, nullptr, 0, H5DataTypes(dp),
+                                       std::vector<hsize_t>(), 1.0, 0.0, rate, nullptr) ;
+      this->add_signal(signal) ;
+      return signal ;
+      }
+
+    H5Signal *new_signal(const std::string &uri, const Unit &unit, Clock *clock)
+    /*------------------------------------------------------------------------*/
+    {
+      double *dp = nullptr ;
+      H5Signal *signal = create_signal(uri, unit, nullptr, 0, H5DataTypes(dp), std::vector<hsize_t>(),
+                                                           1.0, 0.0, 0.0, dynamic_cast<H5Clock *>(clock)) ;
+      this->add_signal(signal) ;
+      return signal ;
+      }
+
+
     SignalGroup *signalgroup(const std::vector<std::string> &uris,
     /*----------------------------------------------------------*/
                              const std::vector<Unit> &units, double rate)
@@ -134,14 +153,28 @@ namespace bsml {
       return signalgroup ;
       }
 
+
+    H5Clock *new_clock(const std::string &uri, const Unit &units, double rate)
+    /*-------------------------------------------------------------------------------*/
+    {
+      H5Clock *clock = this->create_clock(uri, units, std::vector<double>(), rate) ;
+      this->add_resource(clock) ;
+      return clock ;
       }
 
+    H5Clock *new_clock(const std::string &uri, const Unit &units, const std::vector<double> &times)
+    /*-------------------------------------------------------------------------------------------*/
+    {
+      H5Clock *clock = this->create_clock(uri, units, times, 0.0) ;
+      this->add_resource(clock) ;
+      return clock ;
+      }
 
     H5Signal get_signal(const std::string &) ;
     std::list<H5Signal> get_signals(void) ;
 
-    H5Clock get_clock(const std::string &) ;
-    std::list<H5Clock> get_clocks(void) ;
+    H5Clock *get_clock(const std::string &) ;
+    std::list<H5Clock *> get_clocks(void) ;
 
     void store_metadata(const std::string &, const std::string &) ;
     std::pair<std::string, std::string> get_metadata(void) ;

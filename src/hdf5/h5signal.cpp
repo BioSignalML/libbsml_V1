@@ -21,50 +21,29 @@
 #include <cstring>
 
 #include "hdf5/bsml_h5.h"
+#include "model/signal.h"
 
 using namespace bsml ;
 
 
 H5Signal::H5Signal()
 /*================*/
-: H5Dataset(), index(-1)
+: Signal(), H5Dataset()
 {
   }
 
 
-H5Signal::H5Signal(const std::string &uri, const H5DataRef &ds, int n)
-/*==================================================================*/
-: H5Dataset(ds), index(n)
+H5Signal::H5Signal(const std::string &uri, const Unit &units, double rate, const H5DataRef &ds, int n)
+/*--------------------------------------------------------------------------------------------------*/
+: Signal(uri, units, rate), H5Dataset(uri, ds, n)
 {
   }
 
 
-H5Signal::H5Signal(const std::string &uri, const H5DataRef &ds)
-/*===========================================================*/
-:H5Dataset(ds)
+H5Signal::H5Signal(const std::string &uri, const Unit &units, H5Clock *clock, const H5DataRef &ds, int n)
+/*-----------------------------------------------------------------------------------------------------*/
+: Signal(uri, units, clock), H5Dataset(uri, ds, n)
 {
-  H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  H5::Attribute attr = dataset.openAttribute("uri") ;
-  int nsignals = attr.getSpace().getSimpleExtentNpoints() ;
-  index = -1 ;
-  if (nsignals == 1) {
-    attr.read(varstr, this->uri) ;
-    if (uri != this->uri) throw H5Exception("Corrupt URI reference for: " + uri) ;
-    }
-  else {
-    char *uris[nsignals] ;
-    attr.read(varstr, uris) ;
-    int n = 0 ;
-    while (n < nsignals) {
-      if (index == -1 && strcmp(uri.c_str(), uris[n]) == 0) {
-        this->uri = uri ;
-        index = n ;
-        }
-      free(uris[n]) ;
-      ++n ;
-      }
-    if (index == -1) throw H5Exception("Corrupt URI reference for: " + uri) ;
-    }
   }
 
 

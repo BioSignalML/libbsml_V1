@@ -33,15 +33,8 @@ namespace bsml {
   {
 
    private:
-
-    int index ;
-
-    std::string units ;
-
     double gain ;
     double offset ;
-    H5Clock clock ;
-
     int signal_count(void) ;
     size_t clock_size(void) ;
 
@@ -50,8 +43,8 @@ namespace bsml {
 
    public:
     H5Signal() ;
-    H5Signal(const std::string &uri, const H5DataRef &ds, int n) ;
-    H5Signal(const std::string &uri, const H5DataRef &ds) ;
+    H5Signal(const std::string &uri, const Unit &units, double rate, const H5DataRef &ds, int n) ;
+    H5Signal(const std::string &uri, const Unit &units, H5Clock *clock, const H5DataRef &ds, int n) ;
 
 
     /*!

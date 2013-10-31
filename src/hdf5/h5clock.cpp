@@ -36,14 +36,14 @@ H5Clock::H5Clock()
 H5Clock::H5Clock(const std::string &uri, const Unit &units, double rate,
 /*--------------------------------------------------------------------*/
                                                             const H5DataRef &ds)
-: Clock(uri, units, rate), H5Dataset(ds)
+: Clock(uri, units, rate), H5Dataset(uri, ds, -1)
 {
   }
 
 H5Clock::H5Clock(const std::string &uri, const Unit &units, const std::vector<double> &times,
 /*-----------------------------------------------------------------------------------------*/
                                                             const H5DataRef &ds)
-: Clock(uri, units, times), H5Dataset(ds)
+: Clock(uri, units, times), H5Dataset(uri, ds, -1)
 {
   }
 
@@ -67,7 +67,7 @@ void H5Clock::extend(void *times, size_t size, H5::DataType dtype)
   }
 
 
-H5Clock H5Clock::get_clock(const std::string &uri, const H5DataRef &dataref)
+H5Clock *H5Clock::get_clock(const std::string &uri, const H5DataRef &dataref)
 /*------------------------------------------------------------------------*/
 {
   H5::DataSet dset = dataref.first ;
@@ -83,10 +83,10 @@ H5Clock H5Clock::get_clock(const std::string &uri, const H5DataRef &dataref)
     attr.close() ;
     }
   catch (H5::AttributeIException e) { }
-  if (rate != 0.0) return H5Clock(uri, Unit(units), rate, dataref) ;
+  if (rate != 0.0) return new H5Clock(uri, Unit(units), rate, dataref) ;
 
   size_t size = dset.getSpace().getSimpleExtentNpoints() ;
   std::vector<double> times(size) ;
   dset.read((void *)&times[0], H5DataTypes(&rate).mtype) ;
-  return H5Clock(uri, Unit(units), times, dataref) ;
+  return new H5Clock(uri, Unit(units), times, dataref) ;
   }

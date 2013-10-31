@@ -48,8 +48,6 @@ namespace bsml {
     std::string uri ;         //!< The URI for the dataset.
     H5::DataSet dataset ;     //!< The DataSet in the underlying HDF5 file.
 
-    void extend(void *, size_t, H5::DataType, int, int) ;
-
    public:
 
     /*!
@@ -58,24 +56,17 @@ namespace bsml {
     H5Dataset() ;
 
     /*!
-     * Create a H5Dataset object from an existing dataset in a HDF5 file.
-     *
-     * \param ds a bsml::DataRef to the dataset.
-     */
-    H5Dataset(const H5DataRef &ds) ;
-
-    /*!
      * Create a H5Dataset object and initialise an existing dataset in a HDF5 file.
      *
      * \param uri the URI for the dataset.
      * \param ds a bsml::DataRef to the dataset.
      */
-    H5Dataset(const std::string &uri, const H5DataRef &ds) ;
+    H5Dataset(const std::string &uri, const H5DataRef &ds, int index) ;
 
     /*!
      * Ensure the underlying dataset is closed.
      */
-    ~H5Dataset() ;
+    virtual ~H5Dataset() ;
 
     /*!
      * Close the underlying dataset.
@@ -101,6 +92,9 @@ namespace bsml {
      * Get the name of the DataSet object in the underlying HDF5 file.
      */
     std::string name(void) ;
+
+
+    void extend(void *, size_t, H5::DataType, int, int) ;
 
     } ;
 

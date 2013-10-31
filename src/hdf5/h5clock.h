@@ -40,7 +40,7 @@ namespace bsml {
     H5Clock(const std::string &uri, const Unit &units, const std::vector<double> &times, const H5DataRef &ds) ;
     H5Clock &operator=(const H5Clock &other) ;
 
-    static H5Clock get_clock(const std::string &uri, const H5DataRef &ds) ;
+    static H5Clock *get_clock(const std::string &uri, const H5DataRef &ds) ;
 
     /*!
      * Extend a clock in its first dimension.

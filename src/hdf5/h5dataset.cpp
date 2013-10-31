@@ -34,34 +34,50 @@ H5Dataset::H5Dataset()
   }
 
 /*!
- * Create a H5Dataset object from an existing dataset in a HDF5 file.
- *
- * \param ds a bsml::DataRef to the dataset.
- */
-H5Dataset::H5Dataset(const H5DataRef &ds)
-/*=====================================*/
-: dataset(ds.first), reference(ds.second)
-{
-  H5::Attribute attr = dataset.openAttribute("uri") ;
-  if (attr.getSpace().getSimpleExtentNpoints() == 1) {
-    H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-    attr.read(varstr, uri) ;
-    }
-  }
-
-/*!
  * Create a H5Dataset object and initialise an existing dataset in a HDF5 file.
  *
  * \param uri the URI for the dataset.
  * \param ds a bsml::DataRef to the dataset.
  */
-H5Dataset::H5Dataset(const std::string &uri, const H5DataRef &ds)
-/*=============================================================*/
-: uri(uri), dataset(ds.first), reference(ds.second)
+H5Dataset::H5Dataset(const std::string &uri, const H5DataRef &ds, int index)
+/*========================================================================*/
+: reference(ds.second), uri(uri), dataset(ds.first)
 {
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
-  H5::Attribute attr = dataset.createAttribute("uri", varstr, H5::DataSpace(H5S_SCALAR)) ;
-  attr.write(varstr, uri) ;
+  try {
+    H5::Attribute attr = dataset.openAttribute("uri") ;
+    int nsignals = attr.getSpace().getSimpleExtentNpoints() ;
+    if (nsignals == 1) {
+      std::string ds_uri = "" ;
+      attr.read(varstr, ds_uri) ;
+      if (uri != ds_uri) throw H5Exception("Dataset URI '" + ds_uri + "' should be '" + uri + "'") ;
+      }
+    else {
+      char *uris[nsignals] ;
+      attr.read(varstr, uris) ;
+      int ds_index = -1 ;
+      int n = 0 ;
+      while (n < nsignals) {
+        if (ds_index == -1 && strcmp(uri.c_str(), uris[n]) == 0) {
+          this->uri = uri ;
+          ds_index = n ;
+          }
+        free(uris[n]) ;
+        ++n ;
+        }
+
+      if (ds_index == -1) throw H5Exception("Cannot find dataset for '" + uri + "'") ;
+      else if (index < 0) index = ds_index ;
+      else if (index != ds_index) throw H5Exception("Corrupt dataset reference for '" + uri + "'") ;
+      }
+    }
+  catch (H5::AttributeIException e) {
+    if (index < 0) {
+      H5::Attribute attr = dataset.createAttribute("uri", varstr, H5::DataSpace(H5S_SCALAR)) ;
+      attr.write(varstr, uri) ;
+      }
+    }
+  index_ = index ;
   }
 
 /*!
