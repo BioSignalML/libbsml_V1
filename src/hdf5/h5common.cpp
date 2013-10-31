@@ -3,12 +3,6 @@
 using namespace bsml ;
 
 
-H5Exception::H5Exception(const std::string &msg)
-/*--------------------------------------------*/
-: std::runtime_error(msg)
-{
-  }
-
 
 H5DataTypes::H5DataTypes(short *data)
 /*---------------------------------*/

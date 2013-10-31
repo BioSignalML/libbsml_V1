@@ -2,9 +2,10 @@
 #define _BSML_H5_COMMON
 
 #include <sstream>
-#include <stdexcept>
 
 #include <H5Cpp.h>
+
+#include "model/bsml.h"
 
 
 namespace bsml {
@@ -17,11 +18,12 @@ namespace bsml {
   typedef std::pair<H5::DataSet, hobj_ref_t> H5DataRef ;
 
 
-  class H5Exception : public std::runtime_error
-  /*=========================================*/
+  class H5Exception : public Exception
+  /*================================*/
   {
    public:
-    H5Exception(const std::string &msg) ;
+    H5Exception(const std::string &msg)
+    : Exception(msg) { }
     } ;
 
 
