@@ -338,7 +338,7 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
   attr.close() ;
 
   attr = dset.createAttribute("units", varstr, scalar) ;
-  attr.write(varstr, units) ;
+  attr.write(varstr, units.as_string()) ;
   attr.close() ;
 
   set_signal_attributes(dset, gain, offset, rate, "", clock) ;
