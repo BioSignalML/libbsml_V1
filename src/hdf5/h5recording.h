@@ -62,6 +62,7 @@ namespace bsml {
 
     H5Clock *create_clock(const std::string &, const Unit &, const std::vector<double> &, double) ;
 
+    void store_metadata(const std::string &, const std::string &) ;
 
    public:
     H5Recording(const std::string &, H5::H5File) ;
@@ -179,7 +180,6 @@ namespace bsml {
     H5Clock *get_clock(const std::string &) ;
     std::list<H5Clock *> get_clocks(void) ;
 
-    void store_metadata(const std::string &, const std::string &) ;
     std::pair<std::string, std::string> get_metadata(void) ;
 
     void save_metadata(void) ;
