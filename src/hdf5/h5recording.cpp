@@ -343,7 +343,9 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
 
   set_signal_attributes(dset, gain, offset, rate, "", clock) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
-  return H5Signal(uri, sigdata, -1) ;
+  H5Signal *signal = (rate != 0.0) ? new H5Signal(uri, units, rate, sigdata, -1)
+                                   : new H5Signal(uri, units, clock, sigdata, -1) ;
+  return signal ;
   }
 
 
