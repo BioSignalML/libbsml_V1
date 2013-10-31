@@ -180,6 +180,7 @@ namespace bsml {
     void store_metadata(const std::string &, const std::string &) ;
     std::pair<std::string, std::string> get_metadata(void) ;
 
+    void save_metadata(void) ;
     } ;
 
   } ;

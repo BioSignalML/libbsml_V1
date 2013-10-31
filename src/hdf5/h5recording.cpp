@@ -29,6 +29,7 @@
 #include <H5Cpp.h>
 
 #include "hdf5/bsml_h5.h"
+#include "rdf/rdf.h"
 
 
 using namespace bsml ;
@@ -658,4 +659,10 @@ std::pair<std::string, std::string> H5Recording::get_metadata(void)
     }
   catch (H5::FileIException e) { }
   return std::make_pair("", "") ;
+  }
+
+void H5Recording::save_metadata(void)
+/*---------------------------------*/
+{
+  this->store_metadata(this->serialise(rdf::Format::TURTLE).c_str(), rdf::Format::TURTLE) ;
   }
