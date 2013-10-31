@@ -44,6 +44,7 @@ namespace rdf {
     Uri(Uri &&other) ;                           // Move constructor
     virtual Uri &operator=(const Uri &other) ;   // Copy assignment
     virtual Uri &operator=(Uri &&other) ;        // Move assignment
+    virtual explicit operator bool() const ;
 
     friend class Node ;
     friend class Graph ;
@@ -70,6 +71,7 @@ namespace rdf {
     Node(Node &&other) ;                         // Move constructor
     virtual Node &operator=(const Node &other);  // Copy assignment
     virtual Node &operator=(Node &&other) ;      // Move assignment
+    virtual explicit operator bool() const ;
 
     friend class Statement ;
     } ;

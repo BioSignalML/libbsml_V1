@@ -87,6 +87,12 @@ Uri &Uri::operator=(Uri &&other)               // Move assignment
   return *this ;
   }
 
+Uri::operator bool() const
+/*----------------------*/
+{
+  return (uri != NULL) ;
+  }
+
 std::string Uri::as_string(void) const
 /*----------------------------------*/
 {
@@ -186,6 +192,16 @@ bool Node::operator!=(const Node& other) const
 /*------------------------------------------*/
 {
   return !operator==(other) ;
+  }
+
+Node::operator bool() const
+/*-----------------------*/
+{
+  if (node) {
+    unsigned char *s = librdf_node_get_literal_value((librdf_node *)node) ;
+    return (s == NULL || *s) ;
+    }
+  return false ;
   }
 
 RDFObject Node::get_rdf_uri(void) const
