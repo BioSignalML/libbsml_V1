@@ -5,6 +5,7 @@
 
 #include "utility/utility.h"
 #include "model/units.h"
+#include "model/bsml.h"
 
 
 using namespace bsml ;
@@ -21,6 +22,21 @@ Unit::Unit(const std::string &unit)
 : rdf::Resource(unit)
 {
   }
+
+
+std::string Unit::NS("http://www.sbpax.org/uome/list.owl#") ;
+rdf::Uri Unit::uri(Unit::NS) ;
+
+Unit Unit::Second(Unit::NS + "Second") ;
+Unit Unit::Minute(Unit::NS + "Minute") ;
+Unit Unit::Millivolt(Unit::NS + "Millivolt") ;
+
+strlist Unit::list {
+  "Second",
+  "Minute",
+  "Millivolt"
+  } ;
+
 
 
 static dict direct_ = {
@@ -120,7 +136,7 @@ static std::string mult(const std::string &u)
   }
 
 
-Unit bsml::get_unit(const std::string &u)
+Unit Unit::get_unit(const std::string &u)
 /*=====================================*/
 {
   /**
@@ -143,10 +159,9 @@ Unit bsml::get_unit(const std::string &u)
           unit = titlecase(u) ;
         }
       }
-    if (bsml::unit::list.contains(unit)) return Unit(bsml::unit::NS + unit) ;
+    if (Unit::list.contains(unit)) return Unit(Unit::NS + unit) ;
     }
-//   raise ValueError("Unknown units abbreviation, %s" % s)
-  return Unit() ;
+  throw Exception("Unknown units abbreviation '" + u + "'") ;
   }
 
 
