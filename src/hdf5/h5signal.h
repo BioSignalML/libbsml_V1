@@ -36,7 +36,6 @@ namespace bsml {
     double gain ;
     double offset ;
     int signal_count(void) ;
-    size_t clock_size(void) ;
 
     void extend(void *, size_t, H5::DataType) ;
 
@@ -47,6 +46,7 @@ namespace bsml {
     H5Signal(const std::string &uri, const Unit &units, H5Clock *clock, const H5DataRef &ds, int n) ;
     H5Signal &operator=(const H5Signal &other) ;
 
+    size_t clock_size(void) ;
 
     /*!
      * Extend a signal in its first dimension.
