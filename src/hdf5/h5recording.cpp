@@ -329,6 +329,8 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
   hobj_ref_t reference = sigdata.second ;
+
+try {
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
@@ -342,6 +344,11 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
   attr.close() ;
 
   set_signal_attributes(dset, gain, offset, rate, "", clock) ;
+  }
+catch (H5::AttributeIException e) {
+  throw H5Exception("Cannot set signal's attributes") ;
+  }
+
   h5.flush(H5F_SCOPE_GLOBAL) ;
   H5Signal *signal = (rate != 0.0) ? new H5Signal(uri, units, rate, sigdata, -1)
                                    : new H5Signal(uri, units, clock, sigdata, -1) ;
@@ -415,8 +422,12 @@ try {
   attr.close() ;
 
   set_signal_attributes(dset, gain, offset, rate, "", clock) ;
-  h5.flush(H5F_SCOPE_GLOBAL) ;
+  }
+catch (H5::AttributeIException e) {
+  throw H5Exception("Cannot set signal's attributes") ;
+  }
 
+  h5.flush(H5F_SCOPE_GLOBAL) ;
   return signals ;
   }
 
@@ -447,6 +458,8 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
 
   H5::DataSpace scalar(H5S_SCALAR) ;
   hobj_ref_t reference = clkdata.second ;
+
+try {
   attr = urigroup.createAttribute(uri, H5::PredType::STD_REF_OBJ, scalar) ;
   attr.write(H5::PredType::STD_REF_OBJ, &reference) ;
   attr.close() ;
@@ -462,6 +475,10 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
     attr.write(H5::PredType::NATIVE_DOUBLE, &rate) ;
     attr.close() ;
     }
+  }
+catch (H5::AttributeIException e) {
+  throw H5Exception("Cannot set clocks's attributes") ;
+  }
 
   h5.flush(H5F_SCOPE_GLOBAL) ;
   return (rate != 0.0) ? new H5Clock(uri, units, rate, clkdata)
