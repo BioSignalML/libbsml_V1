@@ -38,13 +38,13 @@ namespace rdf {
    public:
     Uri(void) ;
     Uri(const std::string &uri) ;
-    ~Uri(void) ;
-    std::string as_string(void) const ;
+    virtual ~Uri(void) ;
     Uri(const Uri &other) ;                      // Copy constructor
     Uri(Uri &&other) ;                           // Move constructor
     virtual Uri &operator=(const Uri &other) ;   // Copy assignment
     virtual Uri &operator=(Uri &&other) ;        // Move assignment
     virtual explicit operator bool() const ;
+    virtual std::string as_string(void) const ;
 
     friend class Node ;
     friend class Graph ;
@@ -64,13 +64,13 @@ namespace rdf {
     Node(const Uri &uri) ;
     Node(const std::string &value, const std::string &language) ;
     Node(const std::string &value, const Resource &datatype) ;
-    ~Node(void) ;
-    bool operator==(const Node& other) const ;
-    bool operator!=(const Node& other) const ;
+    virtual ~Node(void) ;
     Node(const Node &other) ;                    // Copy constructor
     Node(Node &&other) ;                         // Move constructor
     virtual Node &operator=(const Node &other);  // Copy assignment
     virtual Node &operator=(Node &&other) ;      // Move assignment
+    virtual bool operator==(const Node& other) const ;
+    virtual bool operator!=(const Node& other) const ;
     virtual explicit operator bool() const ;
     virtual std::string as_string(void) const ;
 
@@ -141,7 +141,7 @@ namespace rdf {
 
    public:
     Graph(const std::string &uri) ;
-    ~Graph(void) ;
+    virtual ~Graph(void) ;
     void append(const Statement &statement) const ;
     std::string serialise(const std::string &format, const std::string &base, std::list<Prefix> prefixes) ;
     std::string serialise(const std::string &format) ;
