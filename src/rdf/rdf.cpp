@@ -233,7 +233,7 @@ BlankNode::BlankNode(const std::string &identifier)
 
 Literal::Literal()
 /*--------------*/
-: Node(NULL) { }
+: Node("") { }
 
 Literal::Literal(int i)
 /*-------------------*/
