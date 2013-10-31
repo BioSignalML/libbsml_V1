@@ -47,6 +47,15 @@ H5Signal::H5Signal(const std::string &uri, const Unit &units, H5Clock *clock, co
   }
 
 
+H5Signal &H5Signal::operator=(const H5Signal &other)
+/*------------------------------------------------*/
+{
+  Signal::operator=(other) ;
+  H5Dataset::operator=(other) ;
+  return *this ;
+  }
+
+
 int H5Signal::signal_count(void)
 /*============================*/
 {

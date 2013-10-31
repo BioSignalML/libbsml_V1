@@ -45,6 +45,7 @@ namespace bsml {
     H5Signal() ;
     H5Signal(const std::string &uri, const Unit &units, double rate, const H5DataRef &ds, int n) ;
     H5Signal(const std::string &uri, const Unit &units, H5Clock *clock, const H5DataRef &ds, int n) ;
+    H5Signal &operator=(const H5Signal &other) ;
 
 
     /*!
