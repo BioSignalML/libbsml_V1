@@ -272,7 +272,7 @@ void H5Recording::set_signal_attributes(const H5::DataSet &dset, double gain, do
     }
   else {
     attr = dset.createAttribute("clock", H5::PredType::STD_REF_OBJ, scalar) ;
-    hobj_ref_t ref = clock->getRef() ;
+    hobj_ref_t ref = clock->get_ref() ;
     attr.write(H5::PredType::STD_REF_OBJ, &ref) ;
     attr.close() ;
     }

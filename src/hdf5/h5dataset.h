@@ -76,17 +76,17 @@ namespace bsml {
     /*!
      * Get the DataSet object in the underlying HDF5 file.
      */
-    H5::DataSet getDataset(void) ;
+    H5::DataSet get_dataset(void) const ;
 
     /*!
      * Get a HDF5 reference to the DataSet object in the underlying HDF5 file.
      */
-    hobj_ref_t getRef(void) ;
+    hobj_ref_t get_ref(void) const ;
 
     /*!
      * Get the number of elements in the first dimension of the dataset.
      */
-    size_t length(void) ;
+    size_t length(void) const ;
 
     /*!
      * Get the name of the DataSet object in the underlying HDF5 file.

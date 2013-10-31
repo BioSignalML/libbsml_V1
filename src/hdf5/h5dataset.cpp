@@ -101,8 +101,8 @@ void H5Dataset::close(void)
 /*!
  * Get the DataSet object in the underlying HDF5 file.
  */
-H5::DataSet H5Dataset::getDataset(void)
-/*===================================*/
+H5::DataSet H5Dataset::get_dataset(void) const
+/*------------------------------------------*/
 {
   return dataset ;
   }
@@ -110,8 +110,8 @@ H5::DataSet H5Dataset::getDataset(void)
 /*!
  * Get a HDF5 reference to the DataSet object in the underlying HDF5 file.
  */
-hobj_ref_t H5Dataset::getRef(void)
-/*==============================*/
+hobj_ref_t H5Dataset::get_ref(void) const
+/*-------------------------------------*/
 {
   return reference ;
   }
@@ -119,8 +119,8 @@ hobj_ref_t H5Dataset::getRef(void)
 /*!
  * Get the number of elements in the first dimension of the dataset.
  */
-size_t H5Dataset::length(void)
-/*==========================*/
+size_t H5Dataset::length(void) const
+/*--------------------------------*/
 {
   if (dataset.getId() == 0) return 0 ;
   else {
@@ -173,11 +173,6 @@ void H5Dataset::extend(void *data, size_t size, H5::DataType dtype, int nsignals
 
     if (clock_size >= 0 && clock_size < newshape[0])
       throw H5Exception("Clock for '" + uri + "' doesn't have sufficient times") ;
-
-
-
-
-
 
     dataset.extend(newshape) ;
     dspace = dataset.getSpace() ;
