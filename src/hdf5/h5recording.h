@@ -171,8 +171,10 @@ namespace bsml {
       return clock ;
       }
 
+#ifdef TODO_READ_HDF5
     H5Signal get_signal(const std::string &) ;
     std::list<H5Signal> get_signals(void) ;
+#endif
 
     H5Clock *get_clock(const std::string &) ;
     std::list<H5Clock *> get_clocks(void) ;

@@ -512,6 +512,7 @@ H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &pr
   }
 
 
+#ifdef TODO_READ_HDF5
 H5Signal H5Recording::get_signal(const std::string &uri)
 /*--------------------------------------------------=*/
 {
@@ -575,6 +576,7 @@ std::list<H5Signal> H5Recording::get_signals(void)
   h5.iterateElems(name, nullptr, save_signal, (void *)&signals) ;
   return signals ;
   }
+#endif  // TODO
 
 
 H5Clock *H5Recording::get_clock(const std::string &uri)
