@@ -2,6 +2,7 @@
 #define _BSML_BSML_H
 
 #include <string>
+#include <stdexcept>
 
 #include "rdf/rdf.h"
 
@@ -9,44 +10,55 @@
 
 namespace bsml {
 
-  namespace Format
-  /*============*/
+  class Exception : public std::runtime_error
+  /*=======================================*/
   {
-    static rdf::Literal HDF5("application/x-bsml+hdf5") ;
+   public:
+    Exception(const std::string &msg)
+    : std::runtime_error(msg) { }
     } ;
 
 
-  namespace BSML
-  /*==========*/
+  class Format
+  /*=========*/
   {
-    static std::string NS("http://www.biosignalml.org/ontologies/2011/04/biosignalml#") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource Recording(NS + "Recording") ;
-    static rdf::Resource Signal(NS + "Signal") ;
-    static rdf::Resource SampleClock(NS + "SampleClock") ;
-    static rdf::Resource Segment(NS + "Segment") ;
-    static rdf::Resource Annotation(NS + "Annotation") ;
-    static rdf::Resource Event(NS + "Event") ;
+   public:
+    static rdf::Literal HDF5 ;
+    } ;
 
-    static rdf::Resource clock(NS + "clock") ;
-    static rdf::Resource dataBits(NS + "dataBits") ;
-    static rdf::Resource dataset(NS + "dataset") ;
-    static rdf::Resource digest(NS + "digest") ;
-    static rdf::Resource eventType(NS + "eventType") ;
-    static rdf::Resource maxFrequency(NS + "maxFrequency") ;
-    static rdf::Resource maxValue(NS + "maxValue") ;
-    static rdf::Resource minFrequency(NS + "minFrequency") ;
-    static rdf::Resource minValue(NS + "minValue") ;
-    static rdf::Resource offset(NS + "offset") ;
-    static rdf::Resource period(NS + "period") ;
-    static rdf::Resource preFilter(NS + "preFilter") ;
-    static rdf::Resource rate(NS + "rate") ;
-    static rdf::Resource recording(NS + "recording") ;
-    static rdf::Resource sensor(NS + "sensor") ;
-    static rdf::Resource signalType(NS + "signalType") ;
-    static rdf::Resource tag(NS + "tag") ;
-    static rdf::Resource time(NS + "time") ;
-    static rdf::Resource units(NS + "units") ;
+
+  class BSML
+  /*=======*/
+  {
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource Recording ;
+    static rdf::Resource Signal ;
+    static rdf::Resource SampleClock ;
+    static rdf::Resource Segment ;
+    static rdf::Resource Annotation ;
+    static rdf::Resource Event ;
+
+    static rdf::Resource clock ;
+    static rdf::Resource dataBits ;
+    static rdf::Resource dataset ;
+    static rdf::Resource digest ;
+    static rdf::Resource eventType ;
+    static rdf::Resource maxFrequency ;
+    static rdf::Resource maxValue ;
+    static rdf::Resource minFrequency ;
+    static rdf::Resource minValue ;
+    static rdf::Resource offset ;
+    static rdf::Resource period ;
+    static rdf::Resource preFilter ;
+    static rdf::Resource rate ;
+    static rdf::Resource recording ;
+    static rdf::Resource sensor ;
+    static rdf::Resource signalType ;
+    static rdf::Resource tag ;
+    static rdf::Resource time ;
+    static rdf::Resource units ;
     } ;
 
   } ;

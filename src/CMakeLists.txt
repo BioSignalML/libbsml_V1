@@ -24,6 +24,7 @@ endif()
 
 
 set (SOURCES
+  model/bsml.cpp
   model/object.cpp
   model/recording.cpp
   model/signal.cpp
