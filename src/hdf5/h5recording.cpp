@@ -46,7 +46,7 @@ typedef struct {
 
 
 H5Recording *H5Recording::H5create(const std::string &uri, const std::string &fname, bool replace)
-/*==============================================================================================*/
+/*----------------------------------------------------------------------------------------------*/
 {
 //Create a new HDF5 Recording file.
 //
@@ -95,7 +95,7 @@ H5Recording *H5Recording::H5create(const std::string &uri, const std::string &fn
 
 
 H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
-/*=====================================================================*/
+/*---------------------------------------------------------------------*/
 {
 //Open an existing HDF5 Recording file.
 //
@@ -161,18 +161,18 @@ H5Recording *H5Recording::H5open(const std::string &fname, bool readonly)
 
 
 H5Recording::H5Recording(const std::string &uri, H5::H5File h5)
-/*===========================================================*/
+/*----------------------------------------------------------=*/
 : Recording(uri), h5(h5), closed(false) { }
 
 
 H5Recording::~H5Recording(void)
-/*===========================*/
+/*---------------------------*/
 {
   if (!closed) close() ;
   }
 
 void H5Recording::close(void)
-/*=========================*/
+/*-------------------------*/
 {
   h5.close() ;
   closed = true ;
@@ -202,7 +202,7 @@ H5Clock *H5Recording::check_timing(double rate, const std::string &clock, size_t
 
 
 H5DataRef H5Recording::create_dataset(const std::string &group, int rank, hsize_t *shape,
-/*======================================================================================*/
+/*-------------------------------------------------------------------------------------=*/
  hsize_t *maxshape, void *data, H5DataTypes datatypes)
 {
   H5Compression compression = BSML_H5_DEFAULT_COMPRESSION ;
@@ -514,7 +514,7 @@ H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &pr
 
 #ifdef TODO_READ_HDF5
 H5Signal H5Recording::get_signal(const std::string &uri)
-/*--------------------------------------------------=*/
+/*---------------------------------------------------*/
 {
 //Find a signal from its URI.
 //
@@ -528,7 +528,7 @@ H5Signal H5Recording::get_signal(const std::string &uri)
 
 
 static herr_t save_signal(hid_t id, const char *name, void *op_data)
-/*--------------------------------------------------------------=*/
+/*---------------------------------------------------------------*/
 {
   SaveInfo *info = (SaveInfo *)op_data ;
   std::list<H5Signal> &sig = reinterpret_cast<std::list<H5Signal> &>(info->listp) ;
@@ -631,7 +631,7 @@ std::list<H5Clock *> H5Recording::get_clocks(void)
 
 
 void H5Recording::store_metadata(const std::string &metadata, const std::string &mimetype)
-/*------------------------------------------------------------------------------------=*/
+/*-------------------------------------------------------------------------------------*/
 {
 //Store metadata in the HDF5 recording.
 //

@@ -36,9 +36,7 @@ namespace bsml {
 //    double gain ;
 //    double offset ;
     int signal_count(void) ;
-
     void extend(void *, size_t, H5::DataType) ;
-
 
    public:
     H5Signal() ;

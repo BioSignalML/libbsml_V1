@@ -57,7 +57,7 @@ H5Signal &H5Signal::operator=(const H5Signal &other)
 
 
 int H5Signal::signal_count(void)
-/*============================*/
+/*----------------------------*/
 {
   H5::DataSpace uspace = dataset.openAttribute("uri").getSpace() ;
   int udims = uspace.getSimpleExtentNdims() ;
@@ -70,7 +70,7 @@ int H5Signal::signal_count(void)
 
 
 size_t H5Signal::clock_size(void)
-/*=============================*/
+/*-----------------------------*/
 {
   try {
     H5::Attribute attr = dataset.openAttribute("clock") ;
@@ -90,11 +90,10 @@ size_t H5Signal::clock_size(void)
 
 
 void H5Signal::extend(void *data, size_t size, H5::DataType dtype)
-/*==============================================================*/
+/*--------------------------------------------------------------*/
 {
 #if !H5_DEBUG
   H5::Exception::dontPrint() ;
 #endif
-
   H5Dataset::extend(data, size, dtype, signal_count(), clock_size()) ;
   }
