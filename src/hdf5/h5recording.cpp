@@ -576,7 +576,7 @@ static herr_t save_clock(hid_t id, const char *name, void *op_data)
 /*--------------------------------------------------------------*/
 {
   SaveInfo *info = (SaveInfo *)op_data ;
-  std::list<H5Clock> clk = reinterpret_cast<std::list<H5Clock> &>(info->listp) ;
+  std::list<H5Clock *> clk = reinterpret_cast<std::list<H5Clock *> &>(info->listp) ;
   try {
     H5::DataSet dset = H5::DataSet(info->h5.openDataSet(name)) ;
 
