@@ -498,12 +498,13 @@ H5DataRef H5Recording::get_dataref(const std::string &uri, const std::string &pr
 
     H5::DataSet dset = H5::DataSet(h5, &ref) ;
     hid_t id = dset.getId() ;
-    int len = H5Rget_name(id, H5R_OBJECT, &ref, NULL, 0) ;
-    char *buf = (char *)malloc(len + 1) ;
-    H5Rget_name(id, H5R_OBJECT, &ref, buf, len + 1) ;
+    char buf[8] ;                                         // HDF5 bug, must be at least 2 long
+    int len = H5Rget_name(id, H5R_OBJECT, &ref, buf, 8) ; // HDF5 bug, cannot have NULL name
+    char *name = (char *)malloc(len + 1) ;
+    H5Rget_name(id, H5R_OBJECT, &ref, name, len + 1) ;
 
-    bool matched = (prefix.compare(0, std::string::npos, buf, prefix.size()) == 0) ;
-    free(buf) ;
+    bool matched = (prefix.compare(0, std::string::npos, name, prefix.size()) == 0) ;
+    free(name) ;
     if (matched) return H5DataRef(dset, ref) ;
     }
   catch (H5::AttributeIException e) { }
