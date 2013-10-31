@@ -94,21 +94,8 @@ namespace bsml {
       return signalgroup ;
       }
 
-    Clock *new_clock(const std::string &uri, const Unit &units, double rate)
-    /*--------------------------------------------------------------------*/
-    {
-      Clock *clock = new Clock(uri, units, rate) ;
-      this->add_resource(clock) ;
-      return clock ;
-      }
-
-    Clock *new_clock(const std::string &uri, const Unit &units, const std::vector<double> &times)
-    /*----------------------------------------------------------------------------------*/
-    {
-      Clock *clock = new Clock(uri, units, times) ;
-      this->add_resource(clock) ;
-      return clock ;
-      }
+    virtual Clock *new_clock(const std::string &uri, const Unit &units, double rate) ;
+    virtual Clock *new_clock(const std::string &uri, const Unit &units, const std::vector<double> &times) ;
 
     void set_format(const rdf::Literal &format) ;
     void set_starttime(const Datetime &starttime) ;

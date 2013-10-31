@@ -70,6 +70,24 @@ void Recording::add_signal(Signal *signal)
   // Error if signal already attached to a recording
   }
 
+
+Clock *Recording::new_clock(const std::string &uri, const Unit &units, double rate)
+/*-------------------------------------------------------------------------------*/
+{
+  Clock *clock = new Clock(uri, units, rate) ;
+  this->add_resource(clock) ;
+  return clock ;
+  }
+
+Clock *Recording::new_clock(const std::string &uri, const Unit &units, const std::vector<double> &times)
+/*----------------------------------------------------------------------------------------------------*/
+{
+  Clock *clock = new Clock(uri, units, times) ;
+  this->add_resource(clock) ;
+  return clock ;
+  }
+
+
 void Recording::to_rdf(const rdf::Graph &graph)
 /*-------------------------------------------*/
 {
