@@ -36,40 +36,51 @@ namespace bsml {
     } ;
 
 
-  template <class SIGNAL>
-  class SignalGroup : public std::vector<SIGNAL *>
+  class SignalGroup : public std::vector<Signal *>
   /*============================================*/
   {
    private:
-    std::map<std::string, SIGNAL *> urimap ;
+    std::map<std::string, Signal *> urimap ;
 
    public:
     SignalGroup(size_t size)
     /*--------------------*/
-    : std::vector<SIGNAL *>(size) { }
+    : std::vector<Signal *>(size) { }
 
-    void add_signal(SIGNAL *signal)
-    /*---------------------------*/
+    virtual ~SignalGroup(void)
+    /*----------------------*/
     {
-      urimap.insert(std::pair<std::string, SIGNAL *>(signal->get_uri_as_string(), signal)) ;
-      this->push_back(signal) ;
       }
 
-    SIGNAL *get_signal(const std::string uri)
+    void set_signal(size_t pos, Signal *signal)
+    /*---------------------------------------*/
+    {
+      urimap.insert(std::pair<std::string, Signal *>(signal->get_uri_as_string(), signal)) ;
+      (*this)[pos] = signal ;
+      }
+
+    Signal *get_signal(const std::string uri)
     /*-------------------------------------*/
     {
       return urimap.at(uri) ;
       }
 
-    SIGNAL *get_signal(size_t index)
+    Signal *get_signal(size_t index)
     /*----------------------------*/
     {
       return this->at(index) ;
       }
 
-    virtual void extend(std::vector<double> data __attribute__((__unused__)))
-    /*---------------------------------------------------------------------*/
+    virtual void extend(double *data __attribute__((__unused__)),
+    /*---------------------------------------------------------*/
+                        size_t size __attribute__((__unused__)))
     {
+      }
+
+    virtual void extend(std::vector<double> data)
+    /*-----------------------------------------*/
+    {
+      this->extend(&data[0], data.size()) ;
       }
 
 

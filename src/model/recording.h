@@ -68,30 +68,28 @@ namespace bsml {
       return signal ;
       }
 
-    template <class SIGNAL_T>
-    SignalGroup<SIGNAL_T> signalgroup(const std::vector<std::string> &uris,
-    /*-----------------------------------------------------------------*/
-                            const std::vector<Unit> &units, double rate)
+    virtual SignalGroup *signalgroup(const std::vector<std::string> &uris,
+    /*------------------------------------------------------------------*/
+                                     const std::vector<Unit> &units, double rate)
     {
       assert(uris.size() == units.size()) ;
-      SignalGroup<SIGNAL_T> signalgroup(uris.size()) ;
+      SignalGroup *signalgroup = new SignalGroup(uris.size()) ;
       for (size_t i = 0 ;  i < uris.size() ;  ++i) {
-        SIGNAL_T *signal = this->new_signal<SIGNAL_T>(uris[i], units[i], rate) ;
-        signalgroup.add_signal(signal) ;
+        Signal *signal = this->new_signal(uris[i], units[i], rate) ;
+        signalgroup->set_signal(i, signal) ;
         }
       return signalgroup ;
       }
 
-    template <class SIGNAL_T>
-    SignalGroup<SIGNAL_T> signalgroup(const std::vector<std::string> &uris,
-    /*-----------------------------------------------------------------*/
-                            const std::vector<Unit> &units, Clock *clock)
+    virtual SignalGroup *signalgroup(const std::vector<std::string> &uris,
+    /*------------------------------------------------------------------*/
+                                     const std::vector<Unit> &units, Clock *clock)
     {
       assert(uris.size() == units.size()) ;
-      SignalGroup<SIGNAL_T> signalgroup(uris.size()) ;
+      SignalGroup *signalgroup = new SignalGroup(uris.size()) ;
       for (size_t i = 0 ;  i < uris.size() ;  ++i) {
-        SIGNAL_T *signal = this->new_signal<SIGNAL_T>(uris[i], units[i], clock) ;
-        signalgroup.add_signal(signal) ;
+        Signal *signal = this->new_signal(uris[i], units[i], clock) ;
+        signalgroup->set_signal(i, signal) ;
         }
       return signalgroup ;
       }
