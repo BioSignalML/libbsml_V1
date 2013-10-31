@@ -10,6 +10,14 @@
 
 namespace rdf {
 
+  class Format
+  /*--------*/
+  {
+   public:
+    static std::string RDFXML ;
+    static std::string TURTLE ;
+    static std::string JSON ;
+    } ;
 
   typedef void *RDFObject ;
 

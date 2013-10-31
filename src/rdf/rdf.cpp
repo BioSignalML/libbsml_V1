@@ -29,6 +29,10 @@ void rdf::finalise(void)
   }
 
 
+std::string Format::RDFXML = "application/rdf+xml" ;
+std::string Format::TURTLE = "text/turtle" ;
+std::string Format::JSON   = "application/json" ;
+
 
 /*================================================================================*/
 
