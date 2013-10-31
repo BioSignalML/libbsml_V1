@@ -37,6 +37,7 @@ namespace bsml {
 
    private:
     hobj_ref_t reference ;
+    int index_ ;
 
     int rank ;
     hsize_t *shape ;    // rowshape[rank]

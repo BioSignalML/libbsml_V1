@@ -29,7 +29,7 @@ using namespace bsml ;
  */
 H5Dataset::H5Dataset()
 /*==================*/
-: dataset(H5::DataSet()), reference(0)
+: reference(0), dataset(H5::DataSet()), index_(-1)
 {
   }
 
