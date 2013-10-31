@@ -323,7 +323,6 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
     }
   shape[0] = npoints ;
 
-  H5Clock clocktimes = check_timing(rate, clock, npoints) ;
   H5DataRef sigdata = create_dataset("signal", rank, shape, maxshape, data, datatypes) ;
   H5::DataSet dset = sigdata.first ;
 
@@ -342,7 +341,7 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
   attr.write(varstr, units) ;
   attr.close() ;
 
-  set_signal_attributes(dset, gain, offset, rate, timeunits, clocktimes) ;
+  set_signal_attributes(dset, gain, offset, rate, "", clock) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
   return H5Signal(uri, sigdata, -1) ;
   }
