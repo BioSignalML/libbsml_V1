@@ -440,7 +440,6 @@ H5Clock *H5Recording::create_clock(const std::string &uri, const Unit &units,
   if (times.size() > 0 && rate != 0.0)
     throw H5Exception("A Clock cannot have both 'times' and a 'rate'") ;
   
-  size_t npoints = 0 ;
   hsize_t maxshape[] = { H5S_UNLIMITED } ;
   hsize_t shape[]    = { times.size() } ;
   H5DataRef clkdata = create_dataset("clock", 1, shape, maxshape, (void *)&times[0], H5DataTypes(&rate)) ;
