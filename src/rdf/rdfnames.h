@@ -6,54 +6,59 @@
 
 namespace rdf {
 
-  namespace RDF
-  /*==========*/
+  class RDF
+  /*=======*/
   {
-    static std::string NS("http://www.w3.org/1999/02/22-rdf-syntax-ns#") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource type(NS + "type") ;
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource type ;
     } ;
 
-  namespace RDFS
-  /*==========*/
+  class RDFS
+  /*=======*/
   {
-    static std::string NS("http://www.w3.org/2000/01/rdf-schema#") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource comment(NS + "comment") ;
-    static rdf::Resource label(NS + "label") ;
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource comment ;
+    static rdf::Resource label ;
     } ;
 
-  namespace DCT
-  /*=========*/
+  class DCT
+  /*======*/
   {
-    static std::string NS("http://purl.org/dc/terms/") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource created(NS + "created") ;
-    static rdf::Resource creator(NS + "creator") ;
-    static rdf::Resource description(NS + "description") ;
-    static rdf::Resource extent(NS + "extent") ;
-    static rdf::Resource format(NS + "format") ;
-    static rdf::Resource source(NS + "source") ;
-    static rdf::Resource subject(NS + "subject") ;
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource created ;
+    static rdf::Resource creator ;
+    static rdf::Resource description ;
+    static rdf::Resource extent ;
+    static rdf::Resource format ;
+    static rdf::Resource source ;
+    static rdf::Resource subject ;
     } ;
 
-  namespace PRV
-  /*=========*/
+  class PRV
+  /*======*/
   {
-    static std::string NS("http://purl.org/net/provenance/ns#") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource precededBy(NS + "precededBy") ;
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource precededBy ;
     } ;
 
-  namespace XSD
-  /*=========*/
+  class XSD
+  /*======*/
   {
-    static std::string NS("http://www.w3.org/2001/XMLSchema#") ;
-    static rdf::Uri uri(NS) ;
-    static rdf::Resource XSD_integer(NS + "integer") ;
-    static rdf::Resource XSD_double(NS + "double") ;
-    static rdf::Resource XSD_dateTime(NS + "dateTime") ;
-    static rdf::Resource XSD_dayTimeDuration(NS + "dayTimeDuration") ;
+   public:
+    static std::string NS ;
+    static rdf::Uri uri ;
+    static rdf::Resource XSD_integer ;
+    static rdf::Resource XSD_double ;
+    static rdf::Resource XSD_dateTime ;
+    static rdf::Resource XSD_dayTimeDuration ;
     } ;
 
 /*

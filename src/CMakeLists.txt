@@ -44,6 +44,7 @@ set (SOURCES ${SOURCES}
 set (SOURCES ${SOURCES}
   utility/utility.cpp
   rdf/rdf.cpp
+  rdf/rdfnames.cpp
   )
 
 
