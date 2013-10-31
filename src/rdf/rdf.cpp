@@ -335,30 +335,32 @@ void Graph::append(const Statement &statement) const
   librdf_model_add_statement((librdf_model *)model, (librdf_statement *)(statement.statement)) ;
   }
 
-std::string Graph::serialise(  // Need to specify format, base, and prefixes
-  std::list<Prefix> prefixes
-  )
-/*-----------------------*/
+std::string Graph::serialise(const std::string &format,
+/*---------------------------------------------------*/
+                             const std::string &base, std::list<Prefix> prefixes)
 {
-  librdf_serializer *serialiser = librdf_new_serializer((librdf_world *)get_world(), "turtle", NULL, NULL) ;
-  librdf_uri *base ;
-  base = (librdf_uri *)(uri.uri) ;
+  librdf_serializer *serialiser = librdf_new_serializer((librdf_world *)world(),
+                                                           nullptr, format.c_str(), nullptr) ;
+  librdf_uri *base_uri ;
+  if (base != "") base_uri = librdf_new_uri(world(), (const unsigned char *)base.c_str()) ;
+  else            base_uri = (librdf_uri *)(uri.uri) ;
   for (std::list<Prefix>::iterator p = prefixes.begin() ;  p != prefixes.end() ;  ++p) {
 //std::cout << "PFX: " << p->first << "\n" ;
     librdf_serializer_set_namespace(serialiser, (librdf_uri *)(p->second.uri), p->first.c_str()) ;
     }
   unsigned char *serialised
-    = librdf_serializer_serialize_model_to_string(serialiser, base, (librdf_model *)model) ;
+    = librdf_serializer_serialize_model_to_string(serialiser, base_uri, (librdf_model *)model) ;
   std::string result = std::string((char *)serialised) ;
+  if (base != "") librdf_free_uri(base_uri) ;
   librdf_free_memory(serialised) ;
   librdf_free_serializer(serialiser) ;
   return result ;
   }
 
-std::string Graph::serialise(void)
-/*------------------------------*/
+std::string Graph::serialise(const std::string &format)
+/*---------------------------------------------------*/
 {
-  return Graph::serialise(std::list<Prefix>()) ;
+  return Graph::serialise(format, "", std::list<Prefix>()) ;
   }
 
 

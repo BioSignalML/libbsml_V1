@@ -143,10 +143,8 @@ namespace rdf {
     Graph(const std::string &uri) ;
     ~Graph(void) ;
     void append(const Statement &statement) const ;
-    std::string serialise(  // Need to specify format, base, and prefixes
-      std::list<Prefix> prefixes
-      ) ;
-    std::string serialise(void) ;
+    std::string serialise(const std::string &format, const std::string &base, std::list<Prefix> prefixes) ;
+    std::string serialise(const std::string &format) ;
     } ;
 
 
