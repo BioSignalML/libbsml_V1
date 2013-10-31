@@ -6,6 +6,7 @@
 
 #include "model/object.h"
 #include "model/units.h"
+#include "rdf/rdf.h"
 
 
 namespace bsml {
@@ -17,6 +18,7 @@ namespace bsml {
     Unit unit_ ;
     std::vector<double> times_ ;
     double rate_ ;
+    rdf::Literal literal_rate ;
 
    public:
     Clock(void) ;

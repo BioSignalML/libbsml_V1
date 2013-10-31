@@ -4,6 +4,7 @@
 
 #include "model/clock.h"
 #include "model/bsml.h"
+#include "rdf/rdf.h"
 
 
 using namespace bsml ;
@@ -20,6 +21,9 @@ Clock::Clock(const std::string &uri, const Unit &unit, double rate)
 : AbstractObject(BSML::SampleClock, uri), unit_(unit),
   times_(std::vector<double>()), rate_(rate)
 {
+  rdfmap.append(BSML::units, &unit_) ;
+  literal_rate = rdf::Literal(rate_) ;
+  rdfmap.append(BSML::rate, &literal_rate) ;
   }
 
 Clock::Clock(const std::string &uri, const Unit &unit, const std::vector<double> &times)
@@ -27,6 +31,7 @@ Clock::Clock(const std::string &uri, const Unit &unit, const std::vector<double>
 : AbstractObject(BSML::SampleClock, uri), unit_(unit),
   times_(times), rate_(0.0)
 {
+  rdfmap.append(BSML::units, &unit_) ;
   }
 
 
