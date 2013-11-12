@@ -43,7 +43,7 @@ namespace rdf {
     Uri(Uri &&other) ;                           // Move constructor
     virtual Uri &operator=(const Uri &other) ;   // Copy assignment
     virtual Uri &operator=(Uri &&other) ;        // Move assignment
-    virtual explicit operator bool() const ;
+    virtual bool is_empty(void) const ;
     virtual std::string as_string(void) const ;
 
     friend class Node ;
@@ -71,9 +71,11 @@ namespace rdf {
     virtual Node &operator=(Node &&other) ;      // Move assignment
     virtual bool operator==(const Node& other) const ;
     virtual bool operator!=(const Node& other) const ;
-    virtual explicit operator bool() const ;
+    virtual bool is_empty(void) const ;
     virtual std::string as_string(void) const ;
 
+    friend class Literal ;
+    friend class Resource ;
     friend class Statement ;
     } ;
 

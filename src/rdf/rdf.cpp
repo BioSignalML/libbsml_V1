@@ -87,10 +87,10 @@ Uri &Uri::operator=(Uri &&other)               // Move assignment
   return *this ;
   }
 
-Uri::operator bool() const
-/*----------------------*/
+bool Uri::is_empty(void) const
+/*--------------------------*/
 {
-  return (uri != NULL) ;
+  return (uri == nullptr) ;
   }
 
 std::string Uri::as_string(void) const
@@ -182,7 +182,7 @@ Node &Node::operator=(Node &&other)               // Move assignment
 
 
 bool Node::operator==(const Node& other) const
-/*------------------------------------*/
+/*------------------------------------------*/
 {
   return (node == other.node)
    || librdf_node_equals((librdf_node *)node, (librdf_node *)other.node) ;
@@ -194,14 +194,14 @@ bool Node::operator!=(const Node& other) const
   return !operator==(other) ;
   }
 
-Node::operator bool() const
-/*-----------------------*/
+bool Node::is_empty(void) const
+/*---------------------------*/
 {
   if (node) {
     unsigned char *s = librdf_node_get_literal_value((librdf_node *)node) ;
-    return (s == NULL || *s) ;
+    return (s != nullptr && *s == '\0') ;
     }
-  return false ;
+  return true ;
   }
 
 RDFObject Node::get_rdf_uri(void) const
@@ -261,17 +261,35 @@ BlankNode::BlankNode(const std::string &identifier)
 
 /*================================================================================*/
 
+#if WIN32
+ #define snprintf _snprintf_s      // VS 2010
+#endif
+
 Literal::Literal()
 /*--------------*/
 : Node("") { }
 
 Literal::Literal(int i)
 /*-------------------*/
-: Node(std::to_string(i), XSD::XSD_integer) { }
+{
+  char buf[20] ;
+  snprintf(buf, 20, "%d", i) ;
+  node = (RDFObject)librdf_new_node_from_typed_literal(world(),
+           (const unsigned char *)buf,
+           nullptr,
+           (librdf_uri *)XSD::XSD_integer.get_rdf_uri()) ;
+  }
 
 Literal::Literal(double d)
 /*----------------------*/
-: Node(std::to_string(d), XSD::XSD_double) { }
+{
+  char buf[20] ;
+  snprintf(buf, 20, "%g", d) ;
+  node = (RDFObject)librdf_new_node_from_typed_literal(world(),
+           (const unsigned char *)buf,
+           nullptr,
+           (librdf_uri *)XSD::XSD_double.get_rdf_uri()) ;
+  }
 
 Literal::Literal(const std::string &value, const std::string &language)
 /*-------------------------------------------------------------------*/
@@ -318,8 +336,8 @@ Statement::~Statement(void)
 
 Graph::Graph(const std::string &uri)
 /*--------------------------------*/
-: storage((RDFObject)librdf_new_storage((librdf_world *)world(), "hashes", "triples", "hash-type='memory'")),
-  model((RDFObject)librdf_new_model((librdf_world *)world(), (librdf_storage *)storage, nullptr)),
+: storage((RDFObject)librdf_new_storage(world(), "hashes", "triples", "hash-type='memory'")),
+  model((RDFObject)librdf_new_model(world(), (librdf_storage *)storage, nullptr)),
   uri(Uri(uri))
 {
   }
@@ -341,8 +359,7 @@ std::string Graph::serialise(const std::string &format,
 /*---------------------------------------------------*/
                              const std::string &base, std::list<Prefix> prefixes)
 {
-  librdf_serializer *serialiser = librdf_new_serializer((librdf_world *)world(),
-                                                           nullptr, format.c_str(), nullptr) ;
+  librdf_serializer *serialiser = librdf_new_serializer(world(), nullptr, format.c_str(), nullptr) ;
   librdf_uri *base_uri ;
   if (base != "") base_uri = librdf_new_uri(world(), (const unsigned char *)base.c_str()) ;
   else            base_uri = (librdf_uri *)(uri.uri) ;
