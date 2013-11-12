@@ -21,19 +21,19 @@ namespace rdf
    public:
     Mapping(rdf::Resource &property, const rdf::Node *reference)
     /*------------------------------------------------*/
-    : property(property), reference(reference), literal(NULL) { }
+    : property(property), reference(reference), literal(nullptr) { }
 
     Mapping(rdf::Resource &property, const std::string *literal)
     /*------------------------------------------------*/
-    : property(property), reference(NULL), literal(literal) { }
+    : property(property), reference(nullptr), literal(literal) { }
 
     void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject)
     /*--------------------------------------------------------------*/
     {
-      if (reference != NULL && *reference) {
+      if (reference != nullptr && !reference->is_empty()) {
         graph.append(rdf::Statement(subject, property, *reference)) ;
         }
-      else if (literal != NULL && *literal != "") {
+      else if (literal != nullptr && *literal != "") {
         graph.append(rdf::Statement(subject, property, *literal)) ;
         }
       }
