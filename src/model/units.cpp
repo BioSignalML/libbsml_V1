@@ -10,6 +10,8 @@
 
 using namespace bsml ;
 
+strlist Unit::list ;
+
 Unit::Unit(void)
 /*------------*/
 : rdf::Resource()
@@ -24,20 +26,28 @@ Unit::Unit(const std::string &unit)
   }
 
 
+Unit::Unit(const std::string &prefix, const std::string &unit)
+/*----------------------------------------------------------*/
+: rdf::Resource(prefix + unit)
+{
+  Unit::list.push_back(unit) ;
+  }
+
+
 std::string Unit::NS("http://www.sbpax.org/uome/list.owl#") ;
 rdf::Uri Unit::uri(Unit::NS) ;
 
-Unit Unit::Second(Unit::NS + "Second") ;
-Unit Unit::Minute(Unit::NS + "Minute") ;
-Unit Unit::Millivolt(Unit::NS + "Millivolt") ;
-
-strlist Unit::list {
-  "Second",
-  "Minute",
-  "Millivolt"
-  } ;
+Unit Unit::Second(Unit::NS, "Second") ;
+Unit Unit::Minute(Unit::NS, "Minute") ;
+Unit Unit::Millivolt(Unit::NS, "Millivolt") ;
 
 
+/*=====================================================================================*/
+
+
+typedef std::map<std::string, std::string> dict ;
+
+#if CXX11_INITIALISERS
 
 static dict direct_ = {
   { "Bpm",    "BeatsPerMinute" },
@@ -93,7 +103,71 @@ static dict prefixes_ = {
   { "y", "Yocto" } } ;
 //  { "\u00b5", "Micro" } } ;  // C++ and Unicode don't play...
 
+#else
 
+typedef std::pair<std::string, std::string> entry ;
+
+#define MAKE_DICT(name, entries) dict name((entries), (entries) + sizeof(entries)/sizeof(entry))
+
+static entry direct_entries_[]= {
+  entry( "Bpm",    "BeatsPerMinute" ),
+  entry( "bpm",    "BeatsPerMinute" ),
+  entry( "cc",     "CubicCentimetre" ),
+  entry( "pm",     "PerMinute" ),
+  entry( "1/min",  "PerMinute" ),
+  entry( "Lpm",    "LitrePerMinute" ),
+  entry( "lpm",    "LitrePerMinute" ),
+  entry( "mv",     "Millivolt" ),
+  entry( "uV-mrs", "Microvolt" ),
+  entry( "annotation", "AnnotationData" ) } ;
+static MAKE_DICT(direct_, direct_entries_) ;
+
+static entry units_entries_[]= {
+  entry( "%",     "Percent" ),
+  entry( "A",     "ampere" ),
+  entry( "deg",   "DegreeOfArc" ),
+  entry( "degC",  "DegreeCelsius" ),
+  entry( "mHg",   "metresOfMercury" ),
+  entry( "mH2O",  "metresOfWater" ),
+  entry( "g",     "gram" ),
+  entry( "J",     "joule" ),
+  entry( "K",     "Kelvin" ),
+  entry( "l",     "litre" ),
+  entry( "L",     "litre" ),
+  entry( "m",     "metre" ),
+  entry( "min",   "minute" ),
+  entry( "s",     "second" ),
+  entry( "V",     "volt" ),
+  entry( "W",     "watt" ),
+  entry( "bar",   "bar" ),
+  entry( "BPM",   "BeatsPerMinute" ),
+  entry( "bpm",   "BeatsPerMinute" ),
+  entry( "M",     "molar" ),
+  entry( "mol",   "mole" ) } ;
+static MAKE_DICT(units_, units_entries_) ;
+
+static entry powers_prefix_entries_[]= {
+  entry( "2", "Square" ),
+  entry( "3", "Cubic" ) } ;
+static MAKE_DICT(powers_prefix_, powers_prefix_entries_) ;
+
+static entry powers_suffix_entries_[]= {
+  entry( "2", "Squared" ),
+  entry( "3", "Cubed" ) } ;
+static MAKE_DICT(powers_suffix_, powers_suffix_entries_) ;
+
+static entry prefixes_entries_[]= {
+  entry( "Y", "Yotta" ),  entry( "Z", "Zetta" ),  entry( "E", "Exa" ),
+  entry( "P", "Peta" ),   entry( "T", "Tera" ),   entry( "G", "Giga" ),
+  entry( "M", "Mega" ),   entry( "K", "Kilo" ),   entry( "H", "Hecto" ),
+  entry( "D", "Deca" ),
+  entry( "d", "Deci" ),   entry( "c", "Centi" ),  entry( "m", "Milli" ),
+  entry( "u", "Micro" ),  entry( "n", "Nano" ),   entry( "p", "Pico" ),
+  entry( "f", "Femto" ),  entry( "a", "Atto" ),   entry( "z", "Zepto" ),
+  entry( "y", "Yocto" ) } ;
+static MAKE_DICT(prefixes_, prefixes_entries_) ;
+
+#endif
 
 static std::string titlecase(const std::string &s)
 /*----------------------------------------*/

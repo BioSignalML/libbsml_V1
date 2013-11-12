@@ -13,6 +13,7 @@ namespace bsml {
    public:
     Unit(void) ;
     Unit(const std::string &unit) ;
+    Unit(const std::string &prefix, const std::string &unit) ;
 
     static std::string NS ;
     static rdf::Uri uri ;
