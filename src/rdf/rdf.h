@@ -3,6 +3,7 @@
 
 #include <iostream>
 
+#include <stdexcept>
 #include <string>
 #include <list>
 #include <map>
@@ -12,6 +13,14 @@ namespace rdf {
 
   class Format
   /*--------*/
+  class Exception : public std::runtime_error
+  /*=======================================*/
+  {
+   public:
+    Exception(const std::string &msg)
+    : std::runtime_error(msg) { }
+    } ;
+
   {
    public:
     static std::string RDFXML ;
@@ -119,6 +128,7 @@ namespace rdf {
     RDFObject statement ;
 
    public:
+    Statement(void) ;
     Statement(const Resource &subject, const Resource &predicate, const Node &object) ;
     Statement(const Resource &subject, const Resource &predicate, const std::string &literal) ;
 //    Statement(const BlankNode &subject, const Resource &predicate, const Node &object)
@@ -137,14 +147,13 @@ namespace rdf {
   /*=======*/
   {
    private:
-    RDFObject storage ;
-    RDFObject model ;
+    std::list<Statement *> statements ;
     const Uri uri ;
 
    public:
     Graph(const std::string &uri) ;
-    virtual ~Graph(void) ;
-    void append(const Statement &statement) const ;
+    ~Graph(void) ;
+    void append(const Statement &statement) ;
     std::string serialise(const std::string &format, const std::string &base, std::list<Prefix> prefixes) ;
     std::string serialise(const std::string &format) ;
     } ;

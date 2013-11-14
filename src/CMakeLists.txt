@@ -48,12 +48,12 @@ set (SOURCES ${SOURCES}
   rdf/rdf.cpp
   rdf/rdfnames.cpp
   )
+set (RDF_LIBRARIES
+  raptor2
+  )
 
 
 if (APPLE)
-  set (RDF_LIBRARIES
-    rdf
-    )
   set (HDF5_LIBRARIES
     sz
     hdf5

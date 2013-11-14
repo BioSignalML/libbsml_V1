@@ -1,5 +1,5 @@
 #include <string>
-#include <redland.h>
+#include <raptor2/raptor2.h>
 
 #include "rdf/rdf.h"
 #include "rdf/rdfnames.h"
@@ -7,14 +7,14 @@
 using namespace rdf ;
 
 
-static librdf_world *rdf_world = nullptr ;
+static raptor_world *rdf_world = nullptr ;
 
-static librdf_world *world(void)
+static raptor_world *world(void)
 /*----------------------------*/
 {
   if (rdf_world == nullptr) {    // Need to make thread safe...
-    rdf_world = librdf_new_world() ;
-    librdf_world_open(rdf_world) ;
+    rdf_world = raptor_new_world() ;
+    raptor_world_open(rdf_world) ;
     }
   return rdf_world ;
   }
@@ -23,15 +23,15 @@ void rdf::finalise(void)
 /*--------------------*/
 {
   if (rdf_world != nullptr) {
-    librdf_free_world(rdf_world) ;
+    raptor_free_world(rdf_world) ;
     rdf_world = nullptr ;
     }
   }
 
 
-std::string Format::RDFXML = "application/rdf+xml" ;
-std::string Format::TURTLE = "text/turtle" ;
-std::string Format::JSON   = "application/json" ;
+std::string Format::RDFXML = "rdfxml" ;
+std::string Format::TURTLE = "turtle" ;
+std::string Format::JSON   = "json" ;
 
 
 /*================================================================================*/
@@ -42,20 +42,20 @@ Uri::Uri(void)
 
 Uri::Uri(const std::string &uri)
 /*----------------------------*/
-: uri((RDFObject)librdf_new_uri(world(), (const unsigned char *)uri.c_str()))
+: uri((RDFObject)raptor_new_uri(world(), (const unsigned char *)uri.c_str()))
 {
   }
 
 Uri::~Uri(void)
 /*-----------*/
 {
-  if (uri) librdf_free_uri((librdf_uri *)uri) ;
+  if (uri) raptor_free_uri((raptor_uri *)uri) ;
   }
 
 
 Uri::Uri(const Uri &other)                     // Copy constructor
 /*----------------------*/
-: uri((RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)))
+: uri((RDFObject)raptor_uri_copy((raptor_uri *)(other.uri)))
 {
   }
 
@@ -70,8 +70,8 @@ Uri &Uri::operator=(const Uri &other)          // Copy assignment
 /*---------------------------------*/
 {
   if (this != &other) {
-    if (uri) librdf_free_uri((librdf_uri *)uri) ;
-    uri = (RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)) ;
+    if (uri) raptor_free_uri((raptor_uri *)uri) ;
+    uri = (RDFObject)raptor_uri_copy((raptor_uri *)(other.uri)) ;
     }
   return *this ;
   }
@@ -80,8 +80,8 @@ Uri &Uri::operator=(Uri &&other)               // Move assignment
 /*----------------------------*/
 {
   if (this != &other) {
-    if (uri) librdf_free_uri((librdf_uri *)uri) ;
-    uri = (RDFObject)librdf_new_uri_from_uri((librdf_uri *)(other.uri)) ;
+    if (uri) raptor_free_uri((raptor_uri *)uri) ;
+    uri = (RDFObject)raptor_uri_copy((raptor_uri *)(other.uri)) ;
 //    uri = other.uri ;
     }
   return *this ;
@@ -97,7 +97,7 @@ std::string Uri::as_string(void) const
 /*----------------------------------*/
 {
   return (uri != nullptr)
-        ? std::string((char *)librdf_uri_as_string((librdf_uri *)uri))
+        ? std::string((char *)raptor_uri_as_string((raptor_uri *)uri))
         : "NULL" ;
   }
 
@@ -110,45 +110,45 @@ Node::Node(void)
 
 Node::Node(const std::string &identifier)
 /*-------------------------------------*/
-: node((RDFObject)librdf_new_node_from_blank_identifier(world(),
+: node((RDFObject)raptor_new_term_from_blank(world(),
          (identifier != "") ? (const unsigned char *)identifier.c_str() : nullptr))
 {
   }
 
 Node::Node(const Uri &uri)
 /*----------------------*/
-: node((RDFObject)librdf_new_node_from_uri(world(), (librdf_uri *)uri.uri))
+: node((RDFObject)raptor_new_term_from_uri(world(), (raptor_uri *)uri.uri))
 {
   }
 
 Node::Node(const std::string &value, const std::string &language)
 /*-------------------------------------------------------------*/
-: node((RDFObject)librdf_new_node_from_literal(world(),
+: node((RDFObject)raptor_new_term_from_literal(world(),
          (const unsigned char *)value.c_str(),
-         language.c_str(),
-         0))
+         nullptr,
+         (const unsigned char *)language.c_str()))
 {
   }
 
 Node::Node(const std::string &value, const Resource &datatype)
 /*----------------------------------------------------------*/
-: node((RDFObject)librdf_new_node_from_typed_literal(world(),
+: node((RDFObject)raptor_new_term_from_literal(world(),
          (const unsigned char *)value.c_str(),
-         nullptr,
-         (librdf_uri *)datatype.get_rdf_uri()))
+         (raptor_uri *)datatype.get_rdf_uri(),
+         nullptr))
 {
   }
 
 Node::~Node(void)
 /*-------------*/
 {
-  if (node) librdf_free_node((librdf_node *)node) ;
+  if (node) raptor_free_term((raptor_term *)node) ;
   }
 
 
 Node::Node(const Node &other)                     // Copy constructor
 /*-------------------------*/
-: node((RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)))
+: node((RDFObject)raptor_term_copy((raptor_term *)(other.node)))
 {
   }
 
@@ -163,8 +163,8 @@ Node &Node::operator=(const Node &other)          // Copy assignment
 /*------------------------------------*/
 {
   if (this != &other) {
-    if (node) librdf_free_node((librdf_node *)node) ;
-    node = (RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)) ;
+    if (node) raptor_free_term((raptor_term *)node) ;
+    node = (RDFObject)raptor_term_copy((raptor_term *)(other.node)) ;
     }
   return *this ;
   }
@@ -173,8 +173,8 @@ Node &Node::operator=(Node &&other)               // Move assignment
 /*-------------------------------*/
 {
   if (this != &other) {
-    if (node) librdf_free_node((librdf_node *)node) ;
-    node = (RDFObject)librdf_new_node_from_node((librdf_node *)(other.node)) ;
+    if (node) raptor_free_term((raptor_term *)node) ;
+    node = (RDFObject)raptor_term_copy((raptor_term *)(other.node)) ;
 //    node = other.node ;
     }
   return *this ;
@@ -185,7 +185,7 @@ bool Node::operator==(const Node& other) const
 /*------------------------------------------*/
 {
   return (node == other.node)
-   || librdf_node_equals((librdf_node *)node, (librdf_node *)other.node) ;
+   || raptor_term_equals((raptor_term *)node, (raptor_term *)other.node) ;
   }
 
 bool Node::operator!=(const Node& other) const
@@ -198,8 +198,9 @@ bool Node::is_empty(void) const
 /*---------------------------*/
 {
   if (node) {
-    unsigned char *s = librdf_node_get_literal_value((librdf_node *)node) ;
-    return (s != nullptr && *s == '\0') ;
+    raptor_term *term = (raptor_term *)node ;
+    return (term->type == RAPTOR_TERM_TYPE_LITERAL
+         && term->value.literal.string_len == 0) ;
     }
   return true ;
   }
@@ -207,7 +208,11 @@ bool Node::is_empty(void) const
 RDFObject Node::get_rdf_uri(void) const
 /*-----------------------------------*/
 {
-  return node ? (RDFObject)librdf_node_get_uri((librdf_node *)node) : nullptr ;
+  if (node) {
+    raptor_term *term = (raptor_term *)node ;
+    if (term->type == RAPTOR_TERM_TYPE_URI) return term->value.uri ;
+    }
+  return nullptr ;
   }
 
 std::string Node::as_string(void) const
@@ -215,7 +220,7 @@ std::string Node::as_string(void) const
 {
   std::string result = "NULL" ;
   if (node != nullptr) {
-    char *s = (char *)librdf_node_to_string((librdf_node *)node) ;
+    char *s = (char *)raptor_term_to_string((raptor_term *)node) ;
     result = std::string(s) ;
     free(s) ;
     }
@@ -232,7 +237,7 @@ Resource::Resource(void)
 Resource::Resource(const std::string &uri)
 /*--------------------------------------*/
 {
-  node = (RDFObject)librdf_new_node_from_uri_string(world(), (const unsigned char *)uri.c_str()) ;
+  node = (RDFObject)raptor_new_term_from_uri_string(world(), (const unsigned char *)uri.c_str()) ;
   }
 
 Resource::Resource(const Uri &uri)
@@ -242,9 +247,13 @@ Resource::Resource(const Uri &uri)
 std::string Resource::as_string(void) const
 /*---------------------------------------*/
 {
-  return (node != nullptr)
-        ? std::string((char *)librdf_uri_as_string(librdf_node_get_uri((librdf_node *)node)))
-        : "NULL" ;
+
+  if (node) {
+    raptor_term *term = (raptor_term *)node ;
+    if (term->type == RAPTOR_TERM_TYPE_URI)
+       return std::string((char *)raptor_uri_as_string(term->value.uri)) ;
+    }
+  return "NULL" ;
   }
 
 
@@ -274,10 +283,10 @@ Literal::Literal(int i)
 {
   char buf[20] ;
   snprintf(buf, 20, "%d", i) ;
-  node = (RDFObject)librdf_new_node_from_typed_literal(world(),
+  node = (RDFObject)raptor_new_term_from_literal(world(),
            (const unsigned char *)buf,
-           nullptr,
-           (librdf_uri *)XSD::XSD_integer.get_rdf_uri()) ;
+           (raptor_uri *)XSD::XSD_integer.get_rdf_uri(),
+           nullptr) ;
   }
 
 Literal::Literal(double d)
@@ -285,10 +294,10 @@ Literal::Literal(double d)
 {
   char buf[20] ;
   snprintf(buf, 20, "%g", d) ;
-  node = (RDFObject)librdf_new_node_from_typed_literal(world(),
+  node = (RDFObject)raptor_new_term_from_literal(world(),
            (const unsigned char *)buf,
-           nullptr,
-           (librdf_uri *)XSD::XSD_double.get_rdf_uri()) ;
+           (raptor_uri *)XSD::XSD_double.get_rdf_uri(),
+           nullptr) ;
   }
 
 Literal::Literal(const std::string &value, const std::string &language)
@@ -302,20 +311,28 @@ Literal::Literal(const std::string &value, const Resource &datatype)
 
 /*================================================================================*/
 
+Statement::Statement(void)
+/*----------------------*/
+: statement(NULL)
+{
+  }
+
 Statement::Statement(const Resource &subject, const Resource &predicate, const Node &object)
 /*----------------------------------------------------------------------------------------*/
-: statement((RDFObject)librdf_new_statement_from_nodes(world(),
-              librdf_new_node_from_node((librdf_node *)(subject.node)),
-              librdf_new_node_from_node((librdf_node *)(predicate.node)),
-              librdf_new_node_from_node((librdf_node *)(object.node))
+: statement((RDFObject)raptor_new_statement_from_nodes(world(),
+              raptor_term_copy((raptor_term *)(subject.node)),
+              raptor_term_copy((raptor_term *)(predicate.node)),
+              raptor_term_copy((raptor_term *)(object.node)),
+              NULL
            ) ) { }
 
 Statement::Statement(const Resource &subject, const Resource &predicate, const std::string &literal)
 /*------------------------------------------------------------------------------------------------*/
-: statement((RDFObject)librdf_new_statement_from_nodes(world(),
-              librdf_new_node_from_node((librdf_node *)(subject.node)),
-              librdf_new_node_from_node((librdf_node *)(predicate.node)),
-              librdf_new_node_from_node((librdf_node *)(Literal(literal).node))
+: statement((RDFObject)raptor_new_statement_from_nodes(world(),
+              raptor_term_copy((raptor_term *)(subject.node)),
+              raptor_term_copy((raptor_term *)(predicate.node)),
+              raptor_term_copy((raptor_term *)(Literal(literal).node)),
+              NULL
             ) ) { }
 
 //  Statement(const BlankNode &subject, const Resource &predicate, const Node &object)
@@ -323,56 +340,61 @@ Statement::Statement(const Resource &subject, const Resource &predicate, const s
 
 Statement::Statement(const Statement &other)
 /*----------------------------------------*/
-: statement((RDFObject)librdf_new_statement_from_statement((librdf_statement *)(other.statement))) { }
+: statement((RDFObject)raptor_statement_copy((raptor_statement *)(other.statement))) { }
 
 Statement::~Statement(void)
 /*-----------------------*/
 {
-  librdf_free_statement((librdf_statement *)statement) ;
+  if (statement) raptor_free_statement((raptor_statement *)statement) ;
   }
 
 
 /*================================================================================*/
 
+
 Graph::Graph(const std::string &uri)
 /*--------------------------------*/
-: storage((RDFObject)librdf_new_storage(world(), "hashes", "triples", "hash-type='memory'")),
-  model((RDFObject)librdf_new_model(world(), (librdf_storage *)storage, nullptr)),
-  uri(Uri(uri))
+: statements(0)
 {
   }
 
 Graph::~Graph(void)
 /*---------------*/
 {
-  librdf_free_model((librdf_model *)model) ;
-  librdf_free_storage((librdf_storage *)storage) ;
+  for (std::list<Statement *>::iterator sp = statements.begin() ; sp != statements.end() ;  ++sp)
+    delete *sp ;
   }
 
-void Graph::append(const Statement &statement) const
-/*------------------------------------------------*/
+void Graph::append(const Statement &statement)
+/*------------------------------------------*/
 {
-  librdf_model_add_statement((librdf_model *)model, (librdf_statement *)(statement.statement)) ;
+  statements.push_back(new Statement(statement)) ;
   }
 
 std::string Graph::serialise(const std::string &format,
 /*---------------------------------------------------*/
                              const std::string &base, std::list<Prefix> prefixes)
 {
-  librdf_serializer *serialiser = librdf_new_serializer(world(), nullptr, format.c_str(), nullptr) ;
-  librdf_uri *base_uri ;
-  if (base != "") base_uri = librdf_new_uri(world(), (const unsigned char *)base.c_str()) ;
-  else            base_uri = (librdf_uri *)(uri.uri) ;
+  raptor_serializer *serialiser = raptor_new_serializer(world(), format.c_str()) ;
+  if (serialiser == nullptr) throw Exception("Unable to create graph serialiser") ;
+  raptor_uri *base_uri ;
+  if (base != "") base_uri = raptor_new_uri(world(), (const unsigned char *)base.c_str()) ;
+  else            base_uri = (raptor_uri *)(uri.uri) ;
   for (std::list<Prefix>::iterator p = prefixes.begin() ;  p != prefixes.end() ;  ++p) {
 //std::cout << "PFX: " << p->first << "\n" ;
-    librdf_serializer_set_namespace(serialiser, (librdf_uri *)(p->second.uri), p->first.c_str()) ;
+    raptor_serializer_set_namespace(serialiser, (raptor_uri *)(p->second.uri), (const unsigned char *)p->first.c_str()) ;
     }
-  unsigned char *serialised
-    = librdf_serializer_serialize_model_to_string(serialiser, base_uri, (librdf_model *)model) ;
-  std::string result = std::string((char *)serialised) ;
-  if (base != "") librdf_free_uri(base_uri) ;
-  librdf_free_memory(serialised) ;
-  librdf_free_serializer(serialiser) ;
+
+  size_t length = 0 ;
+  unsigned char *serialised ;
+  raptor_serializer_start_to_string(serialiser, base_uri, (void **)(&serialised), &length) ;
+  for (std::list<Statement *>::iterator sp = statements.begin() ; sp != statements.end() ;  ++sp)
+    raptor_serializer_serialize_statement(serialiser, (raptor_statement *)((*sp)->statement)) ;
+  raptor_serializer_serialize_end(serialiser) ;
+
+  std::string result = std::string((char *)serialised, length) ;
+  if (base != "") raptor_free_uri(base_uri) ;
+  raptor_free_serializer(serialiser) ;
   return result ;
   }
 
@@ -381,6 +403,5 @@ std::string Graph::serialise(const std::string &format)
 {
   return Graph::serialise(format, "", std::list<Prefix>()) ;
   }
-
 
 /*================================================================================*/
