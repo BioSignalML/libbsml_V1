@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 
+#include "config.h"
 #include "model/bsml.h"
 #include "model/object.h"
 #include "model/signal.h"
@@ -19,8 +20,8 @@
 
 namespace bsml {
 
-  class Recording : public AbstractObject
-  /*===================================*/
+  class BSML_EXPORT Recording : public AbstractObject
+  /*===============================================*/
   {
    private:
     std::map<std::string, AbstractObject *> resources_ ;

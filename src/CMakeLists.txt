@@ -5,6 +5,7 @@ project(BioSignalML CXX)
 include_directories(/usr/local/include)
 include_directories(.)
 link_directories(/usr/local/lib)
+add_definitions(-DBSML_BUILD_LIBRARY)
 
 add_definitions(--std=c++11)
 

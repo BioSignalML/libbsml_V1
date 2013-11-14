@@ -21,6 +21,7 @@
 #ifndef _BSML_H5_CLOCK_
 #define _BSML_H5_CLOCK_ 1
 
+#include "config.h"
 #include "hdf5/h5dataset.h"
 #include "model/clock.h"
 #include "model/units.h"
@@ -28,8 +29,8 @@
 
 namespace bsml {
 
-  class H5Clock : public Clock, public H5Dataset
-  /*==========================================*/
+  class BSML_EXPORT H5Clock : public Clock, public H5Dataset
+  /*======================================================*/
   {
    private:
     void extend(void *, size_t, H5::DataType) ;

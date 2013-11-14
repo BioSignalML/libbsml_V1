@@ -4,13 +4,14 @@
 #include <string>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 
+#include "config.h"
 #include "rdf/rdf.h"
 
 
 namespace bsml {
 
-  class Datetime : public rdf::Literal
-  /*================================*/
+  class BSML_EXPORT Datetime : public rdf::Literal
+  /*============================================*/
   {
    private:
     boost::posix_time::ptime datetime ;
@@ -19,8 +20,8 @@ namespace bsml {
     std::string as_iso_string(void) ;
     } ;
 
-  class Duration : public rdf::Literal
-  /*================================*/
+  class BSML_EXPORT Duration : public rdf::Literal
+  /*============================================*/
   {
    private:
     boost::posix_time::time_duration duration ;

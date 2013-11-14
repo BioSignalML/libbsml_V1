@@ -1,7 +1,7 @@
 #ifndef _BSML_EVENT_H
 #define _BSML_EVENT_H
 
-
+#include "config.h"
 #include "model/bsml.h"
 #include "model/object.h"
 #include "rdf/rdfmap.h"
@@ -9,8 +9,8 @@
 
 namespace bsml {
 
-  class Event : public bsml::AbstractObject
-  /*======================================*/
+  class BSML_EXPORT Event : public bsml::AbstractObject
+  /*=================================================*/
   {
    public:
     Event(const std::string &uri)

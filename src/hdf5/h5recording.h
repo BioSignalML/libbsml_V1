@@ -24,6 +24,7 @@
 #include <vector>
 #include <utility>
 
+#include "config.h"
 #include "hdf5/h5common.h"
 #include "hdf5/h5signal.h"
 #include "hdf5/h5clock.h"
@@ -36,8 +37,8 @@
 
 namespace bsml {
 
-  class H5Recording : public Recording
-  /*================================*/
+  class BSML_EXPORT H5Recording : public Recording
+  /*============================================*/
   {
    private:
     H5::H5File h5 ;

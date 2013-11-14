@@ -1,7 +1,7 @@
 #ifndef _BSML_ANNOTATION_H
 #define _BSML_ANNOTATION_H
 
-
+#include "config.h"
 #include "model/bsml.h"
 #include "model/object.h"
 
@@ -10,8 +10,8 @@
 
 namespace bsml {
 
-  class Annotation : public bsml::AbstractObject
-  /*======================================*/
+  class BSML_EXPORT Annotation : public bsml::AbstractObject
+  /*======================================================*/
   {
    public:
     Annotation(const std::string &uri)

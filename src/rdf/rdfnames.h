@@ -1,13 +1,14 @@
 #ifndef _BSML_RDFNAMES_H
 #define _BSML_RDFNAMES_H
 
+#include "config.h"
 #include "rdf/rdf.h"
 
 
 namespace rdf {
 
-  class RDF
-  /*=======*/
+  class BSML_EXPORT RDF
+  /*=================*/
   {
    public:
     static std::string NS ;
@@ -15,8 +16,8 @@ namespace rdf {
     static rdf::Resource type ;
     } ;
 
-  class RDFS
-  /*=======*/
+  class BSML_EXPORT RDFS
+  /*==================*/
   {
    public:
     static std::string NS ;
@@ -25,8 +26,8 @@ namespace rdf {
     static rdf::Resource label ;
     } ;
 
-  class DCT
-  /*======*/
+  class BSML_EXPORT DCT
+  /*=================*/
   {
    public:
     static std::string NS ;
@@ -40,8 +41,8 @@ namespace rdf {
     static rdf::Resource subject ;
     } ;
 
-  class PRV
-  /*======*/
+  class BSML_EXPORT PRV
+  /*=================*/
   {
    public:
     static std::string NS ;
@@ -49,8 +50,8 @@ namespace rdf {
     static rdf::Resource precededBy ;
     } ;
 
-  class XSD
-  /*======*/
+  class BSML_EXPORT XSD
+  /*=================*/
   {
    public:
     static std::string NS ;

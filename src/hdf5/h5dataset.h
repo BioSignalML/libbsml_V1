@@ -24,6 +24,9 @@
 #include <string>
 #include <H5Cpp.h>
 
+#include "config.h"
+
+
 namespace bsml {
 
   /*!
@@ -31,8 +34,8 @@ namespace bsml {
    *
    * The first dimension of an array is able to grow in size.
    */
-  class H5Dataset
-  /*===========*/
+  class BSML_EXPORT H5Dataset
+  /*=======================*/
   {
 
    private:

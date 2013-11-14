@@ -4,6 +4,7 @@
 #include <string>
 #include <list>
 
+#include "config.h"
 #include "rdf/rdf.h"
 #include "rdf/rdfmap.h"
 #include "model/datetime.h"
@@ -11,8 +12,8 @@
 
 namespace bsml {
 
-  class AbstractObject
-  /*================*/
+  class BSML_EXPORT AbstractObject
+  /*============================*/
   {
    private:
     rdf::Resource resource ;

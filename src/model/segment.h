@@ -2,6 +2,7 @@
 #define _BSML_SEGMENT_H
 
 
+#include "config.h"
 #include "model/bsml.h"
 #include "model/object.h"
 #include "rdf/rdfmap.h"
@@ -9,8 +10,8 @@
 
 namespace bsml {
 
-  class Segment : public bsml::AbstractObject
-  /*======================================*/
+  class BSML_EXPORT Segment : public bsml::AbstractObject
+  /*===================================================*/
   {
    public:
     Segment(const std::string &uri)

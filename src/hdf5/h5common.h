@@ -5,8 +5,8 @@
 
 #include <H5Cpp.h>
 
+#include "config.h"
 #include "model/bsml.h"
-
 
 namespace bsml {
 
@@ -27,14 +27,14 @@ namespace bsml {
     } ;
 
 
-  class H5DataTypes
-  /*=============*/
+  class BSML_EXPORT H5DataTypes
+  /*=========================*/
   {
    public:
     H5::DataType mtype ;
     H5::DataType dtype ;
 
-    template <class T> H5DataTypes(T *data __attribute__((__unused__))) {
+    template <class T> H5DataTypes(T *data UNUSED) {
       throw H5Exception("Unsupported data type") ;
       }
 

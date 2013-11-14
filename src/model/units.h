@@ -1,14 +1,15 @@
 #ifndef _BSML_UNITS_H
 #define _BSML_UNITS_H
 
+#include "config.h"
 #include "rdf/rdf.h"
 #include "utility/utility.h"
 
 
 namespace bsml {
 
-  class Unit : public rdf::Resource
-  /*=============================*/
+  class BSML_EXPORT Unit : public rdf::Resource
+  /*=========================================*/
   {
    public:
     Unit(void) ;

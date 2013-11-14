@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "config.h"
 #include "model/object.h"
 #include "model/units.h"
 #include "rdf/rdf.h"
@@ -11,8 +12,8 @@
 
 namespace bsml {
 
-  class Clock : public AbstractObject
-  /*================================*/
+  class BSML_EXPORT Clock : public AbstractObject
+  /*===========================================*/
   {
    protected:
     Unit unit_ ;

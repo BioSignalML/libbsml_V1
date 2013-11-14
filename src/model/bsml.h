@@ -4,6 +4,7 @@
 #include <string>
 #include <stdexcept>
 
+#include "config.h"
 #include "rdf/rdf.h"
 
 // This should be generated from the BSML Ontology...
@@ -19,16 +20,16 @@ namespace bsml {
     } ;
 
 
-  class Format
-  /*=========*/
+  class BSML_EXPORT Format
+  /*====================*/
   {
    public:
     static rdf::Literal HDF5 ;
     } ;
 
 
-  class BSML
-  /*=======*/
+  class BSML_EXPORT BSML
+  /*==================*/
   {
    public:
     static std::string NS ;

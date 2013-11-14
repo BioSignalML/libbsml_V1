@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "config.h"
 #include "rdf/rdf.h"
 
 
@@ -10,8 +11,8 @@ namespace rdf
 /*=========*/
 {
 
-  class Mapping
-  /*=========*/
+  class BSML_EXPORT Mapping
+  /*=====================*/
   {
    private:
     const rdf::Resource property ;
@@ -41,8 +42,8 @@ namespace rdf
     } ;
 
 
-  class RdfMap
-  /*========*/
+  class BSML_EXPORT RdfMap
+  /*====================*/
   {
    private:
     std::list<Mapping *> maps ;

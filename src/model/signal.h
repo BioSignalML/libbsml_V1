@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 
+#include "config.h"
 #include "model/object.h"
 #include "model/datetime.h"
 #include "model/clock.h"
@@ -16,8 +17,8 @@ namespace bsml {
 
   class Recording ;
 
-  class Signal : public AbstractObject
-  /*================================*/
+  class BSML_EXPORT Signal : public AbstractObject
+  /*============================================*/
   {
    private:
     Recording *recording_ ;
@@ -36,8 +37,8 @@ namespace bsml {
     } ;
 
 
-  class SignalGroup : public std::vector<Signal *>
-  /*============================================*/
+  class BSML_EXPORT SignalGroup : public std::vector<Signal *>
+  /*========================================================*/
   {
    private:
     std::map<std::string, Signal *> urimap ;
@@ -71,9 +72,8 @@ namespace bsml {
       return this->at(index) ;
       }
 
-    virtual void extend(double *data __attribute__((__unused__)),
-    /*---------------------------------------------------------*/
-                        size_t size __attribute__((__unused__)))
+    virtual void extend(double *data UNUSED, size_t size UNUSED)
+    /*--------------------------------------------------------*/
     {
       }
 

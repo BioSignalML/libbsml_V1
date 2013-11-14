@@ -23,6 +23,8 @@
 
 #include <string>
 
+#include "config.h"
+
 
 namespace bsml
 /*==========*/

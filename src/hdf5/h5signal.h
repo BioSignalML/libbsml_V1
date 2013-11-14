@@ -21,6 +21,7 @@
 #ifndef _BSML_H5_SIGNAL
 #define _BSML_H5_SIGNAL
 
+#include "config.h"
 #include "hdf5/h5clock.h"
 #include "hdf5/h5dataset.h"
 #include "model/signal.h"
@@ -28,8 +29,8 @@
 
 namespace bsml {
 
-  class H5Signal : public Signal, public H5Dataset
-  /*============================================*/
+  class BSML_EXPORT H5Signal : public Signal, public H5Dataset
+  /*========================================================*/
   {
 
    private:
@@ -67,8 +68,8 @@ namespace bsml {
     } ;
 
 
-  class H5SignalGroup : public SignalGroup
-  /*====================================*/
+  class BSML_EXPORT H5SignalGroup : public SignalGroup
+  /*================================================*/
   {
 
    public:

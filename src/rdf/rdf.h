@@ -8,11 +8,11 @@
 #include <list>
 #include <map>
 
+#include "config.h"
+
 
 namespace rdf {
 
-  class Format
-  /*--------*/
   class Exception : public std::runtime_error
   /*=======================================*/
   {
@@ -21,6 +21,8 @@ namespace rdf {
     : std::runtime_error(msg) { }
     } ;
 
+  class BSML_EXPORT Format
+  /*====================*/
   {
    public:
     static std::string RDFXML ;
@@ -30,16 +32,16 @@ namespace rdf {
 
   typedef void *RDFObject ;
 
-  void finalise(void) ;
-  /*-----------------*/
+  BSML_EXPORT void finalise(void) ;
+  /*-----------------------------*/
 
   class Node ;             // Declare forward
   class Graph ;
   class Resource ;
   class Statement ;
 
-  class Uri
-  /*=====*/
+  class BSML_EXPORT Uri
+  /*=================*/
   {
    private:
     RDFObject uri ;
@@ -60,8 +62,8 @@ namespace rdf {
     } ;
 
 
-  class Node
-  /*======*/
+  class BSML_EXPORT Node
+  /*==================*/
   {
    protected:
     RDFObject node ;
@@ -89,8 +91,8 @@ namespace rdf {
     } ;
 
 
-  class Resource : public Node
-  /*========================*/
+  class BSML_EXPORT Resource : public Node
+  /*====================================*/
   {
    public:
     Resource(void) ;
@@ -100,8 +102,8 @@ namespace rdf {
     } ;
 
 
-  class BlankNode : public Node
-  /*=========================*/
+  class BSML_EXPORT BlankNode : public Node
+  /*=====================================*/
   {
    public:
     BlankNode(void) ;
@@ -109,8 +111,8 @@ namespace rdf {
     } ;
 
 
-  class Literal : public Node
-  /*=======================*/
+  class BSML_EXPORT Literal : public Node
+  /*===================================*/
   {
    public:
     Literal() ;
@@ -121,8 +123,8 @@ namespace rdf {
     } ;
 
 
-  class Statement
-  /*===========*/
+  class BSML_EXPORT Statement
+  /*=======================*/
   {
    private:
     RDFObject statement ;
@@ -143,8 +145,8 @@ namespace rdf {
   typedef std::pair<const std::string &, const Uri &> Prefix ;
 
 
-  class Graph
-  /*=======*/
+  class BSML_EXPORT Graph
+  /*===================*/
   {
    private:
     std::list<Statement *> statements ;
