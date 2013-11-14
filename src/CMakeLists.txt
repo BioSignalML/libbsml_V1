@@ -34,7 +34,6 @@ if (APPLE)
   add_definitions(--stdlib=libc++)
 endif()
 
-if (MSYS)
 if (WIN32)
 ##From http://www.unknownroad.com/rtfm/VisualStudio/warningC4251.html
   add_definitions(/wd4251)
@@ -84,33 +83,6 @@ set (RDF_LIBRARIES
 if (APPLE)
   set (BOOST_LIBRARIES
     boost_date_time
-    )
-elseif (MSYS)       ## Static linking...
-  set (RDF_LIBRARIES
-    rdf
-    rasqal
-    raptor2
-    xml2
-    gmp
-    pcre
-    pthread
-    curl
-    idn
-    iconv
-    lzma
-    gnutls
-    nettle
-    ssh2
-    ws2_32
-    )
-  set (HDF5_LIBRARIES
-    sz.a
-    hdf5.a
-    hdf5_cpp.a
-    hdf5_hl_cpp.a
-    )
-  set (BOOST_LIBRARIES
-    boost_date_time-mt.a
     )
 endif()
 
