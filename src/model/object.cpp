@@ -73,8 +73,8 @@ const std::string AbstractObject::get_uri_as_string(void) const
   return resource.as_string() ;
   }
 
-void AbstractObject::to_rdf(const rdf::Graph &graph)
-/*------------------------------------------------*/
+void AbstractObject::to_rdf(rdf::Graph &graph)
+/*------------------------------------------*/
 {
   rdfmap.to_rdf(graph, resource) ;
   }

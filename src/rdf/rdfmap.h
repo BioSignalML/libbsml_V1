@@ -28,8 +28,8 @@ namespace rdf
     /*------------------------------------------------*/
     : property(property), reference(nullptr), literal(literal) { }
 
-    void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject)
-    /*--------------------------------------------------------------*/
+    void to_rdf(rdf::Graph &graph, const rdf::Resource &subject)
+    /*--------------------------------------------------------*/
     {
       if (reference != nullptr && !reference->is_empty()) {
         graph.append(rdf::Statement(subject, property, *reference)) ;
@@ -73,8 +73,8 @@ namespace rdf
       maps.push_back(new Mapping(property, literal)) ;
       }
 
-    void to_rdf(const rdf::Graph &graph, const rdf::Resource &subject)
-    /*--------------------------------------------------------------*/
+    void to_rdf(rdf::Graph &graph, const rdf::Resource &subject)
+    /*--------------------------------------------------------*/
     {
       for (auto m = maps.begin() ;  m != maps.end() ;  ++m) {
         (*m)->to_rdf(graph, subject) ;

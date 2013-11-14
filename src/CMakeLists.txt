@@ -2,26 +2,53 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(BioSignalML CXX)
 
-include_directories(/usr/local/include)
-include_directories(.)
-link_directories(/usr/local/lib)
 add_definitions(-DBSML_BUILD_LIBRARY)
 
-add_definitions(--std=c++11)
+include_directories(.)
+
+IF (WIN32)
+##  FIND_PACKAGE(HDF5 COMPONENTS CXX REQUIRED)  ## Need HDF5 1.8.12 to work ???
+  SET (HDF5_INCLUDE_DIRS
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/include"
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/include/cpp"
+    )
+  SET (HDF5_LIBRARIES
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/lib/zlib.lib"
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/lib/szip.lib"
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/lib/hdf5.lib"
+    "c:/Program Files/HDF_Group/HDF5/1.8.11/lib/hdf5_cpp.lib"
+    )
+ELSE()
+  FIND_PACKAGE(HDF5 COMPONENTS CXX REQUIRED)
+ENDIF()
+INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIRS})
 
 
-#FIND_PACKAGE (HDF5 NAMES hdf5)
-#INCLUDE_DIRECTORIES (${HDF5_INCLUDE_DIR})
-
+if (UNIX)
+  add_definitions(--std=c++11)
+  include_directories(/usr/local/include)
+  link_directories(/usr/local/lib)
+endif()
 
 if (APPLE)
   add_definitions(--stdlib=libc++)
 endif()
 
 if (MSYS)
+if (WIN32)
+##From http://www.unknownroad.com/rtfm/VisualStudio/warningC4251.html
+  add_definitions(/wd4251)
+  add_definitions(/EHsc)
+
   include_directories(
-    ${CMAKE_FIND_ROOT_PATH}/include/rasqal
-    ${CMAKE_FIND_ROOT_PATH}/include/raptor2
+    M:/build/boost_1_54_0
+## For Raptor
+    M:/build/win32/redland/include
+    )
+  link_directories(
+#    "c:/Program Files/HDF_Group/HDF5/1.8.11/lib"
+    M:/build/boost_1_54_0/bin.v2/libs/date_time/build/msvc-10.0/debug/link-static/threading-multi
+    M:/build/win32/raptor/vc10/src
     )
 endif()
 
@@ -55,14 +82,6 @@ set (RDF_LIBRARIES
 
 
 if (APPLE)
-  set (HDF5_LIBRARIES
-    sz
-    hdf5
-    hdf5_cpp
-    )
-  set (CPP_LIBRARIES
-    c++
-    )
   set (BOOST_LIBRARIES
     boost_date_time
     )
@@ -99,11 +118,9 @@ endif()
 add_library(biosignalml SHARED ${SOURCES})
 
 target_link_libraries(biosignalml
-  ${CPP_LIBRARIES}
   ${RDF_LIBRARIES}
   ${BOOST_LIBRARIES}
   ${HDF5_LIBRARIES}
-  z
   )
 
 

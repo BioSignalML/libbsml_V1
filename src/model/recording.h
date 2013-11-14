@@ -100,7 +100,7 @@ namespace bsml {
     void set_starttime(const Datetime &starttime) ;
     void set_duration(const Duration &duration) ;
 
-    void to_rdf(const rdf::Graph &graph) ;
+    void to_rdf(rdf::Graph &graph) ;
 
     std::string serialise(const std::string &format) ;
     virtual void save_metadata(void) { }

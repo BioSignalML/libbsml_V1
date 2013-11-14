@@ -19,6 +19,7 @@
  ******************************************************************************/
 
 #include <cstring>
+#include <stdlib.h>
 
 #include "hdf5/bsml_h5.h"
 #include "model/signal.h"
@@ -80,9 +81,11 @@ size_t H5Signal::clock_size(void)
     H5::DataSet clk(H5Rdereference(H5Iget_file_id(dataset.getId()), H5R_OBJECT, &ref)) ;
     H5::DataSpace cspace = clk.getSpace() ;
     int cdims = cspace.getSimpleExtentNdims() ;
-    hsize_t cshape[cdims] ;
+    hsize_t *cshape = (hsize_t *)calloc(cdims, sizeof(hsize_t)) ;
     cspace.getSimpleExtentDims(cshape) ;
-    return cshape[0] ;
+    hsize_t result = cshape[0] ;
+    free(cshape) ;
+    return result ;
     }
   catch (H5::AttributeIException e) { }
   return -1 ;

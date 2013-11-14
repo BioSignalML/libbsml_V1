@@ -87,8 +87,8 @@ Clock *Recording::new_clock(const std::string &uri, const Unit &units, const std
   }
 
 
-void Recording::to_rdf(const rdf::Graph &graph)
-/*-------------------------------------------*/
+void Recording::to_rdf(rdf::Graph &graph)
+/*-------------------------------------*/
 {
   AbstractObject::to_rdf(graph) ;
   for (auto rp = resources_.begin() ;  rp != resources_.end() ;  ++rp) {

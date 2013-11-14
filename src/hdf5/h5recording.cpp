@@ -219,9 +219,11 @@ H5DataRef H5Recording::create_dataset(const std::string &group, int rank, hsize_
     grp = h5.createGroup("/recording/" + group) ;
     }
   std::string dsetname = "/recording/" + group + "/" + std::to_string(grp.getNumObjs()) ;
+  hsize_t *chunks = (hsize_t *)calloc(rank, sizeof(hsize_t)) ;
+  H5::DataSet dset ;
+  hobj_ref_t reference ;
   try {
     H5::DSetCreatPropList props ;
-    hsize_t chunks[rank] ;
     chunks[0] = 4096 ;
     int chunkbytes = chunks[0]*dtype.getSize() ;
     for (int n = 1 ;  n < rank ;  ++n) {
@@ -235,16 +237,16 @@ H5DataRef H5Recording::create_dataset(const std::string &group, int rank, hsize_
     props.setChunk(rank, chunks) ;
     if      (compression == BSML_H5_COMPRESS_GZIP) props.setDeflate(4) ;
     else if (compression == BSML_H5_COMPRESS_SZIP) props.setSzip(H5_SZIP_NN_OPTION_MASK, 8) ;
-    H5::DataSet dset = h5.createDataSet(dsetname, dtype, dspace, props) ;
+    dset = h5.createDataSet(dsetname, dtype, dspace, props) ;
     if (data != nullptr) dset.write(data, datatypes.mtype) ;
-    hobj_ref_t reference ;
     h5.reference(&reference, dsetname) ;
-    return H5DataRef(dset, reference) ;
     }
   catch (H5::FileIException e) {
     e.printError() ;
     throw H5Exception("Cannot create '" + group + "' dataset: " + e.getDetailMsg()) ;
     }
+  free(chunks) ;
+  return H5DataRef(dset, reference) ;
   }
 
 
@@ -307,7 +309,8 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
 
   size_t npoints = 0 ;
   int rank = datashape.size() + 1 ;
-  hsize_t maxshape[rank], shape[rank] ;
+  hsize_t *shape = (hsize_t *)calloc(rank, sizeof(hsize_t)) ;
+  hsize_t *maxshape = (hsize_t *)calloc(rank, sizeof(hsize_t)) ;
   maxshape[0] = H5S_UNLIMITED ;
   int elsize = 1 ;
   if (rank > 1) {           // simple dataset, shape of data point given
@@ -322,8 +325,9 @@ H5Signal *H5Recording::create_signal(const std::string &uri, const Unit &units,
     npoints = datasize ;
     }
   shape[0] = npoints ;
-
   H5DataRef sigdata = create_dataset("signal", rank, shape, maxshape, data, datatypes) ;
+  free(maxshape) ;
+  free(shape) ;
   H5::DataSet dset = sigdata.first ;
 
   H5::DataSpace scalar(H5S_SCALAR) ;
@@ -398,8 +402,7 @@ std::vector<H5Signal *> H5Recording::create_signal(const std::vector<std::string
   H5::DataSpace scalar(H5S_SCALAR) ;
   H5::StrType varstr(H5::PredType::C_S1, H5T_VARIABLE) ;
   hobj_ref_t reference = sigdata.second ;
-
-  const char *values[nsignals] ;
+  const char **values= (const char **)calloc(nsignals, sizeof(char *)) ;
   hsize_t dims[1] ;
   dims[0] = nsignals ;
   H5::DataSpace attrspace(1, dims, dims) ;
@@ -427,6 +430,7 @@ catch (H5::AttributeIException e) {
   throw H5Exception("Cannot set signal's attributes") ;
   }
 
+  free(values) ;
   h5.flush(H5F_SCOPE_GLOBAL) ;
   return signals ;
   }

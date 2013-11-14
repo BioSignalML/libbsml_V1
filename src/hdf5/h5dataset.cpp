@@ -18,8 +18,9 @@
  *                                                                            *
  ******************************************************************************/
 
-#include "hdf5/bsml_h5.h"
+#include <stdlib.h>
 
+#include "hdf5/bsml_h5.h"
 
 using namespace bsml ;
 
@@ -53,7 +54,7 @@ H5Dataset::H5Dataset(const std::string &uri, const H5DataRef &ds, int index)
       if (uri != ds_uri) throw H5Exception("Dataset URI '" + ds_uri + "' should be '" + uri + "'") ;
       }
     else {
-      char *uris[nsignals] ;
+      char **uris = (char **)calloc(nsignals, sizeof(char *)) ;
       attr.read(varstr, uris) ;
       int ds_index = -1 ;
       int n = 0 ;
@@ -65,6 +66,7 @@ H5Dataset::H5Dataset(const std::string &uri, const H5DataRef &ds, int index)
         free(uris[n]) ;
         ++n ;
         }
+      free(uris) ;
 
       if (ds_index == -1) throw H5Exception("Cannot find dataset for '" + uri + "'") ;
       else if (index < 0) index = ds_index ;
@@ -125,9 +127,11 @@ size_t H5Dataset::length(void) const
   if (dataset.getId() == 0) return 0 ;
   else {
     H5::DataSpace dspace = dataset.getSpace() ;
-    hsize_t shape[dspace.getSimpleExtentNdims()] ;
+    hsize_t *shape = (hsize_t *)calloc(dspace.getSimpleExtentNdims(), sizeof(hsize_t)) ;
     dspace.getSimpleExtentDims(shape) ;
-    return shape[0] ;
+    hsize_t result = shape[0] ;
+    free(shape) ;
+    return result ;
     }
   }
 
@@ -139,9 +143,11 @@ std::string H5Dataset::name(void)
 {
   int n = H5Iget_name(dataset.getId(), NULL, 0) ;
   if (n == 0) return std::string("") ;
-  char name[n+1] ;
+  char *name = (char *)calloc(n+1, sizeof(char)) ;
   H5Iget_name(dataset.getId(), name, n+1) ;
-  return std::string(name) ;
+  std::string result(name) ;
+  free(name) ;
+  return result ;
   }
 
 
@@ -151,8 +157,12 @@ void H5Dataset::extend(void *data, size_t size, H5::DataType dtype, int nsignals
 
   H5::DataSpace dspace = dataset.getSpace() ;
   int ndims = dspace.getSimpleExtentNdims() ;
+  hsize_t
+    *shape = (hsize_t *)calloc(ndims, sizeof(hsize_t)),
+    *newshape = (hsize_t *)calloc(ndims, sizeof(hsize_t)),
+    *count = (hsize_t *)calloc(ndims, sizeof(hsize_t)),
+    *start = (hsize_t *)calloc(ndims, sizeof(hsize_t)) ;
   try {
-    hsize_t shape[ndims], newshape[ndims], count[ndims], start[ndims] ;
     dspace.getSimpleExtentDims(shape) ;
     if (nsignals > 1) {         // compound dataset
       if (ndims != 2) throw H5Exception("Compound dataset has wrong shape: " + uri) ;
@@ -183,4 +193,8 @@ void H5Dataset::extend(void *data, size_t size, H5::DataType dtype, int nsignals
   catch (H5::DataSetIException e) {
     throw H5Exception("Cannot extend dataset '" + uri + "': " + e.getDetailMsg()) ;
     }
+  free(shape) ;
+  free(newshape) ;
+  free(count) ;
+  free(start) ;
   }
