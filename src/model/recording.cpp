@@ -99,9 +99,10 @@ void Recording::to_rdf(rdf::Graph &graph)
 std::string Recording::serialise(const std::string &format)
 /*-------------------------------------------------------*/
 {
-  std::list<rdf::Prefix> prefixes(1, rdf::Prefix("bsml", BSML::uri)) ;
-  prefixes.push_back(rdf::Prefix("rdfs", rdf::RDFS::uri)) ;
-  prefixes.push_back(rdf::Prefix("dct", rdf::DCT::uri)) ;
+  std::list<rdf::Prefix> prefixes ;
+//  (1, rdf::Prefix("bsml", BSML::uri)) ;
+//  prefixes.push_back(rdf::Prefix("rdfs", rdf::RDFS::uri)) ;    *** VS 2010 ****
+//  prefixes.push_back(rdf::Prefix("dct", rdf::DCT::uri)) ;
 
   rdf::Graph graph("") ;
   this->to_rdf(graph) ;
